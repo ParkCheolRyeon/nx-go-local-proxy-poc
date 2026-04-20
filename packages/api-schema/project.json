@@ -1,0 +1,15 @@
+{
+  "name": "api-schema",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "packages/api-schema/src",
+  "targets": {
+    "gen": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "openapi-typescript openapi.yaml -o src/types.ts",
+        "cwd": "packages/api-schema"
+      }
+    }
+  }
+}

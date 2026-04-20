@@ -46,3 +46,22 @@ Thumbs.db
 # Next.js
 .next
 out
+
+certs/
+node_modules/
+
+# Nx
+dist/
+.nx/cache
+.nx/workspace-data
+
+# Go
+apps/dp-back/internal/api/*.gen.go
+# ↑ 생성 파일. 논쟁의 여지 있음 — 팀마다 커밋할지 말지 다름.
+# 일단 POC에선 gitignore 안 해도 됨. 나중에 결정.
+
+# Env
+**/.env.local
+
+# Cert
+tools/local-proxy/certs/

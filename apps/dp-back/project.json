@@ -1,0 +1,29 @@
+{
+  "name": "dp-back",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/dp-back",
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "go run main.go",
+        "cwd": "apps/dp-back"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "go build -o ../../dist/apps/dp-back/dp-back",
+        "cwd": "apps/dp-back"
+      }
+    },
+    "gen": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "oapi-codegen -config oapi-codegen.yaml ../../packages/api-schema/openapi.yaml",
+        "cwd": "apps/dp-back"
+      }
+    }
+  }
+}

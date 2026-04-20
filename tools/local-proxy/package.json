@@ -1,0 +1,13 @@
+{
+  "name": "@tool/local-proxy",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "start": "sudo node start.js",
+    "stop": "sudo node stop.js"
+  },
+  "dependencies": {
+    "http-proxy": "1.18.1",
+    "shelljs": "^0.8.5"
+  }
+}

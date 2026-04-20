@@ -2,7 +2,10 @@
   "name": "@igallery/source",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "local-proxy": "pnpm --filter @tool/local-proxy",
+    "gen": "pnpm nx run-many -t gen"
+  },
   "private": true,
   "dependencies": {
     "next": "~16.1.6",
