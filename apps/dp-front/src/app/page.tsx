@@ -1,5 +1,6 @@
 import React from 'react';
 import { createApiClient } from '@igallery/api-schema';
+import UsersPanel from '@/app/users-panel';
 
 export default async function Home() {
   const api = createApiClient('https://api.dp.dev.local');
@@ -16,6 +17,8 @@ export default async function Home() {
           <pre className="text-green-500">{JSON.stringify(data, null, 2)}</pre>
         )}
       </section>
+
+      <UsersPanel />
     </main>
   );
 }
