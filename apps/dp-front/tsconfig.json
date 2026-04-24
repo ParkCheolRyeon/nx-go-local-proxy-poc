@@ -17,7 +17,8 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@public/*": ["./public/*"]
     },
     "outDir": "dist",
     "rootDir": "src",

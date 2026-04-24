@@ -4,7 +4,8 @@
   "license": "MIT",
   "scripts": {
     "local-proxy": "pnpm --filter @tool/local-proxy",
-    "gen": "pnpm nx run-many -t gen"
+    "gen": "pnpm nx run-many -t gen",
+    "dev:fe": "pnpm --filter @igallery/dp-front run dev"
   },
   "private": true,
   "dependencies": {
@@ -24,6 +25,7 @@
     "@swc/cli": "~0.8.0",
     "@swc/core": "~1.15.5",
     "@swc/helpers": "~0.5.18",
+    "@trivago/prettier-plugin-sort-imports": "^6.0.2",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "autoprefixer": "10.4.13",
@@ -37,6 +39,7 @@
     "nx": "22.6.5",
     "postcss": "8.4.38",
     "prettier": "~3.6.2",
+    "prettier-plugin-tailwindcss": "0.6.11",
     "tailwindcss": "3.4.3",
     "tslib": "^2.3.0",
     "typescript": "~5.9.2",

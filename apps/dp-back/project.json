@@ -21,7 +21,7 @@
     "gen": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "oapi-codegen -config oapi-codegen.yaml ../../packages/api-schema/openapi.yaml",
+        "command": "curl -sf http://localhost:8080/openapi.yaml -o ../../packages/api-schema/openapi.yaml",
         "cwd": "apps/dp-back"
       }
     },

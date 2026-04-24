@@ -6,6 +6,7 @@
   "targets": {
     "gen": {
       "executor": "nx:run-commands",
+      "dependsOn": ["dp-back:gen"],
       "options": {
         "command": "openapi-typescript openapi.yaml -o src/types.ts",
         "cwd": "packages/api-schema"

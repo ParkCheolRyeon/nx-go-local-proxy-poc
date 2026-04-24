@@ -1,0 +1,25 @@
+/* 나눔스퀘어라운드 웹폰트 v1.11 https://github.com/innks/NanumSquareRound */
+@font-face {
+  font-family: "NanumSquareRound";
+  font-style: normal;
+  font-weight: 300;
+  src: url("NanumSquareRoundL.woff2") format("woff2");
+}
+@font-face {
+  font-family: "NanumSquareRound";
+  font-style: normal;
+  font-weight: 400;
+  src: url("NanumSquareRoundR.woff2") format("woff2");
+}
+@font-face {
+  font-family: "NanumSquareRound";
+  font-style: normal;
+  font-weight: 700;
+  src: url("NanumSquareRoundB.woff2") format("woff2");
+}
+@font-face {
+  font-family: "NanumSquareRound";
+  font-style: normal;
+  font-weight: 800;
+  src: url("NanumSquareRoundEB.woff2") format("woff2");
+}
