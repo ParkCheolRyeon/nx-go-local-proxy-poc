@@ -18,13 +18,19 @@ import (
 // Domain
 type User struct {
 	ID        string    `json:"id" example:"a3f2c891d4b7e0f1"`
+	Email     string    `json:"email" format:"email" example:"parkcr@example.com"`
 	Name      string    `json:"name" example:"련철박"`
 	CreatedAt time.Time `json:"createdAt"`
 }
 
 func toDomain(u db.User) User {
+	email := ""
+	if u.Email != nil {
+		email = *u.Email
+	}
 	return User{
 		ID:        u.ID,
+		Email:     email,
 		Name:      u.Name,
 		CreatedAt: u.CreatedAt,
 	}
@@ -32,12 +38,16 @@ func toDomain(u db.User) User {
 
 // Server
 type Server struct {
-	queries *db.Queries
+	pool      *pgxpool.Pool
+	queries   *db.Queries
+	jwtSecret []byte
 }
 
-func New(pool *pgxpool.Pool) *Server {
+func New(pool *pgxpool.Pool, jwtSecret string) *Server {
 	return &Server{
-		queries: db.New(pool),
+		pool:      pool,
+		queries:   db.New(pool),
+		jwtSecret: []byte(jwtSecret),
 	}
 }
 
@@ -48,9 +58,22 @@ func generateID() string {
 }
 
 // API Setup
-func NewAPI(r *gin.Engine) huma.API {
+func NewAPI(r *gin.Engine, s *Server) huma.API {
 	config := huma.DefaultConfig("iGallery DP API", "0.1.0")
-	return humagin.New(r, config)
+
+	// OpenAPI 문서에 'bearer' 인증 방식이 있다고 알려줌 (/docs에 자물쇠 표시)
+	config.Components.SecuritySchemes = map[string]*huma.SecurityScheme{
+		"bearer": {
+			Type:         "http",
+			Scheme:       "bearer",
+			BearerFormat: "JWT",
+		},
+	}
+
+	api := humagin.New(r, config)
+	api.UseMiddleware(s.AuthMiddleware(api))
+
+	return api
 }
 
 func RegisterRoutes(api huma.API, s *Server) {
@@ -78,6 +101,32 @@ func RegisterRoutes(api huma.API, s *Server) {
 		Summary:     "사용자 단건 조회",
 		Tags:        []string{"users"},
 	}, s.GetUser)
+
+	huma.Register(api, huma.Operation{
+		OperationID:   "signUp",
+		Method:        "POST",
+		Path:          "/auth/signup",
+		Summary:       "회원가입",
+		Tags:          []string{"auth"},
+		DefaultStatus: 201,
+	}, s.SignUp)
+
+	huma.Register(api, huma.Operation{
+		OperationID: "signIn",
+		Method:      "POST",
+		Path:        "/auth/signin",
+		Summary:     "로그인",
+		Tags:        []string{"auth"},
+	}, s.SignIn)
+
+	huma.Register(api, huma.Operation{
+		OperationID: "getMe",
+		Method:      "GET",
+		Path:        "/me",
+		Summary:     "내 정보 조회",
+		Tags:        []string{"users"},
+		Security:    []map[string][]string{{"bearer": {}}},
+	}, s.GetMe)
 }
 
 // Handlers

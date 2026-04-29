@@ -25,6 +25,11 @@ func main() {
 		log.Fatal("DATABASE_URL not set")
 	}
 
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		log.Fatal("JWT_SECRET not set")
+	}
+
 	ctx := context.Background()
 
 	pool, err := pgxpool.New(ctx, dbURL)
@@ -49,8 +54,8 @@ func main() {
 		MaxAge:           12 * time.Hour,
 	}))
 
-	srv := server.New(pool)
-	api := server.NewAPI(r)
+	srv := server.New(pool, jwtSecret)
+	api := server.NewAPI(r, srv)
 	server.RegisterRoutes(api, srv)
 
 	r.Run(":8080")

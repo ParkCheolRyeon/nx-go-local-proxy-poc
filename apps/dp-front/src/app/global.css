@@ -364,6 +364,108 @@ pre {
   }
 }
 
+@keyframes ev-dot-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+    opacity: 0.9;
+  }
+  100% {
+    box-shadow: 0 0 0 8px rgba(255, 255, 255, 0);
+    opacity: 0;
+  }
+}
+
+@keyframes st-fade {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.st-row {
+  transition:
+    background 0.15s,
+    padding 0.15s;
+}
+.st-row.is-clickable:hover {
+  background: rgba(49, 150, 255, 0.05);
+  padding-left: 8px;
+  padding-right: 8px;
+  border-radius: 10px;
+}
+
+.st-tab {
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+@keyframes mdl-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes mdl-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.9) translateY(8px);
+  }
+  60% {
+    transform: scale(1.02) translateY(-2px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes mdl-icon-pulse {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes mdl-ring {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+.mdl-btn {
+  transition:
+    transform 0.12s,
+    box-shadow 0.2s,
+    background 0.2s;
+  cursor: pointer;
+}
+.mdl-btn:hover {
+  transform: translateY(-1px);
+}
+.mdl-btn:active {
+  transform: translateY(1px);
+}
+
 .ac02-avatar {
   transition:
     transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),

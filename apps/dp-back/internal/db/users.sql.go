@@ -10,31 +10,89 @@ import (
 )
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO users (id, name)
-VALUES ($1, $2)
-RETURNING id, name, created_at
+INSERT INTO users (id, email, password_hash, name)
+VALUES ($1, $2, $3, $4)
+RETURNING id, name, created_at, email, password_hash, description, avatar, locale, country, marketing_opt_in, updated_at, deleted_at
 `
 
 type CreateUserParams struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
+	ID           string  `json:"id"`
+	Email        *string `json:"email"`
+	PasswordHash *string `json:"password_hash"`
+	Name         string  `json:"name"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
-	row := q.db.QueryRow(ctx, createUser, arg.ID, arg.Name)
+	row := q.db.QueryRow(ctx, createUser,
+		arg.ID,
+		arg.Email,
+		arg.PasswordHash,
+		arg.Name,
+	)
 	var i User
-	err := row.Scan(&i.ID, &i.Name, &i.CreatedAt)
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.CreatedAt,
+		&i.Email,
+		&i.PasswordHash,
+		&i.Description,
+		&i.Avatar,
+		&i.Locale,
+		&i.Country,
+		&i.MarketingOptIn,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
 	return i, err
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id, name, created_at FROM users
-WHERE id = $1
+SELECT id, name, created_at, email, password_hash, description, avatar, locale, country, marketing_opt_in, updated_at, deleted_at FROM users
+WHERE id = $1 AND deleted_at IS NULL
 `
 
 func (q *Queries) GetUser(ctx context.Context, id string) (User, error) {
 	row := q.db.QueryRow(ctx, getUser, id)
 	var i User
-	err := row.Scan(&i.ID, &i.Name, &i.CreatedAt)
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.CreatedAt,
+		&i.Email,
+		&i.PasswordHash,
+		&i.Description,
+		&i.Avatar,
+		&i.Locale,
+		&i.Country,
+		&i.MarketingOptIn,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const getUserByEmail = `-- name: GetUserByEmail :one
+SELECT id, name, created_at, email, password_hash, description, avatar, locale, country, marketing_opt_in, updated_at, deleted_at FROM users
+WHERE lower(email) = lower($1) AND deleted_at IS NULL
+`
+
+func (q *Queries) GetUserByEmail(ctx context.Context, lower string) (User, error) {
+	row := q.db.QueryRow(ctx, getUserByEmail, lower)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.CreatedAt,
+		&i.Email,
+		&i.PasswordHash,
+		&i.Description,
+		&i.Avatar,
+		&i.Locale,
+		&i.Country,
+		&i.MarketingOptIn,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
 	return i, err
 }

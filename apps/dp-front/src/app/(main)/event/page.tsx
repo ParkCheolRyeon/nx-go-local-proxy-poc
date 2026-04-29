@@ -1,5 +1,11 @@
 'use client';
 
+import Image, { type StaticImageData } from 'next/image';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+
+import EventCard from '@/app/(main)/event/EventCard';
+import EventStatusBadge from '@/app/(main)/event/EventStatusBadge';
 import img01 from '@/app/assets/event/1.png';
 import img02 from '@/app/assets/event/2.png';
 import img03 from '@/app/assets/event/3.png';
@@ -11,13 +17,10 @@ import img08 from '@/app/assets/event/8.png';
 import img09 from '@/app/assets/event/9.png';
 import img10 from '@/app/assets/event/10.jpg';
 import { cn } from '@/lib/utils';
-import Image, { type StaticImageData } from 'next/image';
-import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
 
-type EventStatus = 'open' | 'notOpen' | 'end';
+export type EventStatus = 'open' | 'notOpen' | 'end';
 
-type EventItem = {
+export type EventItem = {
   id: string;
   image: StaticImageData;
   title: string;
@@ -43,8 +46,7 @@ const EVENTS: EventItem[] = [
     id: 'stained-glass',
     image: img02,
     title: '스테인드글라스로 보는 세상',
-    subtitle:
-      '스테인드 글라스로 햇살이 들어온다면 어떤 느낌일까요? 너무 반짝반짝 눈이 부셔',
+    subtitle: '스테인드 글라스로 햇살이 들어온다면 어떤 느낌일까요? 너무 반짝반짝 눈이 부셔',
     startAt: '2026-04-10',
     endAt: '2026-05-20',
     participant: 74,
@@ -114,8 +116,7 @@ const EVENTS: EventItem[] = [
     id: 'picasso',
     image: img09,
     title: '피카소가 될꺼야',
-    subtitle:
-      '피카소가 됐다치고 여러분이 그리고 싶은걸 아무거나 골라서 그려봐요.',
+    subtitle: '피카소가 됐다치고 여러분이 그리고 싶은걸 아무거나 골라서 그려봐요.',
     startAt: '2026-01-01',
     endAt: '2026-02-28',
     participant: 732,
@@ -125,8 +126,7 @@ const EVENTS: EventItem[] = [
     id: 'bukchon',
     image: img10,
     title: '한옥마을 feat.북촌',
-    subtitle:
-      '모든 한옥마을이 북촌에 있는건 아니다. 하지만 북촌엔 한옥마을이 있쥬?',
+    subtitle: '모든 한옥마을이 북촌에 있는건 아니다. 하지만 북촌엔 한옥마을이 있쥬?',
     startAt: '2026-07-01',
     endAt: '2026-08-31',
     participant: 0,
@@ -134,26 +134,26 @@ const EVENTS: EventItem[] = [
   },
 ];
 
-type StatusMeta = {
+export type StatusMeta = {
   label: string;
   pillClass: string;
   dotClass: string | null;
 };
 
-const STATUS_META: Record<EventStatus, StatusMeta> = {
+export const STATUS_META: Record<EventStatus, StatusMeta> = {
   open: {
     label: '진행 중',
-    pillClass: 'bg-[#22C55E]/15 text-[#16A34A] border-[#22C55E]/30',
-    dotClass: 'bg-[#22C55E] shadow-[0_0_0_3px_rgba(34,197,94,0.2)]',
+    pillClass: 'bg-green-500/75 text-white border-green-500 shadow-[0_3px_10px_rgba(16,185,129,0.35)]',
+    dotClass: 'bg-white/70',
   },
   notOpen: {
     label: '오픈 예정',
-    pillClass: 'bg-[#3196ff]/15 text-[#1C7AE0] border-[#3196ff]/30',
-    dotClass: 'bg-[#3196ff]',
+    pillClass: 'bg-[#3196ff]/85 text-white border-white/35 shadow-[0_3px_10px_rgba(28,122,224,0.35)]',
+    dotClass: 'bg-white/70',
   },
   end: {
     label: '종료',
-    pillClass: 'bg-[#94A3B8]/20 text-[#64748B] border-[#94A3B8]/30',
+    pillClass: 'bg-slate-800/55 text-white/85 border-white/15',
     dotClass: null,
   },
 };
@@ -167,18 +167,6 @@ const FILTER_OPTIONS: FilterOption[] = [
   { value: 'end', label: '종료' },
 ];
 
-function formatDateRange(startAt: string, endAt: string) {
-  const fmt = (iso: string) => {
-    const d = new Date(iso);
-    return `${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
-  };
-  return `${fmt(startAt)} ~ ${fmt(endAt)}`;
-}
-
-function formatParticipant(n: number) {
-  return new Intl.NumberFormat('ko-KR').format(n);
-}
-
 function isFilterValue(v: string | null): v is EventStatus {
   return v === 'open' || v === 'notOpen' || v === 'end';
 }
@@ -186,24 +174,18 @@ function isFilterValue(v: string | null): v is EventStatus {
 export default function EventPage() {
   const searchParams = useSearchParams();
   const filterParam = searchParams.get('filter');
-  const activeFilter: EventStatus | 'all' = isFilterValue(filterParam)
-    ? filterParam
-    : 'all';
+  const activeFilter: EventStatus | 'all' = isFilterValue(filterParam) ? filterParam : 'all';
 
-  const filtered =
-    activeFilter === 'all'
-      ? EVENTS
-      : EVENTS.filter((e) => e.status === activeFilter);
+  const filtered = activeFilter === 'all' ? EVENTS : EVENTS.filter((e) => e.status === activeFilter);
 
   return (
     <div
       className="relative min-h-[100dvh] overflow-hidden text-[#0b2a63]"
       style={{
-        background:
-          'linear-gradient(160deg,#F4F8FF 0%, #E5F0FF 55%, #D6E8FF 100%)',
+        background: 'linear-gradient(160deg,#F4F8FF 0%, #E5F0FF 55%, #D6E8FF 100%)',
       }}
     >
-      <div className="relative z-10 flex flex-col gap-6 px-10 pt-12 pb-16">
+      <div className="relative z-10 flex flex-col gap-6 px-10 pb-16 pt-12">
         <header
           className="flex flex-wrap items-end justify-between gap-6"
           style={{ animation: 'ac02-fade .5s ease-out both' }}
@@ -211,11 +193,9 @@ export default function EventPage() {
           <div>
             <div className="mb-3.5 flex items-center gap-2.5">
               <div className="h-px w-6 bg-[#1C7AE0]" />
-              <div className="text-[11px] font-bold tracking-[2px] text-[#1C7AE0]">
-                IGALLERY EXCLUSIVE
-              </div>
+              <div className="text-[11px] font-bold tracking-[2px] text-[#1C7AE0]">IGALLERY EXCLUSIVE</div>
             </div>
-            <h1 className="text-[44px] leading-[1.05] font-extrabold tracking-[-0.5px]">
+            <h1 className="text-[44px] font-extrabold leading-[1.05] tracking-[-0.5px]">
               이번 달의 <span className="text-[#1C7AE0]">이벤트</span>
             </h1>
             <p className="mt-2.5 max-w-[420px] text-[14px] leading-[1.55] text-[#5C6F90]">
@@ -231,8 +211,7 @@ export default function EventPage() {
           >
             {FILTER_OPTIONS.map((opt) => {
               const isActive = activeFilter === opt.value;
-              const href =
-                opt.value === 'all' ? '/event' : `/event?filter=${opt.value}`;
+              const href = opt.value === 'all' ? '/event' : `/event?filter=${opt.value}`;
               return (
                 <Link
                   key={opt.value}
@@ -268,96 +247,11 @@ export default function EventPage() {
             {filtered.map((event, i) => {
               const originalIndex = EVENTS.findIndex((e) => e.id === event.id);
               const num = String(originalIndex + 1).padStart(2, '0');
-              return (
-                <EventCard
-                  key={event.id}
-                  event={event}
-                  number={num}
-                  stagger={i * 0.06 + 0.12}
-                />
-              );
+              return <EventCard key={event.id} event={event} number={num} stagger={i * 0.06 + 0.12} />;
             })}
           </div>
         )}
       </div>
     </div>
-  );
-}
-
-type EventCardProps = {
-  event: EventItem;
-  number: string;
-  stagger: number;
-};
-
-function EventCard({ event, number, stagger }: EventCardProps) {
-  const meta = STATUS_META[event.status];
-  const dimmed = event.status === 'end';
-
-  return (
-    <Link
-      href={`/event/${event.id}`}
-      className={cn(
-        'group flex flex-col overflow-hidden rounded-[20px] border border-[#1C7AE0]/10 bg-white shadow-[0_8px_24px_rgba(28,122,224,0.07)] transition-transform duration-300 ease-[cubic-bezier(.34,1.56,.64,1)] hover:-translate-y-1.5 hover:shadow-[0_22px_50px_rgba(28,122,224,0.18)]',
-        dimmed && 'opacity-80',
-      )}
-      style={{
-        animation: `ac02-slide .45s cubic-bezier(.22,1,.36,1) ${stagger}s both`,
-      }}
-    >
-      <div className="relative h-[160px] overflow-hidden border-b border-[#1C7AE0]/10">
-        <Image
-          src={event.image}
-          alt={event.title}
-          fill
-          sizes="(min-width: 1280px) 400px, (min-width: 640px) 50vw, 100vw"
-          className={cn(
-            'object-cover transition-transform duration-500 group-hover:scale-[1.04]',
-            dimmed && 'grayscale',
-          )}
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-black/45" />
-
-        <div className="absolute top-3.5 left-4 text-[13px] font-bold tracking-[1px] text-white/85 drop-shadow">
-          No. {number}
-        </div>
-
-        <div
-          className={cn(
-            'absolute top-3 right-3 flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold backdrop-blur-md',
-            meta.pillClass,
-          )}
-        >
-          {meta.dotClass && (
-            <span
-              className={cn('h-1.5 w-1.5 rounded-full', meta.dotClass)}
-              aria-hidden
-            />
-          )}
-          {meta.label}
-        </div>
-      </div>
-
-      <div className="flex flex-1 flex-col gap-1 px-[18px] pt-4 pb-3">
-        <div className="text-[20px] leading-[1.25] font-bold break-keep text-[#0b2a63]">
-          {event.title}
-        </div>
-        <div className="line-clamp-2 text-[12.5px] leading-[1.5] break-keep text-[#5C6F90]">
-          {event.subtitle}
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between border-t border-dashed border-[#1C7AE0]/15 px-[18px] py-3">
-        <div className="flex items-center gap-2.5 text-[11px] font-semibold text-[#8AA0BD]">
-          <span>{formatDateRange(event.startAt, event.endAt)}</span>
-          <span className="opacity-30">|</span>
-          <span>참여 {formatParticipant(event.participant)}명</span>
-        </div>
-        <div className="flex items-center gap-1.5 text-[12px] font-bold text-[#5C6F90] transition-[color,gap] duration-200 group-hover:gap-2 group-hover:text-[#1C7AE0]">
-          <span>자세히</span>
-          <span>→</span>
-        </div>
-      </div>
-    </Link>
   );
 }

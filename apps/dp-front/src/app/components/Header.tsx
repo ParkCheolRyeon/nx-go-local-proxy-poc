@@ -1,11 +1,12 @@
 'use client';
 
-import IconLogin from '@/app/assets/icons/icon-login.svg';
-import { MENU_ITEMS } from '@/config/menu';
-import { useUser } from '@/stores/userStore';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Fragment, type FC, type SVGProps } from 'react';
+
+import IconLogin from '@/app/assets/icons/icon-login.svg';
+import { MENU_ITEMS } from '@/config/menu';
+import { useUser } from '@/stores/userStore';
 
 type Breadcrumb = {
   label: string;
@@ -38,33 +39,21 @@ export default function Header() {
   const breadcrumbs = buildBreadcrumbs(pathname);
 
   return (
-    <header className="sticky top-16 z-20 flex h-[72px] items-center justify-between border-b border-[#1C7AE0]/10 bg-white/70 px-8 shadow-[0_8px_24px_rgba(28,122,224,0.08)] backdrop-blur-[14px] md:top-0">
-      <nav
-        aria-label="breadcrumb"
-        className="flex items-center gap-1.5 text-[13px]"
-      >
+    <header className="sticky top-16 z-20 flex h-[72px] items-center justify-between border-b border-[#1C7AE0]/10 bg-[linear-gradient(135deg,rgba(234,242,254,0.85)_0%,rgba(214,232,255,0.65)_50%,rgba(244,248,255,0.85)_100%)] px-8 shadow-[0_8px_24px_rgba(28,122,224,0.08)] backdrop-blur-[14px] md:top-0">
+      <nav aria-label="breadcrumb" className="flex items-center gap-1.5 text-[13px]">
         {breadcrumbs.map((c, i) => {
           const last = i === breadcrumbs.length - 1;
           const isRoot = i === 0;
           const content = (
             <span className="flex items-center gap-1.5">
-              {isRoot && c.Icon && (
-                <c.Icon
-                  width={16}
-                  height={16}
-                  aria-hidden
-                  className="text-[#1C7AE0]"
-                />
-              )}
+              {isRoot && c.Icon && <c.Icon width={16} height={16} aria-hidden className="text-[#1C7AE0]" />}
               <span>{c.label}</span>
             </span>
           );
           return (
             <Fragment key={c.href}>
               {last ? (
-                <span className="px-1 py-0.5 font-bold text-[#1C7AE0]">
-                  {content}
-                </span>
+                <span className="px-1 py-0.5 font-bold text-[#1C7AE0]">{content}</span>
               ) : (
                 <Link
                   href={c.href}
@@ -74,10 +63,7 @@ export default function Header() {
                 </Link>
               )}
               {!last && (
-                <span
-                  aria-hidden
-                  className="text-[11px] text-[#8AA0BD] opacity-60"
-                >
+                <span aria-hidden className="text-[11px] text-[#8AA0BD] opacity-60">
                   ›
                 </span>
               )}
