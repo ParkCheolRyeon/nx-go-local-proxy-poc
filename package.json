@@ -5,7 +5,8 @@
   "scripts": {
     "local-proxy": "pnpm --filter @tool/local-proxy",
     "gen": "pnpm nx run-many -t gen",
-    "dev:fe": "pnpm --filter @igallery/dp-front run dev"
+    "dev:fe": "pnpm --filter @igallery/dp-front run dev",
+    "dev:be": "cd apps/dp-back && air"
   },
   "private": true,
   "dependencies": {
