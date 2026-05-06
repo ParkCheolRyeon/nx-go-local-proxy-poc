@@ -20,6 +20,7 @@
     "reset": "nx reset"
   },
   "private": true,
+  "packageManager": "pnpm@10.33.0",
   "dependencies": {
     "next": "~16.1.6",
     "react": "^19.0.0",
