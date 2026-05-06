@@ -31,16 +31,21 @@ function statsFor(_child: ChildProfile): Stats {
 }
 
 export type ChildDeleteModalProps = DialogRequestComponentProps<boolean> & {
-  mode: 'single' | 'all';
+  mode: 'single' | 'multi';
   target?: ChildProfile;
   targets?: ChildProfile[];
+  // multi 모드에서 'targets.length === totalCount' 면 "모두 삭제" 톤,
+  // 아니면 "선택한 N명 삭제" 톤. 미지정 시 모두로 간주.
+  totalCount?: number;
 };
 
 export default function ChildDeleteModal(props: ChildDeleteModalProps) {
   const { resolve, mode } = props;
-  const isAll = mode === 'all';
-  const single = !isAll ? props.target : undefined;
-  const all = isAll ? props.targets ?? [] : [];
+  const isMulti = mode === 'multi';
+  const single = !isMulti ? props.target : undefined;
+  const multi = isMulti ? props.targets ?? [] : [];
+  const isAllSelected =
+    isMulti && (props.totalCount === undefined || multi.length === props.totalCount);
 
   const [agree1, setAgree1] = useState(false);
   const [agree2, setAgree2] = useState(false);
@@ -62,23 +67,29 @@ export default function ChildDeleteModal(props: ChildDeleteModalProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const canSubmit = isAll
+  const canSubmit = isMulti
     ? agree1 && agree2 && typed === CONFIRM_PHRASE
     : agree1 && agree2;
 
-  const headerText = isAll
-    ? '자녀 프로필을 모두 삭제할까요?'
+  const headerText = isMulti
+    ? isAllSelected
+      ? '자녀 프로필을 모두 삭제할까요?'
+      : `선택한 ${multi.length}명을 삭제할까요?`
     : `${single?.name ?? '이 자녀'} 프로필을 삭제할까요?`;
 
-  const headerSub = isAll ? 'DELETE ALL CHILD PROFILES' : 'DELETE CHILD PROFILE';
+  const headerSub = isMulti
+    ? isAllSelected
+      ? 'DELETE ALL CHILD PROFILES'
+      : 'DELETE SELECTED CHILD PROFILES'
+    : 'DELETE CHILD PROFILE';
 
-  const headerGradient = isAll
+  const headerGradient = isMulti
     ? 'linear-gradient(135deg,#7F1D1D 0%, #B91C1C 60%, #EF4444 100%)'
     : 'linear-gradient(135deg,#0b2a63 0%,#1C7AE0 60%,#3196ff 100%)';
 
   // 통계 합계
-  const totalStats: Stats = isAll
-    ? all.reduce<Stats>(
+  const totalStats: Stats = isMulti
+    ? multi.reduce<Stats>(
         (a, c) => {
           const s = statsFor(c);
           return { drawings: a.drawings + s.drawings, awards: a.awards + s.awards };
@@ -89,8 +100,10 @@ export default function ChildDeleteModal(props: ChildDeleteModalProps) {
       ? statsFor(single)
       : { drawings: 0, awards: 0 };
 
-  const submitLabel = isAll
-    ? `${all.length}명 모두 삭제`
+  const submitLabel = isMulti
+    ? isAllSelected
+      ? `${multi.length}명 모두 삭제`
+      : `${multi.length}명 삭제하기`
     : `${single?.name ?? '자녀'} 삭제하기`;
 
   return (
@@ -129,7 +142,7 @@ export default function ChildDeleteModal(props: ChildDeleteModalProps) {
               className="flex h-11 w-11 flex-none items-center justify-center rounded-[14px] text-[22px]"
               style={{ background: 'rgba(255,255,255,0.20)', backdropFilter: 'blur(8px)' }}
             >
-              {isAll ? '⚠️' : '🗑'}
+              {isMulti ? '⚠️' : '🗑'}
             </div>
             <div className="min-w-0 flex-1">
               <div className="text-[11px] font-bold tracking-[1px] opacity-85">{headerSub}</div>
@@ -150,8 +163,8 @@ export default function ChildDeleteModal(props: ChildDeleteModalProps) {
 
         {/* body */}
         <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-[26px] py-5">
-          {!isAll && single && <SingleTargetCard child={single} />}
-          {isAll && <AllTargetsList targets={all} />}
+          {!isMulti && single && <SingleTargetCard child={single} />}
+          {isMulti && <AllTargetsList targets={multi} isAllSelected={isAllSelected} />}
 
           <ImpactGrid drawings={totalStats.drawings} awards={totalStats.awards} />
 
@@ -177,14 +190,16 @@ export default function ChildDeleteModal(props: ChildDeleteModalProps) {
               checked={agree2}
               onChange={setAgree2}
               label={
-                isAll
-                  ? `${all.length}명의 자녀 프로필이 모두 사라지며, 가족 계정만 남는다는 점을 확인했어요.`
+                isMulti
+                  ? isAllSelected
+                    ? `${multi.length}명의 자녀 프로필이 모두 사라지며, 가족 계정만 남는다는 점을 확인했어요.`
+                    : `선택한 ${multi.length}명의 자녀 프로필이 사라진다는 점을 확인했어요.`
                   : '진행 중이던 그림과 미수령 보상은 모두 사라진다는 점을 확인했어요.'
               }
             />
           </div>
 
-          {isAll && (
+          {isMulti && (
             <div>
               <div className="mb-1.5 text-[12px] font-bold text-[#5C6F90]">
                 확인을 위해 <span className="text-[#B91C1C]">"{CONFIRM_PHRASE}"</span>를 입력해 주세요
@@ -272,11 +287,11 @@ function SingleTargetCard({ child }: { child: ChildProfile }) {
   );
 }
 
-function AllTargetsList({ targets }: { targets: ChildProfile[] }) {
+function AllTargetsList({ targets, isAllSelected }: { targets: ChildProfile[]; isAllSelected: boolean }) {
   return (
     <div className="rounded-[14px] border-[1.5px] border-[#EF4444]/[0.24] bg-[#EF4444]/[0.06] px-4 py-3.5">
       <div className="mb-2 text-[12px] font-bold tracking-[0.4px] text-[#B91C1C]">
-        삭제 대상 자녀 {targets.length}명
+        {isAllSelected ? `삭제 대상 자녀 ${targets.length}명 (전체)` : `선택된 자녀 ${targets.length}명`}
       </div>
       <div className="flex flex-col gap-2">
         {targets.map((c) => {

@@ -1,21 +1,16 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
 
-import ChildDeleteModal from '@/app/(main)/setting/children/ChildDeleteModal';
 import Row from '@/app/(main)/setting/Row';
-import { alert, confirm, openDialog } from '@/dialog';
-import { ApiError } from '@/lib/api';
+import { alert, confirm } from '@/dialog';
 import { signOutLocal } from '@/lib/auth-api';
-import { deleteChild } from '@/lib/children-api';
 import { useChildren, useUserActions } from '@/stores/userStore';
 
 export default function DangerTab() {
   const router = useRouter();
-  const { signOut, removeChild } = useUserActions();
+  const { signOut } = useUserActions();
   const children = useChildren();
-  const [deletingAll, setDeletingAll] = useState(false);
 
   const handleSignOut = async () => {
     const ok = await confirm('이 기기에서 로그아웃할까요?', {
@@ -29,36 +24,12 @@ export default function DangerTab() {
     router.replace('/signin');
   };
 
-  const handleDeleteAllChildren = async () => {
-    if (deletingAll) return;
+  const handleDeleteChildren = () => {
     if (children.length === 0) {
       void alert('등록된 자녀 프로필이 없어요.');
       return;
     }
-    const ok = await openDialog(ChildDeleteModal, { mode: 'all', targets: children });
-    if (!ok) return;
-
-    setDeletingAll(true);
-    const results = await Promise.allSettled(children.map((c) => deleteChild(c.id)));
-    const failed: { name: string; reason: string }[] = [];
-    results.forEach((r, i) => {
-      const c = children[i];
-      if (r.status === 'fulfilled') {
-        removeChild(c.id);
-      } else {
-        const reason =
-          r.reason instanceof ApiError ? r.reason.detail : '서버에 연결할 수 없어요.';
-        failed.push({ name: c.name, reason });
-      }
-    });
-    setDeletingAll(false);
-
-    if (failed.length === 0) {
-      void alert('모든 자녀 프로필이 삭제되었어요.', { tone: 'success' });
-      return;
-    }
-    const summary = failed.map((f) => `· ${f.name}: ${f.reason}`).join('\n');
-    void alert(`일부 자녀를 삭제하지 못했어요.\n\n${summary}`, { tone: 'warning' });
+    router.push('/setting/children/delete');
   };
 
   return (
@@ -68,13 +39,11 @@ export default function DangerTab() {
         icon="👶"
         title="자녀 프로필 삭제"
         sub={
-          deletingAll
-            ? '삭제 중…'
-            : children.length > 0
-              ? `${children.length}명 모두 삭제 · 작품·코인 함께 정리`
-              : '등록된 자녀 없음'
+          children.length > 0
+            ? `${children.length}명 중 선택해서 삭제 · 작품·코인 함께 정리`
+            : '등록된 자녀 없음'
         }
-        onClick={handleDeleteAllChildren}
+        onClick={handleDeleteChildren}
         last
       />
       <div

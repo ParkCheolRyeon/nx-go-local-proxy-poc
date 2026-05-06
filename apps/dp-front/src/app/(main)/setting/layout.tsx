@@ -29,8 +29,11 @@ export default function SettingLayout({ children }: { children: ReactNode }) {
   const activeGroup = activeGroupFromPath(pathname);
   const t = useTranslations('setting');
 
-  // 탈퇴 wizard는 자체 셸을 가지므로 layout 헤더/nav 생략.
-  if (pathname?.startsWith('/setting/withdraw')) {
+  // 탈퇴 wizard / 자녀 삭제 브릿지는 자체 셸을 가지므로 layout 헤더/nav 생략.
+  if (
+    pathname?.startsWith('/setting/withdraw') ||
+    pathname?.startsWith('/setting/children/delete')
+  ) {
     return <>{children}</>;
   }
 
