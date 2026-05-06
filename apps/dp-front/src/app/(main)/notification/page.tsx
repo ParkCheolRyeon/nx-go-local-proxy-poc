@@ -2,7 +2,12 @@
 
 import { useState } from 'react';
 
-import { alert, confirm } from '@/dialog';
+import { alert } from '@/dialog';
+import { ApiError } from '@/lib/api';
+import {
+  markAllNotificationsRead as apiMarkAllRead,
+  markNotificationRead as apiMarkRead,
+} from '@/lib/notifications-api';
 import { cn } from '@/lib/utils';
 import {
   formatTimeAgo,
@@ -23,6 +28,13 @@ const TABS: { id: TabId; label: string }[] = [
   { id: 'coin', label: '코인' },
   { id: 'system', label: '시스템' },
 ];
+
+const CATEGORY_DEFAULT_ICON: Record<NotificationCategory, string> = {
+  contest: '🏆',
+  social: '💬',
+  coin: '🪙',
+  system: '🔔',
+};
 
 const CATEGORY_STYLES: Record<NotificationCategory, { bg: string; shadow: string }> = {
   contest: {
@@ -50,6 +62,23 @@ export default function NotificationPage() {
 
   const [tab, setTab] = useState<TabId>('all');
 
+  // 옵티미스틱 — 스토어 먼저 갱신, API 실패 시 alert.
+  const handleRead = (id: string) => {
+    markNotificationRead(id);
+    apiMarkRead(id).catch((err) => {
+      const msg = err instanceof ApiError ? err.detail : '읽음 처리에 실패했어요.';
+      alert(msg, { tone: 'warning' });
+    });
+  };
+  const handleReadAll = () => {
+    if (unreadCount === 0) return;
+    markAllNotificationsRead();
+    apiMarkAllRead().catch((err) => {
+      const msg = err instanceof ApiError ? err.detail : '전체 읽음 처리에 실패했어요.';
+      alert(msg, { tone: 'warning' });
+    });
+  };
+
   const tabCounts: Record<TabId, number> = {
     all: notifications.length,
     contest: 0,
@@ -58,12 +87,12 @@ export default function NotificationPage() {
     system: 0,
   };
   for (const n of notifications) {
-    tabCounts[n.notificationStatus] += 1;
+    tabCounts[n.category] += 1;
   }
 
-  const visible = tab === 'all' ? notifications : notifications.filter((n) => n.notificationStatus === tab);
-  const today = visible.filter((n) => isTodayIso(n.time));
-  const earlier = visible.filter((n) => !isTodayIso(n.time));
+  const visible = tab === 'all' ? notifications : notifications.filter((n) => n.category === tab);
+  const today = visible.filter((n) => isTodayIso(n.createdAt));
+  const earlier = visible.filter((n) => !isTodayIso(n.createdAt));
 
   return (
     <div
@@ -104,7 +133,7 @@ export default function NotificationPage() {
             </div>
             <button
               type="button"
-              onClick={markAllNotificationsRead}
+              onClick={handleReadAll}
               disabled={unreadCount === 0}
               className="flex flex-none items-center gap-1 px-2 py-1.5 text-[13px] font-semibold text-[#5C6F90] transition-colors duration-150 hover:text-[#1C7AE0] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-[#5C6F90]"
             >
@@ -153,7 +182,7 @@ export default function NotificationPage() {
                 <>
                   <GroupLabel label="오늘" />
                   {today.map((n, i) => (
-                    <NotificationRow key={n.id} notification={n} index={i} onRead={() => markNotificationRead(n.id)} />
+                    <NotificationRow key={n.id} notification={n} index={i} onRead={() => handleRead(n.id)} />
                   ))}
                 </>
               )}
@@ -165,7 +194,7 @@ export default function NotificationPage() {
                       key={n.id}
                       notification={n}
                       index={i + today.length}
-                      onRead={() => markNotificationRead(n.id)}
+                      onRead={() => handleRead(n.id)}
                     />
                   ))}
                 </>
@@ -209,7 +238,7 @@ type NotificationRowProps = {
 };
 
 function NotificationRow({ notification: n, index, onRead }: NotificationRowProps) {
-  const accent = CATEGORY_STYLES[n.notificationStatus];
+  const accent = CATEGORY_STYLES[n.category];
   const unread = n.readStatus === 'unRead';
 
   return (
@@ -246,7 +275,7 @@ function NotificationRow({ notification: n, index, onRead }: NotificationRowProp
           boxShadow: `0 6px 14px ${accent.shadow}`,
         }}
       >
-        {n.icon}
+        {n.icon || CATEGORY_DEFAULT_ICON[n.category]}
       </div>
 
       <div className="min-w-0 flex-1">
@@ -260,7 +289,7 @@ function NotificationRow({ notification: n, index, onRead }: NotificationRowProp
               />
             )}
           </div>
-          <div className="flex-shrink-0 text-[11px] tabular-nums text-[#8AA0BD]">{formatTimeAgo(n.time)}</div>
+          <div className="flex-shrink-0 text-[11px] tabular-nums text-[#8AA0BD]">{formatTimeAgo(n.createdAt)}</div>
         </div>
         <div className="mt-0.5 break-keep text-[13px] leading-[1.5] text-[#5C6F90]">{n.description}</div>
         {n.cta && (
