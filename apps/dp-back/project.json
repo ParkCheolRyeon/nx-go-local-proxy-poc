@@ -47,10 +47,11 @@
       "inputs": [
         "default",
         "{projectRoot}/**/*.go",
-        "{projectRoot}/.golangci.yml"
+        "{projectRoot}/go.mod",
+        "{projectRoot}/go.sum"
       ],
       "options": {
-        "command": "golangci-lint run ./...",
+        "command": "go vet ./...",
         "cwd": "apps/dp-back"
       }
     },

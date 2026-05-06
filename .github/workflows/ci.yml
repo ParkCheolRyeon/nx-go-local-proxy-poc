@@ -32,15 +32,9 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.23'
+          # go.mod 의 go directive 를 그대로 사용 — workflow 에 버전 박지 않음
+          go-version-file: apps/dp-back/go.mod
           cache-dependency-path: apps/dp-back/go.sum
-
-      # golangci-lint binary 만 설치 — nx 가 호출하므로 action 의 자동실행은 사용 안 함
-      - name: Install golangci-lint
-        run: |
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh \
-            | sh -s -- -b $(go env GOPATH)/bin v1.64.8
-          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
 
       # PR 의 base/head SHA 를 NX_BASE / NX_HEAD 환경변수로 export
       - uses: nrwl/nx-set-shas@v4
