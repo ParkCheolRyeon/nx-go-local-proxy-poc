@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+
 import ModalShell, { ModalBanner, ModalBody, type ModalPalette } from '@/components/dialog/ModalShell';
 import { type DialogRequestComponentProps } from '@/stores/dialogStore';
 
@@ -33,15 +35,19 @@ const PALETTES: Record<AlertTone, ModalPalette> = {
 export default function AlertModal({
   resolve,
   message,
-  title = '알림',
+  title,
   tone = 'info',
-  okButtonText = '확인',
+  okButtonText,
 }: AlertModalProps) {
+  const tDialog = useTranslations('dialog');
+  const tCommon = useTranslations('common');
+  const resolvedTitle = title ?? tDialog('alertTitle');
+  const resolvedOk = okButtonText ?? tCommon('confirm');
   const close = () => resolve();
   return (
     <ModalShell onBackdropClick={close}>
       <ModalBanner palette={PALETTES[tone]} />
-      <ModalBody title={title} message={message} />
+      <ModalBody title={resolvedTitle} message={message} />
       <div className="px-[22px] pb-[22px] pt-[18px]">
         <button
           type="button"
@@ -52,7 +58,7 @@ export default function AlertModal({
             boxShadow: '0 8px 18px rgba(28,122,224,0.32)',
           }}
         >
-          {okButtonText}
+          {resolvedOk}
         </button>
       </div>
     </ModalShell>

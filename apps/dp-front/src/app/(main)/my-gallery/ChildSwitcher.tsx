@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
@@ -17,6 +18,7 @@ export default function ChildSwitcher({ children, selectedId, onSelect }: Props)
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const t = useTranslations('child.switcher');
 
   useEffect(() => {
     if (!open) return;
@@ -54,7 +56,7 @@ export default function ChildSwitcher({ children, selectedId, onSelect }: Props)
         >
           {selected ? resolveAvatar(selected.profileEmoji) : '👶'}
         </span>
-        <span className="max-w-[120px] truncate">{selected?.name ?? '자녀 선택'}</span>
+        <span className="max-w-[120px] truncate">{selected?.name ?? t('select')}</span>
         <span
           aria-hidden
           className={cn(
@@ -76,7 +78,7 @@ export default function ChildSwitcher({ children, selectedId, onSelect }: Props)
           }}
         >
           <div className="px-4 pb-1 pt-3 text-[10.5px] font-bold uppercase tracking-[0.8px] text-[#8AA0BD]">
-            자녀 프로필 ({children.length} / 5)
+            {t('title', { count: children.length })}
           </div>
           <ul className="max-h-[280px] overflow-y-auto px-1.5 pb-1.5">
             {children.map((c) => {
@@ -131,7 +133,7 @@ export default function ChildSwitcher({ children, selectedId, onSelect }: Props)
               )}
             >
               <span className="text-[14px]">＋</span>
-              <span>{atMax ? '최대 5명까지 등록 가능' : '자녀 추가하기'}</span>
+              <span>{atMax ? t('atMax') : t('addMore')}</span>
             </button>
           </div>
         </div>

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 
 import Row from '@/app/(main)/setting/Row';
@@ -11,12 +12,14 @@ export default function DangerTab() {
   const router = useRouter();
   const { signOut } = useUserActions();
   const children = useChildren();
+  const t = useTranslations('setting.danger');
+  const tCommon = useTranslations('common');
 
   const handleSignOut = async () => {
-    const ok = await confirm('이 기기에서 로그아웃할까요?', {
-      title: '로그아웃',
-      yesButtonText: '로그아웃',
-      noButtonText: '취소',
+    const ok = await confirm(t('logoutConfirmMsg'), {
+      title: t('logoutConfirmTitle'),
+      yesButtonText: t('logoutConfirmYes'),
+      noButtonText: tCommon('cancel'),
     });
     if (!ok) return;
     signOutLocal();
@@ -26,7 +29,7 @@ export default function DangerTab() {
 
   const handleDeleteChildren = () => {
     if (children.length === 0) {
-      void alert('등록된 자녀 프로필이 없어요.');
+      void alert(t('noChildrenAlert'));
       return;
     }
     router.push('/setting/children/delete');
@@ -34,14 +37,14 @@ export default function DangerTab() {
 
   return (
     <>
-      <Row icon="🚪" title="로그아웃" sub="이 기기에서만 로그아웃합니다" onClick={handleSignOut} />
+      <Row icon="🚪" title={t('logout')} sub={t('logoutSub')} onClick={handleSignOut} />
       <Row
         icon="👶"
-        title="자녀 프로필 삭제"
+        title={t('deleteChildren')}
         sub={
           children.length > 0
-            ? `${children.length}명 중 선택해서 삭제 · 작품·코인 함께 정리`
-            : '등록된 자녀 없음'
+            ? t('deleteChildrenSub', { count: children.length })
+            : t('deleteChildrenEmpty')
         }
         onClick={handleDeleteChildren}
         last
@@ -55,19 +58,19 @@ export default function DangerTab() {
       >
         <div className="mb-1.5 flex items-center gap-2">
           <span className="text-[14px]">⚠️</span>
-          <span className="text-[13px] font-bold text-[#DC2626]">계정 탈퇴</span>
+          <span className="text-[13px] font-bold text-[#DC2626]">{t('withdrawTitle')}</span>
         </div>
         <p className="text-[11.5px] leading-[1.5] text-[#5C6F90]">
-          탈퇴 시 작품·코인·구독이 정리됩니다. 즉시 삭제 또는 30일 유예 중 선택할 수 있어요.
+          {t('withdrawDescLine1')}
           <br />
-          GDPR · COPPA에 따라 ZIP 다운로드와 즉시 삭제 옵션을 제공해요.
+          {t('withdrawDescLine2')}
         </p>
         <button
           type="button"
           onClick={() => router.push('/setting/withdraw')}
           className="mt-3 cursor-pointer rounded-full border-[1.5px] border-[#EF4444]/40 bg-transparent px-4 py-[9px] text-[12px] font-bold text-[#DC2626]"
         >
-          탈퇴 진행
+          {t('withdrawCta')}
         </button>
       </div>
     </>

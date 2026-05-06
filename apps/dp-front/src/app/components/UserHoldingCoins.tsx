@@ -1,4 +1,5 @@
 import { motion } from 'motion/react';
+import { useTranslations } from 'next-intl';
 
 import IconCoin from '@/app/assets/icons/icon-coin.png';
 import {
@@ -9,6 +10,7 @@ import {
 export default function UserHoldingCoins() {
   const holdingCoins = useHoldingCoins();
   const allowance = useMonthlyCoinAllowance();
+  const t = useTranslations('sidebar');
   const ratio = allowance > 0 ? Math.min(1, holdingCoins / allowance) : 0;
 
   return (
@@ -27,7 +29,7 @@ export default function UserHoldingCoins() {
             className="text-[11px]"
             style={{ color: 'rgba(255,255,255,.8)' }}
           >
-            이번 달 코인
+            {t('monthlyCoin')}
           </span>
           <img src={IconCoin.src} alt="coin" className="w-6 h-6" />
         </div>

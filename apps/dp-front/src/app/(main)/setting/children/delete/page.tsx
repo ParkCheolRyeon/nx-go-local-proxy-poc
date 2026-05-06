@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 
@@ -8,13 +9,7 @@ import { CHILD_AVATAR_GRADIENTS, resolveAvatar } from '@/config/avatars';
 import { alert, openDialog } from '@/dialog';
 import { ApiError } from '@/lib/api';
 import { deleteChild } from '@/lib/children-api';
-import { type ChildDrawingLevel, type ChildProfile, useChildren, useUserActions } from '@/stores/userStore';
-
-const LEVEL_LABEL: Record<ChildDrawingLevel, string> = {
-  beginner: '왕초보',
-  intermediate: '중급',
-  expert: '고급',
-};
+import { type ChildProfile, useChildren, useUserActions } from '@/stores/userStore';
 
 function ageOf(birthDate: string, now = new Date()): number | null {
   const birth = new Date(birthDate);
@@ -25,7 +20,6 @@ function ageOf(birthDate: string, now = new Date()): number | null {
   return Math.max(0, years);
 }
 
-// 자녀별 통계 — R7/R9 BE 통합 시 실 데이터로 교체.
 function statsFor(_child: ChildProfile): { drawings: number; awards: number } {
   return { drawings: 0, awards: 0 };
 }
@@ -36,6 +30,7 @@ export default function ChildDeleteBridgePage() {
   const router = useRouter();
   const children = useChildren();
   const { removeChild } = useUserActions();
+  const t = useTranslations('childDelete');
 
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [mode, setMode] = useState<Mode>('individual');
@@ -43,7 +38,6 @@ export default function ChildDeleteBridgePage() {
 
   const togglePick = (id: string) => {
     if (mode !== 'individual') {
-      // 'all' 모드에서 카드 클릭 시 individual 로 전환하면서 클릭한 카드만 해제.
       setMode('individual');
       setPicked(new Set(children.filter((c) => c.id !== id).map((c) => c.id)));
       return;
@@ -81,7 +75,6 @@ export default function ChildDeleteBridgePage() {
 
   const targets = useMemo(() => {
     if (mode === 'all') return children;
-    // picked Set 의 insertion 순서를 보존 — 사용자가 선택한 차례대로 표시.
     const byId = new Map(children.map((c) => [c.id, c]));
     return Array.from(picked)
       .map((id) => byId.get(id))
@@ -106,15 +99,15 @@ export default function ChildDeleteBridgePage() {
     if (!ok) return;
 
     setSubmitting(true);
-    const results = await Promise.allSettled(targets.map((t) => deleteChild(t.id)));
+    const results = await Promise.allSettled(targets.map((tgt) => deleteChild(tgt.id)));
     const failed: { name: string; reason: string }[] = [];
     results.forEach((r, i) => {
-      const t = targets[i];
+      const tgt = targets[i];
       if (r.status === 'fulfilled') {
-        removeChild(t.id);
+        removeChild(tgt.id);
       } else {
-        const reason = r.reason instanceof ApiError ? r.reason.detail : '서버에 연결할 수 없어요.';
-        failed.push({ name: t.name, reason });
+        const reason = r.reason instanceof ApiError ? r.reason.detail : t('errorServer');
+        failed.push({ name: tgt.name, reason });
       }
     });
     setSubmitting(false);
@@ -122,16 +115,15 @@ export default function ChildDeleteBridgePage() {
     if (failed.length === 0) {
       void alert(
         targets.length === 1
-          ? `${targets[0].name} 프로필이 삭제되었어요.`
-          : `${targets.length}명의 자녀 프로필이 삭제되었어요.`,
+          ? t('successOne', { name: targets[0].name })
+          : t('successMany', { count: targets.length }),
         { tone: 'success' },
       );
       router.replace('/setting/children');
       return;
     }
     const summary = failed.map((f) => `· ${f.name}: ${f.reason}`).join('\n');
-    void alert(`일부 자녀를 삭제하지 못했어요.\n\n${summary}`, { tone: 'warning' });
-    // 부분 실패 시에도 Bridge에 머무름. 성공한 자녀는 store에서 빠져 grid 자동 갱신.
+    void alert(`${t('partialFailureTitle')}\n\n${summary}`, { tone: 'warning' });
     setPicked((prev) => {
       const next = new Set(prev);
       failed.forEach((f) => {
@@ -164,40 +156,36 @@ export default function ChildDeleteBridgePage() {
           <header>
             <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-[#EF4444]/[0.28] bg-[#EF4444]/[0.10] px-3 py-[5px] text-[11px] font-bold tracking-[0.6px] text-[#B91C1C]">
               <span>🗑</span>
-              <span>DELETE CHILD PROFILE</span>
+              <span>{t('headerTag')}</span>
             </div>
             <h1 className="text-[28px] font-extrabold leading-[1.18] tracking-[-0.4px] text-[#0b2a63]">
-              어떤 자녀 프로필을 삭제할까요?
+              {t('title')}
             </h1>
-            <p className="mt-1.5 text-[13.5px] text-[#5C6F90]">
-              개별 자녀를 골라 삭제하거나, 모든 자녀 프로필을 한 번에 삭제할 수 있어요.
-            </p>
+            <p className="mt-1.5 text-[13.5px] text-[#5C6F90]">{t('subtitle')}</p>
           </header>
 
           {children.length === 0 ? (
             <div className="rounded-[18px] border border-dashed border-[#1C7AE0]/30 bg-white/70 px-5 py-12 text-center">
               <div className="text-[32px]">👶</div>
-              <div className="mt-2 text-[14px] font-bold text-[#0b2a63]">등록된 자녀가 없어요</div>
-              <p className="mt-1 text-[12px] text-[#5C6F90]">자녀 프로필이 없으면 삭제할 게 없어요.</p>
+              <div className="mt-2 text-[14px] font-bold text-[#0b2a63]">{t('emptyTitle')}</div>
+              <p className="mt-1 text-[12px] text-[#5C6F90]">{t('emptySub')}</p>
             </div>
           ) : (
             <>
               <div className="grid grid-cols-2 gap-3">
                 <ModeCard
-                  mode="individual"
                   active={mode === 'individual'}
                   icon="✂️"
-                  title="선택해서 삭제"
-                  sub="자녀 카드를 골라 1명 또는 여러 명을 삭제"
+                  title={t('modeIndividualTitle')}
+                  sub={t('modeIndividualSub')}
                   accent="#1C7AE0"
                   onClick={enterIndividualMode}
                 />
                 <ModeCard
-                  mode="all"
                   active={mode === 'all'}
                   icon="⚠️"
-                  title="모든 자녀 삭제"
-                  sub={`${children.length}명의 자녀 프로필을 모두 한 번에 삭제`}
+                  title={t('modeAllTitle')}
+                  sub={t('modeAllSub', { count: children.length })}
                   accent="#EF4444"
                   onClick={enterAllMode}
                 />
@@ -206,7 +194,7 @@ export default function ChildDeleteBridgePage() {
               <div>
                 <div className="mb-2 flex items-center justify-between">
                   <div className="text-[12px] font-bold text-[#5C6F90]">
-                    연결된 자녀 {children.length}명
+                    {t('linkedCount', { count: children.length })}
                   </div>
                   {mode === 'individual' && (
                     <button
@@ -214,7 +202,7 @@ export default function ChildDeleteBridgePage() {
                       onClick={enterAllMode}
                       className="cursor-pointer rounded-full border-[1.5px] border-[#EF4444]/[0.28] bg-white px-3 py-1.5 text-[11.5px] font-bold text-[#B91C1C]"
                     >
-                      전체 선택
+                      {t('selectAll')}
                     </button>
                   )}
                 </div>
@@ -246,7 +234,7 @@ export default function ChildDeleteBridgePage() {
               className="inline-flex h-12 flex-none cursor-pointer items-center justify-center whitespace-nowrap rounded-full border-[1.5px] border-[#1C7AE0]/[0.18] bg-white/70 text-[13.5px] font-bold leading-none text-[#5C6F90] transition-colors hover:bg-[#3196ff]/[0.06]"
               style={{ paddingLeft: 22, paddingRight: 22 }}
             >
-              ← 자녀 관리로 돌아가기
+              {t('back')}
             </button>
             <button
               type="button"
@@ -266,14 +254,14 @@ export default function ChildDeleteBridgePage() {
               }}
             >
               {submitting
-                ? '삭제 중…'
+                ? t('submitting')
                 : !canNext
-                  ? '대상을 선택해 주세요'
+                  ? t('submitNoTarget')
                   : mode === 'all'
-                    ? `${targets.length}명 모두 삭제하기 →`
+                    ? t('submitAll', { count: targets.length })
                     : targets.length === 1
-                      ? `${targets[0].name} 삭제하기 →`
-                      : `${targets.length}명 삭제하기 →`}
+                      ? t('submitOne', { name: targets[0].name })
+                      : t('submitMany', { count: targets.length })}
             </button>
           </div>
         </div>
@@ -281,8 +269,6 @@ export default function ChildDeleteBridgePage() {
     </div>
   );
 }
-
-// ---------- subcomponents ----------
 
 function ModeCard({
   active,
@@ -292,7 +278,6 @@ function ModeCard({
   accent,
   onClick,
 }: {
-  mode: Mode;
   active: boolean;
   icon: string;
   title: string;
@@ -348,6 +333,8 @@ function ChildPickCard({
 }) {
   const age = ageOf(child.birthDate);
   const stats = statsFor(child);
+  const t = useTranslations('childDelete');
+  const tLevel = useTranslations('child.level');
   return (
     <button
       type="button"
@@ -364,7 +351,6 @@ function ChildPickCard({
           : '0 4px 14px rgba(28,122,224,0.08)',
       }}
     >
-      {/* 선택 표시 */}
       <div
         className="absolute right-3 top-3 flex h-[22px] w-[22px] items-center justify-center rounded-full text-[11px] font-extrabold"
         style={{
@@ -377,7 +363,6 @@ function ChildPickCard({
         {selected ? '✓' : ''}
       </div>
 
-      {/* 아바타 — 외곽 ring 안쪽에 emoji 영역을 별도 div로 두어 padding 확보 */}
       <div
         className="mb-3 flex h-[64px] w-[64px] items-center justify-center rounded-full"
         style={{
@@ -401,9 +386,9 @@ function ChildPickCard({
         {child.name}
       </div>
       <div className="mt-0.5 truncate text-[11px] text-[#8AA0BD]">
-        {age !== null && `${age}세`}
+        {age !== null && t('ageSuffix', { age })}
         {age !== null && ' · '}
-        {LEVEL_LABEL[child.drawingLevel]}
+        {tLevel(child.drawingLevel)}
       </div>
 
       <div className="mt-2.5 flex w-full items-center gap-1.5 text-[11px] text-[#5C6F90]">
@@ -426,6 +411,7 @@ function SummaryBar({
   onRemove: (id: string) => void;
 }) {
   const empty = targets.length === 0;
+  const t = useTranslations('childDelete');
 
   if (empty) {
     return (
@@ -437,10 +423,10 @@ function SummaryBar({
         </div>
         <div className="min-w-0">
           <div className="text-[11px] font-bold tracking-[0.6px] text-[#8AA0BD]">
-            NO TARGET SELECTED
+            {t('summaryEmptyTag')}
           </div>
           <div className="mt-0.5 text-[14px] font-bold text-[#0b2a63]">
-            카드를 선택하거나 "모든 자녀 삭제"를 골라 주세요
+            {t('summaryEmptyMsg')}
           </div>
         </div>
       </div>
@@ -464,35 +450,33 @@ function SummaryBar({
           </div>
           <div>
             <div className="text-[11px] font-bold tracking-[0.6px] text-[#B91C1C]">
-              {targets.length}명 삭제 예정
+              {t('summaryWillDelete', { count: targets.length })}
             </div>
-            <div className="mt-0.5 text-[13px] text-[#5C6F90]">
-              아래 칩의 ✕로 한 명씩 제외할 수 있어요.
-            </div>
+            <div className="mt-0.5 text-[13px] text-[#5C6F90]">{t('summaryHelp')}</div>
           </div>
         </div>
         <div className="flex flex-none gap-4 text-[11px] text-[#5C6F90]">
           <div className="text-right">
             <div className="text-[18px] font-extrabold leading-none text-[#0b2a63]">{drawings}</div>
-            <div className="mt-0.5">🎨 작품</div>
+            <div className="mt-0.5">{t('drawingsLabel')}</div>
           </div>
           <div className="text-right">
             <div className="text-[18px] font-extrabold leading-none text-[#0b2a63]">{awards}</div>
-            <div className="mt-0.5">🏆 수상</div>
+            <div className="mt-0.5">{t('awardsLabel')}</div>
           </div>
         </div>
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {targets.map((t) => (
+        {targets.map((tgt) => (
           <span
-            key={t.id}
+            key={tgt.id}
             className="group inline-flex items-center gap-2 rounded-full border border-[#EF4444]/[0.28] bg-white py-1 pl-1 pr-1 text-[12.5px] font-bold text-[#0b2a63] shadow-[0_2px_8px_rgba(239,68,68,0.10)] transition-shadow hover:shadow-[0_4px_12px_rgba(239,68,68,0.18)]"
           >
             <span
               className="flex h-7 w-7 items-center justify-center rounded-full"
               style={{
-                background: CHILD_AVATAR_GRADIENTS[t.profileEmoji],
+                background: CHILD_AVATAR_GRADIENTS[tgt.profileEmoji],
                 padding: 3,
                 boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.4)',
               }}
@@ -501,17 +485,17 @@ function SummaryBar({
                 className="flex h-full w-full items-center justify-center rounded-full"
                 style={{ background: 'rgba(255,255,255,0.35)' }}
               >
-                <span className="text-[14px] leading-none">{resolveAvatar(t.profileEmoji)}</span>
+                <span className="text-[14px] leading-none">{resolveAvatar(tgt.profileEmoji)}</span>
               </span>
             </span>
-            <span className="pr-0.5">{t.name}</span>
+            <span className="pr-0.5">{tgt.name}</span>
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                onRemove(t.id);
+                onRemove(tgt.id);
               }}
-              aria-label={`${t.name} 제외`}
+              aria-label={t('removeChipAria', { name: tgt.name })}
               className="flex h-6 w-6 flex-none cursor-pointer items-center justify-center rounded-full border-0 text-[11px] font-extrabold leading-none text-white transition-colors"
               style={{
                 background: 'linear-gradient(135deg,#EF4444,#B91C1C)',

@@ -45,12 +45,6 @@ export type User = {
   children: ChildProfile[];
 };
 
-export const PLAN_LABELS: Record<SubscriptionPlan, string> = {
-  monthlySubscribe: '월 구독',
-  yearlySubscribe: '연 구독',
-  pro: 'Pro 플랜',
-};
-
 const EMPTY_NOTIFICATIONS: UserNotification[] = [];
 
 type UserState = {
@@ -199,17 +193,22 @@ export function getSubscriptionRemainingDays(endAt: string, now = Date.now()) {
   return Math.max(0, Math.ceil(diff / 86_400_000));
 }
 
-export function formatTimeAgo(iso: string, now = Date.now()): string {
+type TimeFormatter = {
+  (key: 'justNow' | 'yesterday'): string;
+  (key: 'minutesAgo' | 'hoursAgo' | 'daysAgo', values: { count: number }): string;
+};
+
+export function formatTimeAgo(iso: string, t: TimeFormatter, now = Date.now()): string {
   const then = new Date(iso).getTime();
   const diff = now - then;
-  if (diff < 60_000) return '방금';
+  if (diff < 60_000) return t('justNow');
   const min = Math.floor(diff / 60_000);
-  if (min < 60) return `${min}분 전`;
+  if (min < 60) return t('minutesAgo', { count: min });
   const hr = Math.floor(diff / 3_600_000);
-  if (hr < 24) return `${hr}시간 전`;
+  if (hr < 24) return t('hoursAgo', { count: hr });
   const day = Math.floor(diff / 86_400_000);
-  if (day === 1) return '어제';
-  if (day < 7) return `${day}일 전`;
+  if (day === 1) return t('yesterday');
+  if (day < 7) return t('daysAgo', { count: day });
   const d = new Date(iso);
   return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
 }

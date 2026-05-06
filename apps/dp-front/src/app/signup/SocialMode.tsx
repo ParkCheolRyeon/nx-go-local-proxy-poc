@@ -1,3 +1,6 @@
+'use client';
+
+import { useTranslations } from 'next-intl';
 import IconApple from '@/app/assets/icons/sns/logo-apple.svg';
 import IconGoogle from '@/app/assets/icons/sns/logo-google.svg';
 import IconKakao from '@/app/assets/icons/sns/logo-kakao.svg';
@@ -10,8 +13,7 @@ type SocialModeProps = {
 };
 
 type Social = {
-  id: string;
-  label: string;
+  id: 'kakao' | 'naver' | 'google' | 'apple';
   bg: string;
   fg: string;
   Icon: FC<SVGProps<SVGSVGElement>>;
@@ -19,38 +21,15 @@ type Social = {
 };
 
 const SOCIALS: Social[] = [
-  {
-    id: 'kakao',
-    label: '카카오로 시작하기',
-    bg: '#FEE500',
-    fg: '#191600',
-    Icon: IconKakao,
-  },
-  {
-    id: 'naver',
-    label: '네이버로 시작하기',
-    bg: '#03C75A',
-    fg: '#ffffff',
-    Icon: IconNaver,
-  },
-  {
-    id: 'google',
-    label: 'Google로 시작하기',
-    bg: '#ffffff',
-    fg: '#1f1f1f',
-    Icon: IconGoogle,
-    border: '1px solid #E4E7EC',
-  },
-  {
-    id: 'apple',
-    label: 'Apple로 시작하기',
-    bg: '#000000',
-    fg: '#ffffff',
-    Icon: IconApple,
-  },
+  { id: 'kakao', bg: '#FEE500', fg: '#191600', Icon: IconKakao },
+  { id: 'naver', bg: '#03C75A', fg: '#ffffff', Icon: IconNaver },
+  { id: 'google', bg: '#ffffff', fg: '#1f1f1f', Icon: IconGoogle, border: '1px solid #E4E7EC' },
+  { id: 'apple', bg: '#000000', fg: '#ffffff', Icon: IconApple },
 ];
 
 export default function SocialMode({ onClickEmail }: SocialModeProps) {
+  const tSocial = useTranslations('auth.social');
+  const tCommon = useTranslations('common');
   return (
     <div className="flex flex-col gap-2.5">
       {SOCIALS.map((s, i) => (
@@ -63,13 +42,11 @@ export default function SocialMode({ onClickEmail }: SocialModeProps) {
             background: s.bg,
             color: s.fg,
             boxShadow: '0 4px 14px rgba(0,0,0,.06)',
-            animation: `ac02-slide .45s cubic-bezier(.22,1,.36,1) ${
-              i * 0.06 + 0.15
-            }s both`,
+            animation: `ac02-slide .45s cubic-bezier(.22,1,.36,1) ${i * 0.06 + 0.15}s both`,
           }}
         >
           <s.Icon width={24} height={24} aria-hidden />
-          <span>{s.label}</span>
+          <span>{tSocial(s.id)}</span>
         </button>
       ))}
 
@@ -80,18 +57,16 @@ export default function SocialMode({ onClickEmail }: SocialModeProps) {
         <div
           className="h-px flex-1"
           style={{
-            background:
-              'linear-gradient(90deg, transparent, #CFDFF4, transparent)',
+            background: 'linear-gradient(90deg, transparent, #CFDFF4, transparent)',
           }}
         />
         <span className="text-[11px] tracking-[0.5px] text-[#8AA0BD]">
-          또는
+          {tCommon('or')}
         </span>
         <div
           className="h-px flex-1"
           style={{
-            background:
-              'linear-gradient(90deg, transparent, #CFDFF4, transparent)',
+            background: 'linear-gradient(90deg, transparent, #CFDFF4, transparent)',
           }}
         />
       </div>
@@ -107,7 +82,7 @@ export default function SocialMode({ onClickEmail }: SocialModeProps) {
         }}
       >
         <IconEmail width={22} height={22} aria-hidden />
-        <span>이메일로 시작하기</span>
+        <span>{tSocial('email')}</span>
       </button>
     </div>
   );

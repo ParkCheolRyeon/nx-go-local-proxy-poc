@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+
 import IconArrowRight from '@/app/assets/icons/icon-arrow-right.svg';
 import AuthBackdrop from '@/app/components/AuthBackdrop';
 import ChildProfileFields, {
@@ -29,14 +31,9 @@ export default function ChildrenProfilePage() {
   const searchParams = useSearchParams();
   const next = safeNext(searchParams.get('next'));
   const { addChild } = useUserActions();
+  const t = useTranslations('auth.childrenProfile');
 
-  const [form, setForm] = useState<ChildFormState>({
-    ...initialChildFormState,
-    name: '짱구',
-    yy: '2018',
-    mm: '03',
-    dd: '14',
-  });
+  const [form, setForm] = useState<ChildFormState>(initialChildFormState);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -63,7 +60,7 @@ export default function ChildrenProfilePage() {
         }
         setError(err.detail);
       } else {
-        setError('자녀 프로필 저장에 실패했어요. 잠시 후 다시 시도해 주세요.');
+        setError(t('errorGeneric'));
       }
     } finally {
       setSubmitting(false);
@@ -84,7 +81,7 @@ export default function ChildrenProfilePage() {
             aria-hidden
             className="-scale-x-100"
           />
-          이전
+          {t('back')}
         </button>
         <MainLogo isExpanded />
         <button
@@ -92,7 +89,7 @@ export default function ChildrenProfilePage() {
           onClick={() => router.replace(next)}
           className="ac02-link cursor-pointer border-0 bg-transparent p-0 text-[13px] font-semibold text-[#8AA0BD]"
         >
-          건너뛰기
+          {t('skip')}
         </button>
       </div>
 
@@ -105,10 +102,10 @@ export default function ChildrenProfilePage() {
           style={{ animation: 'ac02-fade .5s ease-out both' }}
         >
           <div className="text-[32px] leading-[1.15] font-extrabold">
-            <span className="text-[#1C7AE0]">자녀 프로필</span>을 만들어요
+            <span className="text-[#1C7AE0]">{t('headingPre')}</span>{t('headingPost')}
           </div>
           <div className="mt-2 text-[13px] leading-[1.55] text-[#5C6F90]">
-            나중에 설정에서 최대 5명까지 추가할 수 있어요.
+            {t('description')}
           </div>
         </div>
 
@@ -144,7 +141,7 @@ export default function ChildrenProfilePage() {
             onClick={() => router.replace(next)}
             className="ac02-btn h-[54px] cursor-pointer rounded-[14px] border border-[#1C7AE0]/15 bg-white/70 px-[22px] text-[14px] font-semibold text-[#5C6F90]"
           >
-            나중에
+            {t('later')}
           </button>
           <button
             type="button"
@@ -157,7 +154,7 @@ export default function ChildrenProfilePage() {
                 : 'cursor-not-allowed bg-[#B9CDE6]',
             )}
           >
-            <span>{submitting ? '저장 중…' : '완료 · 코인 3개 받기'}</span>
+            <span>{submitting ? t('submitting') : t('submit')}</span>
             <span className="text-[18px]">🪙</span>
           </button>
         </div>

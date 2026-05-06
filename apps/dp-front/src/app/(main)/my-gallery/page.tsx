@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
@@ -18,10 +19,10 @@ import { useChildren, useSelectedChildId, useUserActions } from '@/stores/userSt
 
 type TabId = 'archive' | 'public' | 'awards';
 
-const TABS: { id: TabId; label: string; icon: string }[] = [
-  { id: 'archive', label: '보관함', icon: '📦' },
-  { id: 'public', label: '공개작품', icon: '🎨' },
-  { id: 'awards', label: '수상작', icon: '🏆' },
+const TABS: { id: TabId; icon: string }[] = [
+  { id: 'archive', icon: '📦' },
+  { id: 'public', icon: '🎨' },
+  { id: 'awards', icon: '🏆' },
 ];
 
 type CardItem = {
@@ -68,18 +69,17 @@ export default function MyGalleryPage() {
   const children = useChildren();
   const selectedChildId = useSelectedChildId();
   const { setSelectedChildId } = useUserActions();
+  const t = useTranslations('myGallery');
 
   const [tab, setTab] = useState<TabId>('archive');
   const [items, setItems] = useState<CardItem[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 자녀가 1명 이상이고 selected 가 비어있으면 첫 번째로 자동 선택
   useEffect(() => {
     if (!selectedChildId && children.length > 0) {
       setSelectedChildId(children[0].id);
     }
-    // selected 가 가리키던 자녀가 삭제됐으면 폴백
     if (selectedChildId && children.length > 0 && !children.some((c) => c.id === selectedChildId)) {
       setSelectedChildId(children[0].id);
     }
@@ -90,7 +90,6 @@ export default function MyGalleryPage() {
     [children, selectedChildId],
   );
 
-  // 탭/자녀 변경 시 데이터 fetch
   useEffect(() => {
     if (!selectedChild) {
       setItems(null);
@@ -118,7 +117,7 @@ export default function MyGalleryPage() {
         }
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof ApiError ? err.detail : '작품을 불러오지 못했어요.');
+          setError(err instanceof ApiError ? err.detail : t('errorLoad'));
           setItems([]);
         }
       } finally {
@@ -130,22 +129,21 @@ export default function MyGalleryPage() {
     return () => {
       cancelled = true;
     };
-  }, [selectedChild, tab]);
+  }, [selectedChild, tab, t]);
 
-  // 자녀 0명 — 추가 유도
   if (children.length === 0) {
     return (
       <PageBackdrop>
         <div className="mx-auto flex w-full max-w-[600px] flex-col items-center gap-4 px-6 pb-12 pt-16 text-center">
           <div className="text-[40px]">👶</div>
-          <h1 className="text-[22px] font-extrabold text-[#0b2a63]">아직 등록된 자녀가 없어요</h1>
-          <p className="text-[13px] text-[#5C6F90]">자녀 프로필을 먼저 만들어야 마이갤러리를 사용할 수 있어요.</p>
+          <h1 className="text-[22px] font-extrabold text-[#0b2a63]">{t('emptyChild.title')}</h1>
+          <p className="text-[13px] text-[#5C6F90]">{t('emptyChild.sub')}</p>
           <button
             type="button"
             onClick={() => router.push('/signup/children-profile?next=/my-gallery')}
             className="mt-2 rounded-[14px] bg-[linear-gradient(135deg,#3196ff,#1C7AE0)] px-5 py-3 text-[13px] font-bold text-white shadow-[0_8px_18px_rgba(28,122,224,0.32)]"
           >
-            자녀 추가하기
+            {t('emptyChild.cta')}
           </button>
         </div>
       </PageBackdrop>
@@ -155,7 +153,6 @@ export default function MyGalleryPage() {
   return (
     <PageBackdrop>
       <div className="relative z-10 mx-auto w-full max-w-[1100px] px-6 pb-16 pt-10">
-        {/* Header ----------------------------------------------------------- */}
         <header
           className="flex flex-wrap items-end justify-between gap-4"
           style={{ animation: 'ac02-fade .5s ease-out both' }}
@@ -166,17 +163,13 @@ export default function MyGalleryPage() {
               <span>MY GALLERY</span>
             </div>
             <h1 className="text-[32px] font-extrabold leading-[1.1] tracking-[-0.5px] text-[#0b2a63] sm:text-[36px]">
-              {selectedChild ? (
-                <>
-                  <span className="text-[#1C7AE0]">{selectedChild.name}</span>의 갤러리
-                </>
-              ) : (
-                '마이 갤러리'
-              )}
+              {selectedChild
+                ? t.rich('titleWithName', {
+                    name: () => <span className="text-[#1C7AE0]">{selectedChild.name}</span>,
+                  })
+                : t('title')}
             </h1>
-            <p className="mt-1 text-[13px] text-[#8AA0BD]">
-              보관함에서 이어 그리고, 공개작품으로 자랑하고, 수상작으로 모아둬요.
-            </p>
+            <p className="mt-1 text-[13px] text-[#8AA0BD]">{t('subtitle')}</p>
           </div>
 
           <ChildSwitcher
@@ -186,19 +179,18 @@ export default function MyGalleryPage() {
           />
         </header>
 
-        {/* Tabs ------------------------------------------------------------- */}
         <nav
-          aria-label="갤러리 탭"
+          aria-label={t('tabsAriaLabel')}
           className="mt-6 flex flex-wrap items-center gap-1.5 rounded-full border border-[#1C7AE0]/10 bg-white/70 p-1.5 shadow-[0_4px_12px_rgba(28,122,224,0.08)] sm:w-fit"
           style={{ animation: 'ac02-fade .5s ease-out .05s both' }}
         >
-          {TABS.map((t) => {
-            const active = tab === t.id;
+          {TABS.map((tabDef) => {
+            const active = tab === tabDef.id;
             return (
               <button
-                key={t.id}
+                key={tabDef.id}
                 type="button"
-                onClick={() => setTab(t.id)}
+                onClick={() => setTab(tabDef.id)}
                 aria-current={active ? 'page' : undefined}
                 className={cn(
                   'flex items-center gap-1.5 rounded-full px-4 py-2 text-[12.5px] font-bold transition-all duration-200',
@@ -207,14 +199,13 @@ export default function MyGalleryPage() {
                     : 'text-[#5C6F90] hover:text-[#1C7AE0]',
                 )}
               >
-                <span>{t.icon}</span>
-                <span>{t.label}</span>
+                <span>{tabDef.icon}</span>
+                <span>{t(`tabs.${tabDef.id}` as 'tabs.archive' | 'tabs.public' | 'tabs.awards')}</span>
               </button>
             );
           })}
         </nav>
 
-        {/* Grid ------------------------------------------------------------- */}
         <section
           className="mt-5"
           style={{ animation: 'ac02-fade .5s ease-out .1s both' }}
@@ -250,7 +241,6 @@ export default function MyGalleryPage() {
           )}
         </section>
 
-        {/* Calendar --------------------------------------------------------- */}
         <section
           className="mt-8"
           style={{ animation: 'ac02-fade .5s ease-out .15s both' }}
@@ -258,7 +248,6 @@ export default function MyGalleryPage() {
           <MonthCalendar />
         </section>
 
-        {/* CTA -------------------------------------------------------------- */}
         <div className="mt-6 flex justify-center">
           <button
             type="button"
@@ -266,7 +255,7 @@ export default function MyGalleryPage() {
             className="flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,#3196ff,#1C7AE0)] px-6 py-3 text-[13.5px] font-extrabold text-white shadow-[0_10px_24px_rgba(28,122,224,0.35)] transition-transform duration-200 hover:-translate-y-0.5"
           >
             <span className="text-[16px]">🎨</span>
-            <span>그리러 가기</span>
+            <span>{t('goDraw')}</span>
             <span className="text-[14px]">→</span>
           </button>
         </div>
@@ -274,10 +263,6 @@ export default function MyGalleryPage() {
     </PageBackdrop>
   );
 }
-
-// =============================================================================
-// helper components
-// =============================================================================
 
 function PageBackdrop({ children }: { children: React.ReactNode }) {
   return (
@@ -322,10 +307,11 @@ function GridPlaceholder() {
 }
 
 function EmptyState({ tab, onGoDraw }: { tab: TabId; onGoDraw: () => void }) {
+  const t = useTranslations('myGallery');
   const meta = {
-    archive: { icon: '📦', title: '아직 보관된 작품이 없어요', sub: '첫 그림을 그려서 보관함을 채워보세요.' },
-    public: { icon: '🎨', title: '공개한 작품이 없어요', sub: '완성한 작품을 공개로 전환해 자랑해보세요.' },
-    awards: { icon: '🏆', title: '수상한 작품이 없어요', sub: '이벤트에 출품해서 수상해보세요.' },
+    archive: { icon: '📦', title: t('empty.archiveTitle'), sub: t('empty.archiveSub') },
+    public: { icon: '🎨', title: t('empty.publicTitle'), sub: t('empty.publicSub') },
+    awards: { icon: '🏆', title: t('empty.awardsTitle'), sub: t('empty.awardsSub') },
   }[tab];
 
   return (
@@ -340,7 +326,7 @@ function EmptyState({ tab, onGoDraw }: { tab: TabId; onGoDraw: () => void }) {
           className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-[linear-gradient(135deg,#3196ff,#1C7AE0)] px-4 py-2 text-[12px] font-bold text-white shadow-[0_8px_18px_rgba(28,122,224,0.32)]"
         >
           <span>🎨</span>
-          <span>그리러 가기</span>
+          <span>{t('goDraw')}</span>
         </button>
       )}
     </div>

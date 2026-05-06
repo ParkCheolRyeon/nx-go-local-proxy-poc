@@ -77,7 +77,7 @@ export default function Header() {
 
   return (
     <header className="sticky top-16 z-20 flex h-[72px] items-center justify-between border-b border-[#1C7AE0]/10 bg-[linear-gradient(135deg,rgba(234,242,254,0.85)_0%,rgba(214,232,255,0.65)_50%,rgba(244,248,255,0.85)_100%)] px-8 shadow-[0_8px_24px_rgba(28,122,224,0.08)] backdrop-blur-[14px] md:top-0">
-      <nav aria-label="breadcrumb" className="flex items-center gap-1.5 text-[13px]">
+      <nav aria-label={t('header.breadcrumbAriaLabel')} className="flex items-center gap-1.5 text-[13px]">
         {breadcrumbs.map((c, i) => {
           const last = i === breadcrumbs.length - 1;
           const isRoot = i === 0;
@@ -117,7 +117,7 @@ export default function Header() {
             className="flex items-center gap-2 rounded-full border-[1.5px] border-[#1C7AE0]/25 bg-transparent px-[18px] py-[9px] text-[13px] font-bold text-[#1C7AE0] transition-[background,color,border-color] duration-150 hover:border-[#1C7AE0]/40 hover:bg-[#3196ff]/10"
           >
             <IconLogin width={16} height={16} aria-hidden />
-            <span>로그인</span>
+            <span>{t('header.loginButton')}</span>
           </button>
         )}
       </div>

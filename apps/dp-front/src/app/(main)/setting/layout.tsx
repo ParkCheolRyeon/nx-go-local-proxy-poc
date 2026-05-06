@@ -65,13 +65,13 @@ export default function SettingLayout({ children }: { children: ReactNode }) {
           <header>
             <div className="mb-2.5 inline-flex items-center gap-1.5 rounded-full border border-[#3196ff]/25 bg-[#3196ff]/[0.12] px-3 py-[5px] text-[11px] font-bold tracking-[0.8px] text-[#1C7AE0]">
               <span>⚙️</span>
-              <span>SETTINGS</span>
+              <span>{t('tag')}</span>
             </div>
             <h1 className="text-[32px] font-extrabold leading-[1.15] tracking-[-0.5px] text-[#0b2a63]">{t('title')}</h1>
             <p className="mt-1 text-[13px] text-[#5C6F90]">{t('subtitle')}</p>
           </header>
 
-          <nav className="grid grid-cols-3 gap-2" aria-label="설정 그룹">
+          <nav className="grid grid-cols-3 gap-2" aria-label={t('groupAriaLabel')}>
             {GROUPS.map((g) => {
               const on = activeGroup === g.id;
               const danger = g.id === 'danger';

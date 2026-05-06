@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { use, useEffect, useMemo, useState } from 'react';
 
@@ -26,6 +27,8 @@ export default function ChildEditPage({ params }: EditPageProps) {
   const router = useRouter();
   const children = useChildren();
   const { upsertChild } = useUserActions();
+  const t = useTranslations('setting.childrenEditPage');
+  const tCommon = useTranslations('common');
 
   const fromStore = useMemo(() => children.find((c) => c.id === id), [children, id]);
 
@@ -73,18 +76,18 @@ export default function ChildEditPage({ params }: EditPageProps) {
       .catch((err) => {
         if (cancelled) return;
         if (err instanceof ApiError && err.status === 404) {
-          setLoadError('자녀 프로필을 찾을 수 없어요.');
+          setLoadError(t('loadError404'));
         } else if (err instanceof ApiError && err.status === 401) {
           router.replace('/signin');
         } else {
-          setLoadError('자녀 프로필을 불러오지 못했어요.');
+          setLoadError(t('loadErrorGeneric'));
         }
       });
 
     return () => {
       cancelled = true;
     };
-  }, [id, fromStore, loaded, router]);
+  }, [id, fromStore, loaded, router, t]);
 
   const canSubmit = isChildFormValid(form) && !submitting && loaded;
 
@@ -108,12 +111,12 @@ export default function ChildEditPage({ params }: EditPageProps) {
           return;
         }
         if (err.status === 404) {
-          setError('자녀 프로필을 찾을 수 없어요.');
+          setError(t('saveError404'));
           return;
         }
         setError(err.detail);
       } else {
-        setError('자녀 프로필 저장에 실패했어요. 잠시 후 다시 시도해 주세요.');
+        setError(t('saveErrorGeneric'));
       }
     } finally {
       setSubmitting(false);
@@ -125,7 +128,7 @@ export default function ChildEditPage({ params }: EditPageProps) {
       <section className="flex flex-col items-center gap-3 rounded-[22px] border border-[#1C7AE0]/[0.12] bg-white/85 px-5 py-10 text-center shadow-[0_18px_44px_rgba(28,122,224,0.12)] backdrop-blur-[14px]">
         <div className="text-[32px]">😿</div>
         <div className="text-[14px] font-semibold text-[#0b2a63]">{loadError}</div>
-        <BackButton label="목록으로" href="/setting/children" />
+        <BackButton label={t('backToList')} href="/setting/children" />
       </section>
     );
   }
@@ -136,12 +139,12 @@ export default function ChildEditPage({ params }: EditPageProps) {
         <header>
           <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-[#3196ff]/25 bg-[#3196ff]/[0.12] px-3 py-[5px] text-[11px] font-bold tracking-[0.8px] text-[#1C7AE0]">
             <span>✏️</span>
-            <span>EDIT</span>
+            <span>{t('tag')}</span>
           </div>
           <h2 className="text-[22px] font-extrabold leading-[1.15] tracking-[-0.3px] text-[#0b2a63]">
-            자녀 프로필 수정
+            {t('title')}
           </h2>
-          <p className="mt-1 text-[12px] text-[#5C6F90]">캐릭터·이름·생년월일·그림 실력을 바꿀 수 있어요.</p>
+          <p className="mt-1 text-[12px] text-[#5C6F90]">{t('subtitle')}</p>
         </header>
         <BackButton href="/setting/children" />
       </div>
@@ -172,7 +175,7 @@ export default function ChildEditPage({ params }: EditPageProps) {
           onClick={() => router.replace('/setting/children')}
           className="h-[54px] cursor-pointer rounded-[14px] border border-[#1C7AE0]/15 bg-white/70 px-[22px] text-[14px] font-semibold text-[#5C6F90]"
         >
-          취소
+          {tCommon('cancel')}
         </button>
         <button
           type="button"
@@ -185,7 +188,7 @@ export default function ChildEditPage({ params }: EditPageProps) {
               : 'cursor-not-allowed bg-[#B9CDE6]',
           )}
         >
-          {submitting ? '저장 중…' : '저장'}
+          {submitting ? tCommon('saving') : tCommon('save')}
         </button>
       </div>
     </section>

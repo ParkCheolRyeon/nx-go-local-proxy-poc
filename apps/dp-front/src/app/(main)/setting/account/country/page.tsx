@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState, type ChangeEvent } from 'react';
 
@@ -22,44 +23,58 @@ type CountryId =
   | 'DE'
   | 'AU';
 
+type Region = 'asia' | 'na' | 'europe' | 'oceania';
+
 type Country = {
   id: CountryId;
-  name: string;
   sub: string;
   flag: string;
-  region: '아시아' | '북미' | '유럽' | '오세아니아';
+  region: Region;
 };
 
 const COUNTRIES: Country[] = [
-  { id: 'KR', name: '대한민국', sub: 'KRW · GMT+9', flag: '🇰🇷', region: '아시아' },
-  { id: 'JP', name: '일본', sub: 'JPY · GMT+9', flag: '🇯🇵', region: '아시아' },
-  { id: 'CN', name: '중국', sub: 'CNY · GMT+8', flag: '🇨🇳', region: '아시아' },
-  { id: 'VN', name: '베트남', sub: 'VND · GMT+7', flag: '🇻🇳', region: '아시아' },
-  { id: 'TH', name: '태국', sub: 'THB · GMT+7', flag: '🇹🇭', region: '아시아' },
-  { id: 'US', name: '미국', sub: 'USD · GMT-5', flag: '🇺🇸', region: '북미' },
-  { id: 'CA', name: '캐나다', sub: 'CAD · GMT-5', flag: '🇨🇦', region: '북미' },
-  { id: 'GB', name: '영국', sub: 'GBP · GMT+0', flag: '🇬🇧', region: '유럽' },
-  { id: 'FR', name: '프랑스', sub: 'EUR · GMT+1', flag: '🇫🇷', region: '유럽' },
-  { id: 'DE', name: '독일', sub: 'EUR · GMT+1', flag: '🇩🇪', region: '유럽' },
-  { id: 'AU', name: '호주', sub: 'AUD · GMT+10', flag: '🇦🇺', region: '오세아니아' },
+  { id: 'KR', sub: 'KRW · GMT+9', flag: '🇰🇷', region: 'asia' },
+  { id: 'JP', sub: 'JPY · GMT+9', flag: '🇯🇵', region: 'asia' },
+  { id: 'CN', sub: 'CNY · GMT+8', flag: '🇨🇳', region: 'asia' },
+  { id: 'VN', sub: 'VND · GMT+7', flag: '🇻🇳', region: 'asia' },
+  { id: 'TH', sub: 'THB · GMT+7', flag: '🇹🇭', region: 'asia' },
+  { id: 'US', sub: 'USD · GMT-5', flag: '🇺🇸', region: 'na' },
+  { id: 'CA', sub: 'CAD · GMT-5', flag: '🇨🇦', region: 'na' },
+  { id: 'GB', sub: 'GBP · GMT+0', flag: '🇬🇧', region: 'europe' },
+  { id: 'FR', sub: 'EUR · GMT+1', flag: '🇫🇷', region: 'europe' },
+  { id: 'DE', sub: 'EUR · GMT+1', flag: '🇩🇪', region: 'europe' },
+  { id: 'AU', sub: 'AUD · GMT+10', flag: '🇦🇺', region: 'oceania' },
 ];
 
-const REGION_ORDER: Country['region'][] = ['아시아', '북미', '유럽', '오세아니아'];
+const REGION_ORDER: Region[] = ['asia', 'na', 'europe', 'oceania'];
+
+const REGION_KEY: Record<Region, 'regionAsia' | 'regionNa' | 'regionEurope' | 'regionOceania'> = {
+  asia: 'regionAsia',
+  na: 'regionNa',
+  europe: 'regionEurope',
+  oceania: 'regionOceania',
+};
 
 export default function CountryPage() {
   const router = useRouter();
   const [countryId, setCountryId] = useState<CountryId>('KR');
   const [query, setQuery] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const t = useTranslations('setting.countryPage');
+  const tAccount = useTranslations('setting.account');
+  const tCommon = useTranslations('common');
 
   const current = COUNTRIES.find((c) => c.id === countryId) ?? COUNTRIES[0];
+  const currentName = t(`country.${current.id}`);
 
   const groups = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const filtered = COUNTRIES.filter(
-      (c) => !q || c.name.toLowerCase().includes(q) || c.id.toLowerCase().includes(q),
-    );
-    const map = new Map<Country['region'], Country[]>();
+    const filtered = COUNTRIES.filter((c) => {
+      if (!q) return true;
+      const name = t(`country.${c.id}`).toLowerCase();
+      return name.includes(q) || c.id.toLowerCase().includes(q);
+    });
+    const map = new Map<Region, Country[]>();
     for (const c of filtered) {
       if (!map.has(c.region)) map.set(c.region, []);
       map.get(c.region)!.push(c);
@@ -68,7 +83,7 @@ export default function CountryPage() {
       const items = map.get(region);
       return items && items.length > 0 ? [{ region, items }] : [];
     });
-  }, [query]);
+  }, [query, t]);
 
   const filteredCount = groups.reduce((sum, g) => sum + g.items.length, 0);
 
@@ -79,12 +94,12 @@ export default function CountryPage() {
     } catch (err) {
       if (!(err instanceof ApiError) || err.status !== 401) {
         setSubmitting(false);
-        await alert('서버에 저장하지 못했어요. 잠시 후 다시 시도해 주세요.', { tone: 'warning' });
+        await alert(tAccount('saveFailedToast'), { tone: 'warning' });
         return;
       }
     }
     setSubmitting(false);
-    await alert(`국가가 ${current.name}(으)로 설정됐어요.`, { tone: 'success' });
+    await alert(tAccount('countrySavedToast', { name: currentName }), { tone: 'success' });
     router.replace('/setting/account');
   };
 
@@ -94,12 +109,12 @@ export default function CountryPage() {
         <header>
           <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-[#3196ff]/25 bg-[#3196ff]/[0.12] px-3 py-[5px] text-[11px] font-bold tracking-[0.8px] text-[#1C7AE0]">
             <span>🗺️</span>
-            <span>REGION</span>
+            <span>{t('tag')}</span>
           </div>
           <h2 className="text-[22px] font-extrabold leading-[1.15] tracking-[-0.3px] text-[#0b2a63]">
-            국가 / 지역 설정
+            {t('title')}
           </h2>
-          <p className="mt-1 text-[12px] text-[#5C6F90]">결제 통화, 시간대, 콘텐츠 추천에 영향을 줍니다.</p>
+          <p className="mt-1 text-[12px] text-[#5C6F90]">{t('subtitle')}</p>
         </header>
         <BackButton href="/setting/account" />
       </div>
@@ -113,12 +128,12 @@ export default function CountryPage() {
         >
           <span className="text-[32px]">{current.flag}</span>
           <div className="min-w-0 flex-1">
-            <div className="text-[11px] font-bold tracking-[0.6px] text-[#1C7AE0]">현재 설정</div>
-            <div className="mt-0.5 text-[16px] font-bold text-[#0b2a63]">{current.name}</div>
+            <div className="text-[11px] font-bold tracking-[0.6px] text-[#1C7AE0]">{t('currentLabel')}</div>
+            <div className="mt-0.5 text-[16px] font-bold text-[#0b2a63]">{currentName}</div>
             <div className="text-[11.5px] text-[#8AA0BD]">{current.sub}</div>
           </div>
           <span className="rounded-full bg-[#3196ff]/[0.16] px-2.5 py-1 text-[11px] font-bold text-[#1C7AE0]">
-            적용 중
+            {t('appliedBadge')}
           </span>
         </div>
 
@@ -126,7 +141,7 @@ export default function CountryPage() {
           <input
             value={query}
             onChange={(e: ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
-            placeholder="국가 또는 지역 검색"
+            placeholder={t('searchPlaceholder')}
             className="w-full rounded-[12px] border-[1.5px] border-[#1C7AE0]/[0.18] bg-white py-3 pl-10 pr-4 text-[13.5px] text-[#0b2a63] outline-none transition-[border-color,box-shadow] placeholder:text-[#8AA0BD] focus:border-[#3196ff] focus:shadow-[0_0_0_4px_rgba(49,150,255,0.14)]"
           />
           <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[14px] text-[#8AA0BD]">
@@ -138,7 +153,7 @@ export default function CountryPage() {
           {groups.map(({ region, items }) => (
             <div key={region}>
               <div className="px-1 pb-1.5 pt-1 text-[11px] font-bold tracking-[0.6px] text-[#8AA0BD]">
-                {region.toUpperCase()}
+                {t(REGION_KEY[region]).toUpperCase()}
               </div>
               <div className="flex flex-col gap-1">
                 {items.map((c) => {
@@ -158,7 +173,7 @@ export default function CountryPage() {
                     >
                       <span className="text-[22px]">{c.flag}</span>
                       <div className="min-w-0 flex-1">
-                        <div className="text-[13.5px] font-bold text-[#0b2a63]">{c.name}</div>
+                        <div className="text-[13.5px] font-bold text-[#0b2a63]">{t(`country.${c.id}`)}</div>
                         <div className="text-[11px] text-[#8AA0BD]">{c.sub}</div>
                       </div>
                       <div
@@ -181,7 +196,7 @@ export default function CountryPage() {
             </div>
           ))}
           {filteredCount === 0 && (
-            <div className="px-2 py-6 text-center text-[12px] text-[#8AA0BD]">검색 결과가 없어요.</div>
+            <div className="px-2 py-6 text-center text-[12px] text-[#8AA0BD]">{tCommon('noResult')}</div>
           )}
         </div>
       </div>
@@ -192,7 +207,7 @@ export default function CountryPage() {
           onClick={() => router.replace('/setting/account')}
           className="cursor-pointer rounded-full border-[1.5px] border-[#1C7AE0]/[0.18] bg-white px-[22px] py-3 text-[13.5px] font-bold text-[#5C6F90] transition-colors hover:bg-[#3196ff]/[0.06]"
         >
-          취소
+          {tCommon('cancel')}
         </button>
         <button
           type="button"
@@ -205,7 +220,7 @@ export default function CountryPage() {
               : 'cursor-pointer bg-[linear-gradient(135deg,#3196ff,#1C7AE0)] shadow-[0_10px_22px_rgba(28,122,224,0.32)] hover:-translate-y-px hover:shadow-[0_12px_24px_rgba(28,122,224,0.34)]',
           )}
         >
-          {submitting ? '저장 중…' : '저장'}
+          {submitting ? tCommon('saving') : tCommon('save')}
         </button>
       </div>
     </section>
