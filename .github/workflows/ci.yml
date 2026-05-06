@@ -35,13 +35,12 @@ jobs:
           go-version: '1.23'
           cache-dependency-path: apps/dp-back/go.sum
 
-      # golangci-lint binary 만 설치 (action 의 자동 실행은 끔 — nx 가 호출)
-      - uses: golangci/golangci-lint-action@v6
-        with:
-          version: latest
-          install-mode: binary
-          args: --version
-          working-directory: apps/dp-back
+      # golangci-lint binary 만 설치 — nx 가 호출하므로 action 의 자동실행은 사용 안 함
+      - name: Install golangci-lint
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh \
+            | sh -s -- -b $(go env GOPATH)/bin v1.64.8
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
 
       # PR 의 base/head SHA 를 NX_BASE / NX_HEAD 환경변수로 export
       - uses: nrwl/nx-set-shas@v4
