@@ -1,0 +1,59 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# 같은 PR/브랜치에 새 push 가 오면 이전 run 취소 — 비용 절감
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  affected:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # nx affected 가 base..head diff 를 보려면 전체 히스토리 필요
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install deps
+        run: pnpm i --frozen-lockfile
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          cache-dependency-path: apps/dp-back/go.sum
+
+      # PR 의 base/head SHA 를 NX_BASE / NX_HEAD 환경변수로 export
+      - uses: nrwl/nx-set-shas@v4
+
+      # nx 캐시 (.nx/cache) 를 GitHub Actions 캐시에 보관 → run 간 재사용
+      - uses: actions/cache@v4
+        with:
+          path: .nx/cache
+          key: nx-cache-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            nx-cache-${{ runner.os }}-
+
+      - name: Affected typecheck
+        run: pnpm nx affected -t typecheck --parallel=3
+
+      - name: Affected lint
+        run: pnpm nx affected -t lint --parallel=3
+
+      - name: Affected test
+        run: pnpm nx affected -t test --parallel=3
+
+      - name: Affected build
+        run: pnpm nx affected -t build --parallel=2
