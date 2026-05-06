@@ -1,0 +1,59 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "back": "Back",
+    "confirm": "Confirm"
+  },
+  "menu": {
+    "draw": "Draw",
+    "drawSubMobile": "Start drawing",
+    "drawSubPc": "New canvas · Resume",
+    "event": "Events",
+    "eventSubMobile": "Contests · Badges",
+    "eventSubPc": "Contests · Awards",
+    "gallery": "My Gallery",
+    "gallerySubMobile": "My works",
+    "gallerySubPc": "Works · Timelapse",
+    "notification": "Notifications",
+    "notificationSubMobile": "Updates",
+    "notificationSubPc": "Updates · Invites",
+    "setting": "Settings",
+    "settingSubMobile": "Account · Billing",
+    "settingSubPc": "Account · Wallet · Billing"
+  },
+  "setting": {
+    "title": "Settings",
+    "subtitle": "Manage account, subscription, notifications and safety options here.",
+    "groups": {
+      "account": { "label": "Account", "sub": "Profile · Kids" },
+      "billing": { "label": "Subscription", "sub": "Pro · Coins" },
+      "app": { "label": "App", "sub": "Alerts · Theme" },
+      "kid": { "label": "Kid Safety", "sub": "Time · Content" },
+      "support": { "label": "Support", "sub": "FAQ · Contact" },
+      "danger": { "label": "Account Care", "sub": "Sign out · Delete" }
+    },
+    "account": {
+      "password": "Change password",
+      "language": "Language",
+      "country": "Country / Region",
+      "languageSavedToast": "Language set to {name}.",
+      "countrySavedToast": "Country set to {name}."
+    }
+  },
+  "breadcrumb": {
+    "settingAccount": "Account",
+    "settingBilling": "Subscription",
+    "settingApp": "App",
+    "settingKid": "Kid Safety",
+    "settingSupport": "Support",
+    "settingDanger": "Account Care",
+    "settingChildren": "Kid Profiles",
+    "settingChildrenEdit": "Edit profile",
+    "settingAccountPassword": "Change password",
+    "settingAccountLanguage": "Language",
+    "settingAccountCountry": "Country / Region",
+    "settingWithdraw": "Delete account",
+    "settingWithdrawCancel": "Cancel deletion"
+  }
+}

@@ -1,3 +1,5 @@
+import { NextIntlClientProvider } from 'next-intl';
+import { getLocale, getMessages } from 'next-intl/server';
 import localFont from 'next/font/local';
 
 import RootLayoutContainer from '@/components/RootLayout';
@@ -59,11 +61,15 @@ export const metadata = {
   },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const locale = await getLocale();
+  const messages = await getMessages();
   return (
-    <html lang="ko" className={nanumRound.variable}>
+    <html lang={locale} className={nanumRound.variable}>
       <body className="min-h-screen bg-white font-sans">
-        <RootLayoutContainer>{children}</RootLayoutContainer>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <RootLayoutContainer>{children}</RootLayoutContainer>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

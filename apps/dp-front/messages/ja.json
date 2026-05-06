@@ -1,0 +1,59 @@
+{
+  "common": {
+    "save": "保存",
+    "cancel": "キャンセル",
+    "back": "戻る",
+    "confirm": "確認"
+  },
+  "menu": {
+    "draw": "お絵かき",
+    "drawSubMobile": "描き始める",
+    "drawSubPc": "新規キャンバス · 続きから",
+    "event": "イベント",
+    "eventSubMobile": "コンテスト · バッジ",
+    "eventSubPc": "コンテスト · 受賞",
+    "gallery": "マイギャラリー",
+    "gallerySubMobile": "作品保管庫",
+    "gallerySubPc": "作品 · タイムラプス",
+    "notification": "お知らせ",
+    "notificationSubMobile": "最新情報",
+    "notificationSubPc": "最新情報 · 招待",
+    "setting": "設定",
+    "settingSubMobile": "アカウント · 決済",
+    "settingSubPc": "アカウント · ウォレット · 決済"
+  },
+  "setting": {
+    "title": "設定",
+    "subtitle": "アカウント、サブスク、通知と安全オプションをここで管理。",
+    "groups": {
+      "account": { "label": "アカウント", "sub": "プロフィール · お子様" },
+      "billing": { "label": "サブスク", "sub": "Pro · コイン" },
+      "app": { "label": "アプリ設定", "sub": "通知 · テーマ" },
+      "kid": { "label": "お子様の保護", "sub": "時間 · コンテンツ" },
+      "support": { "label": "サポート", "sub": "FAQ · お問い合わせ" },
+      "danger": { "label": "アカウント管理", "sub": "ログアウト · 退会" }
+    },
+    "account": {
+      "password": "パスワード変更",
+      "language": "言語",
+      "country": "国 / 地域",
+      "languageSavedToast": "言語を {name} に設定しました。",
+      "countrySavedToast": "国を {name} に設定しました。"
+    }
+  },
+  "breadcrumb": {
+    "settingAccount": "アカウント",
+    "settingBilling": "サブスク",
+    "settingApp": "アプリ設定",
+    "settingKid": "お子様の保護",
+    "settingSupport": "サポート",
+    "settingDanger": "アカウント管理",
+    "settingChildren": "お子様プロフィール",
+    "settingChildrenEdit": "プロフィール編集",
+    "settingAccountPassword": "パスワード変更",
+    "settingAccountLanguage": "言語",
+    "settingAccountCountry": "国 / 地域",
+    "settingWithdraw": "アカウント削除",
+    "settingWithdrawCancel": "削除をキャンセル"
+  }
+}

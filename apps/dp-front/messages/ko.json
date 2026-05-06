@@ -1,0 +1,59 @@
+{
+  "common": {
+    "save": "저장",
+    "cancel": "취소",
+    "back": "뒤로",
+    "confirm": "확인"
+  },
+  "menu": {
+    "draw": "드로잉",
+    "drawSubMobile": "그리기 시작",
+    "drawSubPc": "새 캔버스 · 이어그리기",
+    "event": "이벤트",
+    "eventSubMobile": "공모전 · 배지",
+    "eventSubPc": "공모전 · 수상 내역",
+    "gallery": "마이갤러리",
+    "gallerySubMobile": "내 작품 보관함",
+    "gallerySubPc": "작품 · 타임랩스",
+    "notification": "알림",
+    "notificationSubMobile": "새 소식",
+    "notificationSubPc": "새 소식 · 초대",
+    "setting": "설정",
+    "settingSubMobile": "계정 · 결제",
+    "settingSubPc": "계정 · 지갑 · 결제"
+  },
+  "setting": {
+    "title": "설정",
+    "subtitle": "계정, 구독, 알림과 안전 옵션을 한곳에서 관리해요.",
+    "groups": {
+      "account": { "label": "계정", "sub": "프로필 · 자녀" },
+      "billing": { "label": "구독 · 결제", "sub": "Pro · 코인" },
+      "app": { "label": "앱 설정", "sub": "알림 · 테마" },
+      "kid": { "label": "안전 · 자녀 보호", "sub": "시간 · 콘텐츠" },
+      "support": { "label": "고객지원", "sub": "FAQ · 문의" },
+      "danger": { "label": "계정 관리", "sub": "로그아웃 · 탈퇴" }
+    },
+    "account": {
+      "password": "비밀번호 변경",
+      "language": "언어",
+      "country": "국가 / 지역",
+      "languageSavedToast": "언어가 {name}(으)로 설정됐어요.",
+      "countrySavedToast": "국가가 {name}(으)로 설정됐어요."
+    }
+  },
+  "breadcrumb": {
+    "settingAccount": "계정",
+    "settingBilling": "구독 · 결제",
+    "settingApp": "앱 설정",
+    "settingKid": "안전 · 자녀 보호",
+    "settingSupport": "고객지원",
+    "settingDanger": "계정 관리",
+    "settingChildren": "자녀 프로필",
+    "settingChildrenEdit": "프로필 수정",
+    "settingAccountPassword": "비밀번호 변경",
+    "settingAccountLanguage": "언어",
+    "settingAccountCountry": "국가 / 지역",
+    "settingWithdraw": "계정 탈퇴",
+    "settingWithdrawCancel": "탈퇴 취소"
+  }
+}

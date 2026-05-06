@@ -17,6 +17,7 @@ import {
   useUserActions,
 } from '@/stores/userStore';
 import { AnimatePresence, motion } from 'motion/react';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useEffect } from 'react';
 
@@ -273,6 +274,9 @@ function MobileMenuLink({
   order: number;
   onNavigate: () => void;
 }) {
+  const t = useTranslations('menu');
+  const label = t(item.id);
+  const subMobile = t(`${item.id}SubMobile`);
   return (
     <motion.div
       initial={false}
@@ -326,12 +330,12 @@ function MobileMenuLink({
           <item.Icon width={26} height={26} aria-hidden />
         </div>
         <div className="relative flex-1">
-          <div className="text-[17px] font-bold">{item.label}</div>
+          <div className="text-[17px] font-bold">{label}</div>
           <div
             className="mt-0.5 text-[11px]"
             style={{ color: 'rgba(255,255,255,.7)' }}
           >
-            {item.sub.mobile}
+            {subMobile}
           </div>
         </div>
         <div
