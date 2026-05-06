@@ -19,6 +19,15 @@ type AgreementRecord struct {
 	AcceptedAt        pgtype.Timestamptz `json:"accepted_at"`
 }
 
+type Award struct {
+	ID             string             `json:"id"`
+	DrawingID      string             `json:"drawing_id"`
+	ChildProfileID string             `json:"child_profile_id"`
+	EventID        *string            `json:"event_id"`
+	Rank           string             `json:"rank"`
+	AwardedAt      pgtype.Timestamptz `json:"awarded_at"`
+}
+
 type ChildProfile struct {
 	ID           string             `json:"id"`
 	UserID       string             `json:"user_id"`
@@ -47,6 +56,23 @@ type CoinWallet struct {
 	MonthlyCoinAllowance    int32              `json:"monthly_coin_allowance"`
 	DailyTopupRemainingDays int16              `json:"daily_topup_remaining_days"`
 	UpdatedAt               pgtype.Timestamptz `json:"updated_at"`
+}
+
+type Drawing struct {
+	ID             string             `json:"id"`
+	ChildProfileID string             `json:"child_profile_id"`
+	Mode           string             `json:"mode"`
+	Title          string             `json:"title"`
+	ThumbnailUrl   *string            `json:"thumbnail_url"`
+	ImageUrl       *string            `json:"image_url"`
+	TimelapseUrl   *string            `json:"timelapse_url"`
+	IsPublic       bool               `json:"is_public"`
+	Status         string             `json:"status"`
+	StartedAt      pgtype.Timestamptz `json:"started_at"`
+	CompletedAt    pgtype.Timestamptz `json:"completed_at"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
+	DeletedAt      pgtype.Timestamptz `json:"deleted_at"`
 }
 
 type Event struct {
@@ -101,6 +127,15 @@ type OauthAccount struct {
 	LinkedAt       pgtype.Timestamptz `json:"linked_at"`
 }
 
+type PushToken struct {
+	ID         string             `json:"id"`
+	UserID     string             `json:"user_id"`
+	Platform   string             `json:"platform"`
+	Token      string             `json:"token"`
+	CreatedAt  pgtype.Timestamptz `json:"created_at"`
+	LastSeenAt pgtype.Timestamptz `json:"last_seen_at"`
+}
+
 type Subscription struct {
 	ID         string             `json:"id"`
 	UserID     string             `json:"user_id"`
@@ -118,6 +153,17 @@ type SupportInquiry struct {
 	Subject   string             `json:"subject"`
 	Message   string             `json:"message"`
 	Status    string             `json:"status"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+}
+
+type TokenIssuanceLog struct {
+	ID        string             `json:"id"`
+	UserID    string             `json:"user_id"`
+	Event     string             `json:"event"`
+	AccessJti *string            `json:"access_jti"`
+	RefreshID *string            `json:"refresh_id"`
+	UserAgent *string            `json:"user_agent"`
+	IpAddress *string            `json:"ip_address"`
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
 }
 

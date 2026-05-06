@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS awards;
+DROP TABLE IF EXISTS drawings;

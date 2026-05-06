@@ -9,6 +9,36 @@ import (
 	"context"
 )
 
+const applyDailyTopupToZeroBalance = `-- name: ApplyDailyTopupToZeroBalance :many
+UPDATE coin_wallets
+SET holding_coins = 1,
+    daily_topup_remaining_days = daily_topup_remaining_days - 1
+WHERE daily_topup_remaining_days > 0 AND holding_coins = 0
+RETURNING user_id
+`
+
+// 잔액 0인 지갑 중 7일 내 충전 권리가 남은 사용자에게 1개 충전 + remaining_days 1 차감.
+// 반환: 충전된 사용자의 user_id 목록 (원장 기록용).
+func (q *Queries) ApplyDailyTopupToZeroBalance(ctx context.Context) ([]string, error) {
+	rows, err := q.db.Query(ctx, applyDailyTopupToZeroBalance)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var user_id string
+		if err := rows.Scan(&user_id); err != nil {
+			return nil, err
+		}
+		items = append(items, user_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const createCoinWallet = `-- name: CreateCoinWallet :one
 INSERT INTO coin_wallets (user_id)
 VALUES ($1)
@@ -28,6 +58,18 @@ func (q *Queries) CreateCoinWallet(ctx context.Context, userID string) (CoinWall
 	return i, err
 }
 
+const decrementTopupRemainingDays = `-- name: DecrementTopupRemainingDays :exec
+UPDATE coin_wallets
+SET daily_topup_remaining_days = daily_topup_remaining_days - 1
+WHERE daily_topup_remaining_days > 0 AND holding_coins > 0
+`
+
+// 잔액이 있는 지갑은 충전 X, 7일 카운터만 차감 (8일째 자동 종료 보장).
+func (q *Queries) DecrementTopupRemainingDays(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, decrementTopupRemainingDays)
+	return err
+}
+
 const getCoinWallet = `-- name: GetCoinWallet :one
 SELECT user_id, holding_coins, monthly_coin_allowance, daily_topup_remaining_days, updated_at FROM coin_wallets
 WHERE user_id = $1
@@ -35,6 +77,27 @@ WHERE user_id = $1
 
 func (q *Queries) GetCoinWallet(ctx context.Context, userID string) (CoinWallet, error) {
 	row := q.db.QueryRow(ctx, getCoinWallet, userID)
+	var i CoinWallet
+	err := row.Scan(
+		&i.UserID,
+		&i.HoldingCoins,
+		&i.MonthlyCoinAllowance,
+		&i.DailyTopupRemainingDays,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const spendCoin = `-- name: SpendCoin :one
+UPDATE coin_wallets
+SET holding_coins = holding_coins - 1
+WHERE user_id = $1 AND holding_coins > 0
+RETURNING user_id, holding_coins, monthly_coin_allowance, daily_topup_remaining_days, updated_at
+`
+
+// 도안 진입 시 1개 차감. 잔액 부족 시 row 0개 (UPDATE WHERE 실패).
+func (q *Queries) SpendCoin(ctx context.Context, userID string) (CoinWallet, error) {
+	row := q.db.QueryRow(ctx, spendCoin, userID)
 	var i CoinWallet
 	err := row.Scan(
 		&i.UserID,

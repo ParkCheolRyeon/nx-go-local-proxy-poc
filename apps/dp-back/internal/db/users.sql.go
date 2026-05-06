@@ -96,3 +96,54 @@ func (q *Queries) GetUserByEmail(ctx context.Context, lower string) (User, error
 	)
 	return i, err
 }
+
+const patchUserLocaleCountry = `-- name: PatchUserLocaleCountry :one
+UPDATE users
+SET
+    locale  = COALESCE($2,  locale),
+    country = COALESCE($3, country)
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING id, name, created_at, email, password_hash, description, avatar, locale, country, marketing_opt_in, updated_at, deleted_at
+`
+
+type PatchUserLocaleCountryParams struct {
+	ID      string  `json:"id"`
+	Locale  *string `json:"locale"`
+	Country *string `json:"country"`
+}
+
+func (q *Queries) PatchUserLocaleCountry(ctx context.Context, arg PatchUserLocaleCountryParams) (User, error) {
+	row := q.db.QueryRow(ctx, patchUserLocaleCountry, arg.ID, arg.Locale, arg.Country)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.CreatedAt,
+		&i.Email,
+		&i.PasswordHash,
+		&i.Description,
+		&i.Avatar,
+		&i.Locale,
+		&i.Country,
+		&i.MarketingOptIn,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const updatePasswordHash = `-- name: UpdatePasswordHash :exec
+UPDATE users
+SET password_hash = $2
+WHERE id = $1 AND deleted_at IS NULL
+`
+
+type UpdatePasswordHashParams struct {
+	ID           string  `json:"id"`
+	PasswordHash *string `json:"password_hash"`
+}
+
+func (q *Queries) UpdatePasswordHash(ctx context.Context, arg UpdatePasswordHashParams) error {
+	_, err := q.db.Exec(ctx, updatePasswordHash, arg.ID, arg.PasswordHash)
+	return err
+}
