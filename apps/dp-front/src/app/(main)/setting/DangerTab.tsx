@@ -1,19 +1,80 @@
 'use client';
 
-import Row from '@/app/(main)/setting/Row';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
-const COMING_SOON_MSG = '준비 중인 기능이에요.';
-const notifyComingSoon = () => window.alert(COMING_SOON_MSG);
+import ChildDeleteModal from '@/app/(main)/setting/children/ChildDeleteModal';
+import Row from '@/app/(main)/setting/Row';
+import { alert, confirm, openDialog } from '@/dialog';
+import { ApiError } from '@/lib/api';
+import { signOutLocal } from '@/lib/auth-api';
+import { deleteChild } from '@/lib/children-api';
+import { useChildren, useUserActions } from '@/stores/userStore';
 
 export default function DangerTab() {
+  const router = useRouter();
+  const { signOut, removeChild } = useUserActions();
+  const children = useChildren();
+  const [deletingAll, setDeletingAll] = useState(false);
+
+  const handleSignOut = async () => {
+    const ok = await confirm('이 기기에서 로그아웃할까요?', {
+      title: '로그아웃',
+      yesButtonText: '로그아웃',
+      noButtonText: '취소',
+    });
+    if (!ok) return;
+    signOutLocal();
+    signOut();
+    router.replace('/signin');
+  };
+
+  const handleDeleteAllChildren = async () => {
+    if (deletingAll) return;
+    if (children.length === 0) {
+      void alert('등록된 자녀 프로필이 없어요.');
+      return;
+    }
+    const ok = await openDialog(ChildDeleteModal, { mode: 'all', targets: children });
+    if (!ok) return;
+
+    setDeletingAll(true);
+    const results = await Promise.allSettled(children.map((c) => deleteChild(c.id)));
+    const failed: { name: string; reason: string }[] = [];
+    results.forEach((r, i) => {
+      const c = children[i];
+      if (r.status === 'fulfilled') {
+        removeChild(c.id);
+      } else {
+        const reason =
+          r.reason instanceof ApiError ? r.reason.detail : '서버에 연결할 수 없어요.';
+        failed.push({ name: c.name, reason });
+      }
+    });
+    setDeletingAll(false);
+
+    if (failed.length === 0) {
+      void alert('모든 자녀 프로필이 삭제되었어요.', { tone: 'success' });
+      return;
+    }
+    const summary = failed.map((f) => `· ${f.name}: ${f.reason}`).join('\n');
+    void alert(`일부 자녀를 삭제하지 못했어요.\n\n${summary}`, { tone: 'warning' });
+  };
+
   return (
     <>
-      <Row icon="🚪" title="로그아웃" sub="이 기기에서만 로그아웃합니다" onClick={notifyComingSoon} />
+      <Row icon="🚪" title="로그아웃" sub="이 기기에서만 로그아웃합니다" onClick={handleSignOut} />
       <Row
         icon="👶"
         title="자녀 프로필 삭제"
-        sub="자녀별 작품·코인은 함께 정리돼요"
-        onClick={notifyComingSoon}
+        sub={
+          deletingAll
+            ? '삭제 중…'
+            : children.length > 0
+              ? `${children.length}명 모두 삭제 · 작품·코인 함께 정리`
+              : '등록된 자녀 없음'
+        }
+        onClick={handleDeleteAllChildren}
         last
       />
       <div
@@ -34,7 +95,7 @@ export default function DangerTab() {
         </p>
         <button
           type="button"
-          onClick={notifyComingSoon}
+          onClick={() => router.push('/setting/withdraw')}
           className="mt-3 cursor-pointer rounded-full border-[1.5px] border-[#EF4444]/40 bg-transparent px-4 py-[9px] text-[12px] font-bold text-[#DC2626]"
         >
           탈퇴 진행
