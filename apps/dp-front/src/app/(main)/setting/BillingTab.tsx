@@ -1,9 +1,12 @@
 'use client';
 
 import Row from '@/app/(main)/setting/Row';
+import { alert } from '@/dialog';
 
 const COMING_SOON_MSG = '준비 중인 기능이에요.';
-const notifyComingSoon = () => window.alert(COMING_SOON_MSG);
+const notifyComingSoon = () => {
+  void alert(COMING_SOON_MSG);
+};
 
 export default function BillingTab() {
   return (

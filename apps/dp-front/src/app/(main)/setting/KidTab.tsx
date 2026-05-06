@@ -1,18 +1,78 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+
 import Row from '@/app/(main)/setting/Row';
 import Toggle from '@/app/(main)/setting/Toggle';
-import { type SetTweak, type Tweaks } from '@/app/(main)/setting/page';
+import { alert } from '@/dialog';
+import { ApiError } from '@/lib/api';
+import {
+  getMyPreferences,
+  type PatchPreferencesInput,
+  patchMyPreferences,
+  type Preferences,
+} from '@/lib/preferences-api';
 
 const COMING_SOON_MSG = '준비 중인 기능이에요.';
-const notifyComingSoon = () => window.alert(COMING_SOON_MSG);
-
-type KidTabProps = {
-  tweaks: Tweaks;
-  setT: SetTweak;
+const notifyComingSoon = () => {
+  void alert(COMING_SOON_MSG);
 };
 
-export default function KidTab({ tweaks, setT }: KidTabProps) {
+type KidKey = 'safeMode' | 'paymentLock' | 'togetherChat';
+
+const FALLBACK: Pick<Preferences, KidKey> = {
+  safeMode: true,
+  paymentLock: true,
+  togetherChat: false,
+};
+
+export default function KidTab() {
+  const [tweaks, setTweaks] = useState<Pick<Preferences, KidKey>>(FALLBACK);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    getMyPreferences()
+      .then((p) => {
+        if (cancelled) return;
+        setTweaks({
+          safeMode: p.safeMode,
+          paymentLock: p.paymentLock,
+          togetherChat: p.togetherChat,
+        });
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        if (!(err instanceof ApiError) || err.status !== 401) {
+          console.error('preferences load failed', err);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoaded(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const setT = <K extends KidKey>(key: K, value: Pick<Preferences, KidKey>[K]) => {
+    if (!loaded) return;
+    setTweaks((cur) => {
+      const prev = cur;
+      const next = { ...cur, [key]: value };
+      void (async () => {
+        try {
+          await patchMyPreferences({ [key]: value } as PatchPreferencesInput);
+        } catch (err) {
+          setTweaks(prev);
+          if (err instanceof ApiError && err.status === 401) return;
+          void alert('변경사항을 저장하지 못했어요. 잠시 후 다시 시도해 주세요.', { tone: 'warning' });
+        }
+      })();
+      return next;
+    });
+  };
+
   return (
     <>
       <Row

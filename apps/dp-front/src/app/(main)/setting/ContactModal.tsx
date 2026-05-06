@@ -2,6 +2,9 @@
 
 import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 
+import { alert } from '@/dialog';
+import { ApiError } from '@/lib/api';
+import { createSupportInquiry } from '@/lib/support-api';
 import { cn } from '@/lib/utils';
 import { type DialogRequestComponentProps } from '@/stores/dialogStore';
 
@@ -27,15 +30,28 @@ export default function ContactModal({ resolve }: ContactModalProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const onSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const [submitting, setSubmitting] = useState(false);
+
+  const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    window.alert('문의가 접수되었어요. 빠른 시일 내에 답변 드릴게요.');
-    setSubject('');
-    setMessage('');
-    close();
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      await createSupportInquiry({ subject: subject.trim(), message: message.trim() });
+      setSubject('');
+      setMessage('');
+      close();
+      void alert('문의가 접수되었어요. 빠른 시일 내에 답변 드릴게요.', { tone: 'success' });
+    } catch (err) {
+      const msg =
+        err instanceof ApiError ? err.detail : '문의 등록에 실패했어요. 잠시 후 다시 시도해 주세요.';
+      void alert(msg, { tone: 'warning' });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const canSubmit = subject.trim().length > 0 && message.trim().length > 0;
+  const canSubmit = !submitting && subject.trim().length > 0 && message.trim().length > 0;
 
   return (
     <div
@@ -128,7 +144,7 @@ export default function ContactModal({ resolve }: ContactModalProps) {
               )}
               style={{ background: 'linear-gradient(135deg,#3196ff,#1C7AE0)' }}
             >
-              문의하기
+              {submitting ? '전송 중…' : '문의하기'}
             </button>
           </div>
         </form>

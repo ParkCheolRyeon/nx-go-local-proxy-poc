@@ -3,10 +3,12 @@
 import ContactModal from '@/app/(main)/setting/ContactModal';
 import FaqAccordion from '@/app/(main)/setting/FaqAccordion';
 import Row from '@/app/(main)/setting/Row';
-import { openDialog } from '@/dialog';
+import { alert, openDialog } from '@/dialog';
 
 const COMING_SOON_MSG = '준비 중인 기능이에요.';
-const notifyComingSoon = () => window.alert(COMING_SOON_MSG);
+const notifyComingSoon = () => {
+  void alert(COMING_SOON_MSG);
+};
 const openContactDialog = () => {
   void openDialog(ContactModal);
 };
