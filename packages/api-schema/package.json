@@ -6,7 +6,7 @@
   "types": "./src/index.ts",
   "scripts": {
     "gen:ts": "openapi-typescript openapi.yaml -o src/types.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc -b"
   },
   "devDependencies": {
     "openapi-typescript": "^7.4.0"
