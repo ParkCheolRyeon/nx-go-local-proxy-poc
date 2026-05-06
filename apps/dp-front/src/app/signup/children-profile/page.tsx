@@ -2,57 +2,72 @@
 
 import IconArrowRight from '@/app/assets/icons/icon-arrow-right.svg';
 import AuthBackdrop from '@/app/components/AuthBackdrop';
+import ChildProfileFields, {
+  type ChildFormState,
+  childFormBirthDate,
+  initialChildFormState,
+  isChildFormValid,
+} from '@/app/components/ChildProfileFields';
 import MainLogo from '@/app/components/MainLogo';
+import { CHILD_AVATARS } from '@/config/avatars';
+import { ApiError } from '@/lib/api';
+import { apiChildToStoreChild, createChild } from '@/lib/children-api';
 import { cn } from '@/lib/utils';
-import { useRouter } from 'next/navigation';
+import { useUserActions } from '@/stores/userStore';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 
-type Avatar = { emoji: string; gradient: string };
-
-const AVATARS: Avatar[] = [
-  { emoji: '🦁', gradient: 'linear-gradient(135deg,#FDE68A,#FBBF24)' },
-  { emoji: '🐻', gradient: 'linear-gradient(135deg,#FDBA74,#F97316)' },
-  { emoji: '🐰', gradient: 'linear-gradient(135deg,#FBCFE8,#F472B6)' },
-  { emoji: '🐼', gradient: 'linear-gradient(135deg,#E5E7EB,#9CA3AF)' },
-  { emoji: '🦊', gradient: 'linear-gradient(135deg,#FCA5A5,#F87171)' },
-  { emoji: '🐶', gradient: 'linear-gradient(135deg,#FEF08A,#FACC15)' },
-  { emoji: '🐱', gradient: 'linear-gradient(135deg,#C7D2FE,#818CF8)' },
-  { emoji: '🦄', gradient: 'linear-gradient(135deg,#DDD6FE,#A78BFA)' },
-];
-
-type SkillLevel = 'beginner' | 'intermediate' | 'expert';
-
-const LEVELS: { id: SkillLevel; label: string; icon: string; sub: string }[] = [
-  { id: 'beginner', label: '왕초보', icon: '🌱', sub: '처음 그려봐요' },
-  { id: 'intermediate', label: '중급', icon: '🎨', sub: '몇 번 해봤어요' },
-  { id: 'expert', label: '고급', icon: '🏆', sub: '자신 있어요' },
-];
+// next 파라미터로 들어온 경로만 허용 (open redirect 방지를 위해 내부 path 만 통과)
+function safeNext(raw: string | null): string {
+  if (!raw) return '/my-gallery';
+  if (!raw.startsWith('/') || raw.startsWith('//')) return '/my-gallery';
+  return raw;
+}
 
 export default function ChildrenProfilePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = safeNext(searchParams.get('next'));
+  const { addChild } = useUserActions();
 
-  const [picked, setPicked] = useState(0);
-  const [name, setName] = useState('짱구');
-  const [yy, setYy] = useState('2018');
-  const [mm, setMm] = useState('03');
-  const [dd, setDd] = useState('14');
-  const [level, setLevel] = useState<SkillLevel>('beginner');
+  const [form, setForm] = useState<ChildFormState>({
+    ...initialChildFormState,
+    name: '짱구',
+    yy: '2018',
+    mm: '03',
+    dd: '14',
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const nameOk = name.trim().length >= 1;
-  const dobOk =
-    /^\d{4}$/.test(yy) &&
-    /^\d{1,2}$/.test(mm) &&
-    /^\d{1,2}$/.test(dd) &&
-    +mm >= 1 &&
-    +mm <= 12 &&
-    +dd >= 1 &&
-    +dd <= 31;
-  const canSubmit = nameOk && dobOk;
+  const canSubmit = isChildFormValid(form) && !submitting;
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!canSubmit) return;
-    // TODO: 자녀 프로필 저장 API 연동
-    router.replace('/my-gallery');
+    setError(null);
+    setSubmitting(true);
+    try {
+      const created = await createChild({
+        name: form.name.trim(),
+        birthDate: childFormBirthDate(form),
+        profileEmoji: CHILD_AVATARS[form.picked].key,
+        drawingLevel: form.level,
+      });
+      addChild(apiChildToStoreChild(created));
+      router.replace(next);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        if (err.status === 401) {
+          router.replace('/signin');
+          return;
+        }
+        setError(err.detail);
+      } else {
+        setError('자녀 프로필 저장에 실패했어요. 잠시 후 다시 시도해 주세요.');
+      }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -74,7 +89,7 @@ export default function ChildrenProfilePage() {
         <MainLogo isExpanded />
         <button
           type="button"
-          onClick={() => router.replace('/my-gallery')}
+          onClick={() => router.replace(next)}
           className="ac02-link cursor-pointer border-0 bg-transparent p-0 text-[13px] font-semibold text-[#8AA0BD]"
         >
           건너뛰기
@@ -89,7 +104,6 @@ export default function ChildrenProfilePage() {
           className="text-center"
           style={{ animation: 'ac02-fade .5s ease-out both' }}
         >
-          
           <div className="text-[32px] leading-[1.15] font-extrabold">
             <span className="text-[#1C7AE0]">자녀 프로필</span>을 만들어요
           </div>
@@ -109,122 +123,17 @@ export default function ChildrenProfilePage() {
             animation: 'ac02-fade .5s ease-out .1s both',
           }}
         >
-          <section style={{ animation: 'ac02-slide .4s ease-out 0s both' }}>
-            <div className="mb-2.5 flex items-baseline justify-between">
-              <div className="text-[12px] font-bold text-[#5C6F90]">캐릭터</div>
-              <div className="text-[11px] text-[#8AA0BD]">
-                나중에 바꿀 수 있어요
-              </div>
-            </div>
-            <div className="grid grid-cols-8 gap-2">
-              {AVATARS.map((a, i) => {
-                const isPicked = picked === i;
-                return (
-                  <button
-                    type="button"
-                    key={i}
-                    onClick={() => setPicked(i)}
-                    aria-pressed={isPicked}
-                    aria-label={`avatar ${i + 1}`}
-                    className={cn(
-                      'ac02-avatar relative flex aspect-square items-center justify-center rounded-[14px] text-[26px]',
-                      isPicked
-                        ? 'scale-105 border-[2.5px] border-[#1C7AE0] shadow-[0_8px_18px_rgba(28,122,224,0.35),0_0_0_4px_rgba(49,150,255,0.18)]'
-                        : 'border-2 border-transparent shadow-[0_4px_10px_rgba(0,0,0,0.06)]',
-                    )}
-                    style={{ background: a.gradient }}
-                  >
-                    {a.emoji}
-                    {isPicked && (
-                      <span
-                        className="absolute -top-1.5 -right-1.5 flex h-[18px] w-[18px] items-center justify-center rounded-full bg-[#1C7AE0] text-[10px] font-extrabold text-white shadow-[0_2px_6px_rgba(28,122,224,0.5)]"
-                        style={{
-                          animation:
-                            'ac02-pop .35s cubic-bezier(.34,1.56,.64,1) both',
-                        }}
-                      >
-                        ✓
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-
-          <label
-            className="block"
-            style={{ animation: 'ac02-slide .4s ease-out .08s both' }}
-          >
-            <div className="mb-1.5 text-[12px] font-bold text-[#5C6F90]">
-              이름
-            </div>
-            <div className="ac02-field flex h-[50px] items-center gap-2.5 rounded-[14px] border-[1.5px] border-[#DCE8FB] bg-[#F6F9FF] px-3.5">
-              <span className="text-[16px] text-[#8AA0BD]">✏️</span>
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                type="text"
-                placeholder="자녀 이름 혹은 별명"
-                maxLength={12}
-                className="h-full flex-1 border-0 bg-transparent text-[14px] text-[#0b2a63] outline-none"
-              />
-              <div className="text-[11px] text-[#8AA0BD]">{name.length}/12</div>
-            </div>
-          </label>
-
-          <section style={{ animation: 'ac02-slide .4s ease-out .16s both' }}>
-            <div className="mb-1.5 flex items-center justify-between">
-              <div className="text-[12px] font-bold text-[#5C6F90]">
-                생년월일
-              </div>
-              <div className="text-[10px] text-[#8AA0BD]">
-                만 14세 미만 · 법정대리인 동의 필요
-              </div>
-            </div>
-            <div className="grid grid-cols-[1.2fr_1fr_1fr] gap-2">
-              <DobInput value={yy} placeholder="YYYY" max={4} onChange={setYy} />
-              <DobInput value={mm} placeholder="MM" max={2} onChange={setMm} />
-              <DobInput value={dd} placeholder="DD" max={2} onChange={setDd} />
-            </div>
-          </section>
-
-          <section style={{ animation: 'ac02-slide .4s ease-out .24s both' }}>
-            <div className="mb-2 text-[12px] font-bold text-[#5C6F90]">
-              그림 실력
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              {LEVELS.map((lv) => {
-                const on = level === lv.id;
-                return (
-                  <button
-                    type="button"
-                    key={lv.id}
-                    onClick={() => setLevel(lv.id)}
-                    aria-pressed={on}
-                    className={cn(
-                      'ac02-btn flex cursor-pointer flex-col items-center gap-[3px] rounded-[14px] border-[1.5px] px-2 py-3',
-                      on
-                        ? 'border-[#1C7AE0] bg-[linear-gradient(135deg,rgba(49,150,255,0.14),rgba(49,150,255,0.06))] shadow-[0_6px_14px_rgba(28,122,224,0.18)]'
-                        : 'border-[#DCE8FB] bg-[#F6F9FF]',
-                    )}
-                  >
-                    <div className="text-[22px]">{lv.icon}</div>
-                    <div
-                      className={cn(
-                        'text-[13px] font-bold',
-                        on ? 'text-[#1C7AE0]' : 'text-[#0b2a63]',
-                      )}
-                    >
-                      {lv.label}
-                    </div>
-                    <div className="text-[10px] text-[#8AA0BD]">{lv.sub}</div>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
+          <ChildProfileFields state={form} setState={setForm} />
         </form>
+
+        {error && (
+          <div
+            role="alert"
+            className="rounded-[12px] border border-red-200 bg-red-50 px-4 py-3 text-[12.5px] font-semibold text-red-600"
+          >
+            {error}
+          </div>
+        )}
 
         <div
           className="mt-auto flex gap-2.5"
@@ -232,7 +141,7 @@ export default function ChildrenProfilePage() {
         >
           <button
             type="button"
-            onClick={() => router.replace('/my-gallery')}
+            onClick={() => router.replace(next)}
             className="ac02-btn h-[54px] cursor-pointer rounded-[14px] border border-[#1C7AE0]/15 bg-white/70 px-[22px] text-[14px] font-semibold text-[#5C6F90]"
           >
             나중에
@@ -248,34 +157,11 @@ export default function ChildrenProfilePage() {
                 : 'cursor-not-allowed bg-[#B9CDE6]',
             )}
           >
-            <span>완료 · 코인 3개 받기</span>
+            <span>{submitting ? '저장 중…' : '완료 · 코인 3개 받기'}</span>
             <span className="text-[18px]">🪙</span>
           </button>
         </div>
       </div>
     </AuthBackdrop>
-  );
-}
-
-type DobInputProps = {
-  value: string;
-  placeholder: string;
-  max: number;
-  onChange: (v: string) => void;
-};
-
-function DobInput({ value, placeholder, max, onChange }: DobInputProps) {
-  return (
-    <div className="ac02-field flex h-[50px] items-center rounded-[14px] border-[1.5px] border-[#DCE8FB] bg-[#F6F9FF] px-3">
-      <input
-        value={value}
-        onChange={(e) =>
-          onChange(e.target.value.replace(/\D/g, '').slice(0, max))
-        }
-        placeholder={placeholder}
-        inputMode="numeric"
-        className="w-full border-0 bg-transparent text-center text-[14px] tracking-[1px] text-[#0b2a63] outline-none"
-      />
-    </div>
   );
 }

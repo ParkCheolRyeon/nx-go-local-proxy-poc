@@ -3,6 +3,7 @@ import UserHoldingCoins from '@/app/components/UserHoldingCoins';
 import MainLogo from '@/app/components/MainLogo';
 import { MENU_ITEMS, INACTIVE_ICON_COLOR, MenuItem } from '@/config/menu';
 import { useActiveMenuId } from '@/hooks/useActiveMenuId';
+import { useMenuCounts } from '@/hooks/useMenuCounts';
 import { cn } from '@/lib/utils';
 import {
   useSidebarActions,
@@ -15,6 +16,7 @@ import {
   useUserActions,
 } from '@/stores/userStore';
 import { AnimatePresence, motion, type Transition } from 'motion/react';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import IconArrowRight from '@/app/assets/icons/icon-arrow-right.svg';
 import IconLogout from '@/app/assets/icons/icon-logout.svg';
@@ -42,6 +44,7 @@ export default function PcSidebar() {
   const activeId = useActiveMenuId();
   const user = useUser();
   const { signOut } = useUserActions();
+  const counts = useMenuCounts();
 
   return (
     <motion.aside
@@ -94,6 +97,7 @@ export default function PcSidebar() {
             item={item}
             isActive={activeId === item.id}
             isExpanded={isExpanded}
+            count={counts[item.id] ?? 0}
           />
         ))}
       </nav>
@@ -223,11 +227,16 @@ function PCMenuLink({
   item,
   isActive,
   isExpanded,
+  count,
 }: {
   item: MenuItem;
   isActive: boolean;
   isExpanded: boolean;
+  count: number;
 }) {
+  const t = useTranslations('menu');
+  const label = t(item.id);
+  const subPc = t(`${item.id}SubPc`);
   return (
     <Link
       href={item.href}
@@ -275,19 +284,19 @@ function PCMenuLink({
               className="flex-1 overflow-hidden"
             >
               <div className="text-[15px] font-bold whitespace-nowrap">
-                {item.label}
+                {label}
               </div>
               <div
                 className="text-[10px] whitespace-nowrap"
                 style={{ color: 'rgba(255,255,255,.65)' }}
               >
-                {item.sub.pc}
+                {subPc}
               </div>
             </motion.div>
           )}
         </AnimatePresence>
         <AnimatePresence initial={false}>
-          {item.count > 0 && isExpanded && (
+          {count > 0 && isExpanded && (
             <motion.div
               key="count"
               initial={{ opacity: 0, scale: 0.6, width: 0, marginLeft: 0 }}
@@ -305,7 +314,7 @@ function PCMenuLink({
               )}
               style={{ color: isActive ? item.accent : '#fff' }}
             >
-              {item.count}
+              {count}
             </motion.div>
           )}
         </AnimatePresence>
@@ -325,13 +334,13 @@ function PCMenuLink({
             style={{ background: '#0b2a63' }}
           />
           <div className="flex items-center gap-2 text-[13px] font-bold">
-            <span>{item.label}</span>
-            {item.count > 0 && (
+            <span>{label}</span>
+            {count > 0 && (
               <span
                 className="flex h-[18px] min-w-[18px] items-center justify-center rounded-[9px] px-1.5 text-[10px] font-bold"
                 style={{ background: item.accent }}
               >
-                {item.count}
+                {count}
               </span>
             )}
           </div>
@@ -339,7 +348,7 @@ function PCMenuLink({
             className="mt-0.5 text-[10px]"
             style={{ color: 'rgba(255,255,255,.7)' }}
           >
-            {item.sub.pc}
+            {subPc}
           </div>
         </div>
       )}

@@ -1,11 +1,16 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+
 import AuthBackdrop from '@/app/components/AuthBackdrop';
 import MainLogo from '@/app/components/MainLogo';
 import EmailMode from '@/app/signup/EmailMode';
 import SocialMode from '@/app/signup/SocialMode';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { ApiError } from '@/lib/api';
+import { signUp, signIn as apiSignIn } from '@/lib/auth-api';
+import { apiUserToStoreUser } from '@/lib/userAdapter';
+import { useUserActions } from '@/stores/userStore';
 
 type Mode = 'social' | 'email';
 
@@ -17,11 +22,39 @@ export default function SignupPage() {
   const [agreed, setAgreed] = useState(false);
   const router = useRouter();
 
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { signIn: storeSignIn } = useUserActions();
+
   const canSubmit = /@/.test(email) && pw.length >= 6 && agreed;
 
-  const handleSubmit = () => {
-    if (!canSubmit) return;
-    router.push('/signup/children-profile');
+  const handleSubmit = async () => {
+    if (!canSubmit || submitting) return;
+    setError(null);
+    setSubmitting(true);
+    try {
+      await signUp({
+        email: email.trim(),
+        password: pw,
+        name: email.split('@')[0],
+        privacyAccepted: agreed,
+        marketingAccepted: false,
+      });
+
+      const result = await apiSignIn(email.trim(), pw);
+      storeSignIn(apiUserToStoreUser(result.user));
+      router.replace('/signup/children-profile');
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 409) {
+        setError('이미 가입된 이메일입니다.');
+      } else if (err instanceof ApiError && err.status === 400) {
+        setError(err.detail);
+      } else {
+        setError('가입에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+      }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -41,11 +74,8 @@ export default function SignupPage() {
       </div>
 
       <div className="relative z-10 m-auto flex w-full max-w-[460px] flex-col gap-6">
-        <div
-          className="text-center"
-          style={{ animation: 'ac02-fade .5s ease-out both' }}
-        >
-          <div className="text-[36px] leading-[1.15] font-extrabold">
+        <div className="text-center" style={{ animation: 'ac02-fade .5s ease-out both' }}>
+          <div className="text-[36px] font-extrabold leading-[1.15]">
             우리 아이
             <br />첫<span className="text-[#1C7AE0]"> 갤러리</span>를 만들어요
           </div>

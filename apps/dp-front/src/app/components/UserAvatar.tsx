@@ -1,4 +1,5 @@
 import IconUserDefault from '@/app/assets/icons/icon-user-default.svg';
+import { resolveAvatar } from '@/config/avatars';
 import { useUser } from '@/stores/userStore';
 import type { CSSProperties } from 'react';
 
@@ -35,7 +36,7 @@ export default function UserAvatar({
       }}
     >
       {user?.avatar ? (
-        <span className={emojiClassName}>{user.avatar}</span>
+        <span className={emojiClassName}>{resolveAvatar(user.avatar)}</span>
       ) : (
         <IconUserDefault className={iconClassName} />
       )}

@@ -1,5 +1,9 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
+import type { FC, SVGProps } from 'react';
+import { useState } from 'react';
+
 import IconPassword from '@/app/assets/icons/icon-password.svg';
 import IconUserDefault from '@/app/assets/icons/icon-user-default.svg';
 import IconApple from '@/app/assets/icons/sns/logo-apple.svg';
@@ -8,14 +12,11 @@ import IconKakao from '@/app/assets/icons/sns/logo-kakao.svg';
 import IconNaver from '@/app/assets/icons/sns/logo-naver.svg';
 import AuthBackdrop from '@/app/components/AuthBackdrop';
 import MainLogo from '@/app/components/MainLogo';
+import { ApiError } from '@/lib/api';
+import { signIn as apiSignIn } from '@/lib/auth-api';
+import { apiUserToStoreUser } from '@/lib/userAdapter';
 import { cn } from '@/lib/utils';
-import {
-  MOCK_CREDENTIALS,
-  useUserActions,
-} from '@/stores/userStore';
-import { useRouter } from 'next/navigation';
-import type { FC, SVGProps } from 'react';
-import { useState } from 'react';
+import { useUserActions } from '@/stores/userStore';
 
 type QuickSocial = {
   id: string;
@@ -46,18 +47,28 @@ export default function SigninPage() {
   const [error, setError] = useState<string | null>(null);
 
   const router = useRouter();
-  const { setMockUser } = useUserActions();
 
-  const canSubmit = id.trim().length >= 3 && pw.length >= 6;
+  const [submitting, setSubmitting] = useState(false);
+  const { signIn: storeSignIn } = useUserActions();
+  const canSubmit = /@/.test(id) && pw.length >= 1 && !submitting;
 
-  const handleSubmit = () => {
-    if (!canSubmit) return;
-    if (id === MOCK_CREDENTIALS.email && pw === MOCK_CREDENTIALS.password) {
-      setMockUser();
+  const handleSubmit = async () => {
+    if (!canSubmit || submitting) return;
+    setError(null);
+    setSubmitting(true);
+    try {
+      const result = await apiSignIn(id.trim(), pw);
+      storeSignIn(apiUserToStoreUser(result.user));
       router.replace('/my-gallery');
-      return;
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        setError('이메일 또는 비밀번호가 올바르지 않습니다.');
+      } else {
+        setError('로그인에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+      }
+    } finally {
+      setSubmitting(false);
     }
-    setError('아이디 또는 비밀번호가 일치하지 않습니다.');
   };
 
   const clearError = () => {
@@ -81,24 +92,19 @@ export default function SigninPage() {
       </div>
 
       <div className="relative z-10 m-auto flex w-full max-w-[460px] flex-col gap-6">
-        <div
-          className="text-center"
-          style={{ animation: 'ac02-fade .5s ease-out both' }}
-        >
+        <div className="text-center" style={{ animation: 'ac02-fade .5s ease-out both' }}>
           <div
             className="mb-3.5 inline-block rounded-full px-3 py-1 text-[11px] font-bold tracking-[0.4px] text-[#1C7AE0]"
             style={{ background: 'rgba(49,150,255,.12)' }}
           >
             부모 계정 로그인
           </div>
-          <div className="text-[36px] leading-[1.15] font-extrabold">
+          <div className="text-[36px] font-extrabold leading-[1.15]">
             다시 만나서
             <br />
             <span className="text-[#1C7AE0]">반가워요</span> 👋
           </div>
-          <div className="mt-2.5 text-[14px] leading-[1.6] text-[#5C6F90]">
-            아이디와 비밀번호를 입력해 주세요.
-          </div>
+          <div className="mt-2.5 text-[14px] leading-[1.6] text-[#5C6F90]">아이디와 비밀번호를 입력해 주세요.</div>
         </div>
 
         <form
@@ -112,13 +118,8 @@ export default function SigninPage() {
             animation: 'ac02-fade .5s ease-out .1s both',
           }}
         >
-          <label
-            className="block"
-            style={{ animation: 'ac02-slide .4s ease-out 0s both' }}
-          >
-            <div className="mb-1.5 text-[12px] font-bold text-[#5C6F90]">
-              아이디
-            </div>
+          <label className="block" style={{ animation: 'ac02-slide .4s ease-out 0s both' }}>
+            <div className="mb-1.5 text-[12px] font-bold text-[#5C6F90]">아이디</div>
             <div className="ac02-field flex h-[52px] items-center gap-2.5 rounded-[14px] border-[1.5px] border-[#DCE8FB] bg-[#F6F9FF] px-3.5 text-[#8AA0BD]">
               <IconUserDefault width={18} height={18} aria-hidden />
               <input
@@ -135,14 +136,9 @@ export default function SigninPage() {
             </div>
           </label>
 
-          <label
-            className="block"
-            style={{ animation: 'ac02-slide .4s ease-out .08s both' }}
-          >
+          <label className="block" style={{ animation: 'ac02-slide .4s ease-out .08s both' }}>
             <div className="mb-1.5 flex items-center justify-between">
-              <div className="text-[12px] font-bold text-[#5C6F90]">
-                비밀번호
-              </div>
+              <div className="text-[12px] font-bold text-[#5C6F90]">비밀번호</div>
               <button
                 type="button"
                 className="ac02-link cursor-pointer border-0 bg-transparent p-0 text-[11px] font-semibold text-[#1C7AE0]"
@@ -186,9 +182,7 @@ export default function SigninPage() {
               aria-pressed={remember}
               className={cn(
                 'flex h-5 w-5 flex-none items-center justify-center rounded-md border-[1.5px] text-[13px] font-extrabold text-white transition-all duration-200',
-                remember
-                  ? 'border-[#1C7AE0] bg-[#1C7AE0]'
-                  : 'border-[#CFDFF4] bg-white',
+                remember ? 'border-[#1C7AE0] bg-[#1C7AE0]' : 'border-[#CFDFF4] bg-white',
               )}
             >
               {remember ? '✓' : ''}
@@ -220,32 +214,25 @@ export default function SigninPage() {
           </button>
 
           <div
-            className="mt-2.5 mb-1 flex items-center gap-2.5"
+            className="mb-1 mt-2.5 flex items-center gap-2.5"
             style={{ animation: 'ac02-fade .4s ease-out .32s both' }}
           >
             <div
               className="h-px flex-1"
               style={{
-                background:
-                  'linear-gradient(90deg, transparent, #CFDFF4, transparent)',
+                background: 'linear-gradient(90deg, transparent, #CFDFF4, transparent)',
               }}
             />
-            <span className="text-[11px] tracking-[0.5px] text-[#8AA0BD]">
-              간편 로그인
-            </span>
+            <span className="text-[11px] tracking-[0.5px] text-[#8AA0BD]">간편 로그인</span>
             <div
               className="h-px flex-1"
               style={{
-                background:
-                  'linear-gradient(90deg, transparent, #CFDFF4, transparent)',
+                background: 'linear-gradient(90deg, transparent, #CFDFF4, transparent)',
               }}
             />
           </div>
 
-          <div
-            className="flex gap-2.5"
-            style={{ animation: 'ac02-slide .4s ease-out .38s both' }}
-          >
+          <div className="flex gap-2.5" style={{ animation: 'ac02-slide .4s ease-out .38s both' }}>
             {QUICK_SOCIALS.map((s) => (
               <button
                 type="button"

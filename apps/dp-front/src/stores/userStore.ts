@@ -8,32 +8,27 @@ export type NotificationCategory = 'contest' | 'social' | 'coin' | 'system';
 
 export type UserNotification = {
   id: string;
+  category: NotificationCategory;
   title: string;
   description: string;
-  icon: string;
-  time: string;
-  readStatus: NotificationReadStatus;
-  notificationStatus: NotificationCategory;
+  icon?: string;
   cta?: string;
+  readStatus: NotificationReadStatus;
+  createdAt: string;
 };
 
-export type ChildProfileEmoji =
-  | 'lion'
-  | 'bear'
-  | 'rabbit'
-  | 'panda'
-  | 'fox'
-  | 'dog'
-  | 'cat'
-  | 'unikorn';
+export type ChildProfileEmoji = 'lion' | 'bear' | 'rabbit' | 'panda' | 'fox' | 'dog' | 'cat' | 'unikorn';
 
 export type ChildDrawingLevel = 'beginner' | 'intermediate' | 'expert';
 
 export type ChildProfile = {
+  id: string;
   name: string;
   birthDate: string;
   profileEmoji: ChildProfileEmoji;
   drawingLevel: ChildDrawingLevel;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type User = {
@@ -56,146 +51,28 @@ export const PLAN_LABELS: Record<SubscriptionPlan, string> = {
   pro: 'Pro 플랜',
 };
 
-// TODO: auth 연동 전까지 개발용으로 쓰는 목업 자격증명. 실제 인증 붙으면 제거.
-export const MOCK_CREDENTIALS = {
-  email: 'test@test.com',
-  password: '1q2w3e4r',
-};
-
-// 오늘(3개) / 이전(4개) 분포를 현재 시각 기준으로 항상 유지하도록 동적 계산.
-function buildMockNotifications(): UserNotification[] {
-  const now = Date.now();
-  const startOfToday = new Date(new Date().setHours(0, 0, 0, 0)).getTime();
-
-  // 오늘: hoursBack만큼 과거로 이동하되, 오늘 0시 이전으로는 못 내려가도록 클램프.
-  const withinToday = (hoursBack: number) => {
-    const candidate = now - hoursBack * 3_600_000;
-    return new Date(Math.max(candidate, startOfToday)).toISOString();
-  };
-
-  const daysAgo = (days: number, hour: number) => {
-    const d = new Date();
-    d.setDate(d.getDate() - days);
-    d.setHours(hour, 0, 0, 0);
-    return d.toISOString();
-  };
-
-  return [
-    {
-      id: 'n1',
-      title: '수상 알림',
-      description: "봄 그림 대회 '우주 토끼'가 대상을 받았어요!",
-      icon: '🥇',
-      time: withinToday(0),
-      readStatus: 'unRead',
-      notificationStatus: 'contest',
-      cta: '상세 보기',
-    },
-    {
-      id: 'n2',
-      title: '심사가 시작됐어요',
-      description: "'멋진 사자' 작품 심사가 방금 시작됐어요",
-      icon: '⏰',
-      time: withinToday(2),
-      readStatus: 'unRead',
-      notificationStatus: 'contest',
-      cta: '심사 페이지',
-    },
-    {
-      id: 'n3',
-      title: '좋아요 21개',
-      description: "'우주 토끼' 작품에 21명이 좋아했어요",
-      icon: '❤️',
-      time: withinToday(5),
-      readStatus: 'unRead',
-      notificationStatus: 'social',
-    },
-    {
-      id: 'n4',
-      title: '이번 주 무료 도안',
-      description: "'우주 토끼' 도안이 공개됐어요",
-      icon: '🎁',
-      time: daysAgo(1, 15),
-      readStatus: 'read',
-      notificationStatus: 'system',
-    },
-    {
-      id: 'n5',
-      title: '매일 코인 획득',
-      description: '오늘 로그인 보상 코인 1개를 받았어요 (7일차 보너스 +3)',
-      icon: '🪙',
-      time: daysAgo(1, 9),
-      readStatus: 'read',
-      notificationStatus: 'coin',
-    },
-    {
-      id: 'n6',
-      title: '함께 그리기 초대',
-      description: "곰곰이가 '같이 그려요' 방에 초대했어요",
-      icon: '👯',
-      time: daysAgo(2, 10),
-      readStatus: 'read',
-      notificationStatus: 'social',
-      cta: '방으로 이동',
-    },
-    {
-      id: 'n7',
-      title: '보호자 확인 요청',
-      description: '민준이의 작품 업로드에 보호자 승인이 필요해요',
-      icon: '🛡',
-      time: daysAgo(3, 11),
-      readStatus: 'read',
-      notificationStatus: 'system',
-    },
-  ];
-}
-
-// TODO: auth 연동 전까지 개발용으로 쓰는 목업 유저. setMockUser에서 buildMockUser()를 매번 호출해 fresh 데이터 주입.
-export function buildMockUser(): User {
-  return {
-    id: 'mock-user-1',
-    name: '련철박',
-    description: '만 97세 · 왕초보',
-    avatar: '🦁',
-    plan: 'pro',
-    subscribeStartAt: '2026-04-11T00:00:00.000Z',
-    subscribeEndAt: '2026-05-11T00:00:00.000Z',
-    holdingCoins: 999,
-    monthlyCoinAllowance: 30,
-    notifications: buildMockNotifications(),
-    children: [
-      {
-        name: '티라노사우르스',
-        birthDate: '2010-01-23',
-        profileEmoji: 'fox',
-        drawingLevel: 'beginner',
-      },
-      {
-        name: '파파덕',
-        birthDate: '2019-04-21',
-        profileEmoji: 'unikorn',
-        drawingLevel: 'intermediate',
-      },
-    ],
-  };
-}
-
-export const MOCK_USER: User = buildMockUser();
-
 const EMPTY_NOTIFICATIONS: UserNotification[] = [];
 
 type UserState = {
   user: User | null;
   isAuthenticated: boolean;
+  hasHydrated: boolean;
+  selectedChildId: string | null;
 };
 
 type UserActions = {
   signIn: (user: User) => void;
   signOut: () => void;
-  setMockUser: () => void;
   setHoldingCoins: (count: number) => void;
+  setNotifications: (n: UserNotification[]) => void;
   markNotificationRead: (id: string) => void;
   markAllNotificationsRead: () => void;
+  setHasHydrated: (v: boolean) => void;
+  setChildren: (children: ChildProfile[]) => void;
+  addChild: (child: ChildProfile) => void;
+  removeChild: (id: string) => void;
+  upsertChild: (child: ChildProfile) => void;
+  setSelectedChildId: (id: string | null) => void;
 };
 
 type UserStore = UserState & { actions: UserActions };
@@ -205,24 +82,22 @@ const useUserStore = create<UserStore>()(
     (set) => ({
       user: null,
       isAuthenticated: false,
+      hasHydrated: false,
+      selectedChildId: null,
       actions: {
         signIn: (user) => set({ user, isAuthenticated: true }),
-        signOut: () => set({ user: null, isAuthenticated: false }),
-        setMockUser: () =>
-          set({ user: buildMockUser(), isAuthenticated: true }),
-        setHoldingCoins: (count) =>
-          set((s) =>
-            s.user ? { user: { ...s.user, holdingCoins: count } } : s,
-          ),
+        signOut: () => set({ user: null, isAuthenticated: false, selectedChildId: null }),
+        setHoldingCoins: (count) => set((s) => (s.user ? { user: { ...s.user, holdingCoins: count } } : s)),
+        setNotifications: (n) =>
+          set((s) => (s.user ? { user: { ...s.user, notifications: n } } : s)),
+        setHasHydrated: (v) => set({ hasHydrated: v }),
         markNotificationRead: (id) =>
           set((s) =>
             s.user
               ? {
                   user: {
                     ...s.user,
-                    notifications: s.user.notifications.map((n) =>
-                      n.id === id ? { ...n, readStatus: 'read' } : n,
-                    ),
+                    notifications: s.user.notifications.map((n) => (n.id === id ? { ...n, readStatus: 'read' } : n)),
                   },
                 }
               : s,
@@ -241,43 +116,83 @@ const useUserStore = create<UserStore>()(
                 }
               : s,
           ),
+        setChildren: (children) =>
+          set((s) => (s.user ? { user: { ...s.user, children } } : s)),
+        addChild: (child) =>
+          set((s) => (s.user ? { user: { ...s.user, children: [...s.user.children, child] } } : s)),
+        removeChild: (id) =>
+          set((s) =>
+            s.user ? { user: { ...s.user, children: s.user.children.filter((c) => c.id !== id) } } : s,
+          ),
+        upsertChild: (child) =>
+          set((s) => {
+            if (!s.user) return s;
+            const idx = s.user.children.findIndex((c) => c.id === child.id);
+            const next = idx >= 0 ? s.user.children.with(idx, child) : [...s.user.children, child];
+            return { user: { ...s.user, children: next } };
+          }),
+        setSelectedChildId: (id) => set({ selectedChildId: id }),
       },
     }),
     {
       name: 'igallery:user',
-      version: 4,
+      version: 7,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
+        selectedChildId: state.selectedChildId,
       }),
       migrate: (persistedState, version) => {
         // 스키마 변경 또는 stale mock 데이터 무효화를 위해 이전 버전은 로그아웃 상태로 리셋.
-        if (version < 4) {
-          return { user: null, isAuthenticated: false };
+        if (version < 5) {
+          return { user: null, isAuthenticated: false, hasHydrated: false, selectedChildId: null };
+        }
+        if (version < 6) {
+          const prev = (persistedState ?? {}) as Partial<UserState>;
+          return {
+            user: prev.user ?? null,
+            isAuthenticated: prev.isAuthenticated ?? false,
+            hasHydrated: false,
+            selectedChildId: null,
+          };
+        }
+        if (version < 7) {
+          // v6 → v7: UserNotification 필드명 변경 (time→createdAt, notificationStatus→category).
+          // 기존 알림은 폐기하고 빈 배열로. bootstrap 시 API 에서 다시 채워짐.
+          const prev = (persistedState ?? {}) as Partial<UserState>;
+          if (prev.user) {
+            return {
+              user: { ...prev.user, notifications: [] },
+              isAuthenticated: prev.isAuthenticated ?? false,
+              hasHydrated: false,
+              selectedChildId: prev.selectedChildId ?? null,
+            } as UserState;
+          }
         }
         return persistedState as UserState;
+      },
+      onRehydrateStorage: () => (state) => {
+        // localStorage 읽기 끝난 직후 호출됨 → 깜빡임 방지용 플래그 set
+        state?.actions.setHasHydrated(true);
       },
     },
   ),
 );
 
+const EMPTY_CHILDREN: ChildProfile[] = [];
+
 export const useUser = () => useUserStore((s) => s.user);
-export const useIsAuthenticated = () =>
-  useUserStore((s) => s.isAuthenticated);
-export const useHoldingCoins = () =>
-  useUserStore((s) => s.user?.holdingCoins ?? 0);
-export const useMonthlyCoinAllowance = () =>
-  useUserStore((s) => s.user?.monthlyCoinAllowance ?? 0);
-export const useNotifications = () =>
-  useUserStore((s) => s.user?.notifications ?? EMPTY_NOTIFICATIONS);
+export const useIsAuthenticated = () => useUserStore((s) => s.isAuthenticated);
+export const useHoldingCoins = () => useUserStore((s) => s.user?.holdingCoins ?? 0);
+export const useMonthlyCoinAllowance = () => useUserStore((s) => s.user?.monthlyCoinAllowance ?? 0);
+export const useNotifications = () => useUserStore((s) => s.user?.notifications ?? EMPTY_NOTIFICATIONS);
 export const useUnreadNotificationCount = () =>
-  useUserStore(
-    (s) =>
-      s.user?.notifications.filter((n) => n.readStatus === 'unRead').length ??
-      0,
-  );
+  useUserStore((s) => s.user?.notifications.filter((n) => n.readStatus === 'unRead').length ?? 0);
+export const useChildren = () => useUserStore((s) => s.user?.children ?? EMPTY_CHILDREN);
+export const useSelectedChildId = () => useUserStore((s) => s.selectedChildId);
 export const useUserActions = () => useUserStore((s) => s.actions);
+export const useHasHydrated = () => useUserStore((s) => s.hasHydrated);
 
 export function getSubscriptionRemainingDays(endAt: string, now = Date.now()) {
   const diff = new Date(endAt).getTime() - now;
@@ -301,9 +216,6 @@ export function formatTimeAgo(iso: string, now = Date.now()): string {
 
 export function isTodayIso(iso: string, now = new Date()): boolean {
   const d = new Date(iso);
-  return (
-    d.getFullYear() === now.getFullYear() &&
-    d.getMonth() === now.getMonth() &&
-    d.getDate() === now.getDate()
-  );
+  return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
 }
+

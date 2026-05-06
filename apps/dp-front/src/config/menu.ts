@@ -11,10 +11,10 @@ export type MenuItem = {
   Icon: FC<SVGProps<SVGSVGElement>>;
   accent: string;
   sub: { mobile: string; pc: string };
-  count: number;
   href: string;
 };
 
+// 배지 카운트는 hooks/useMenuCounts.ts 에서 동적으로 계산.
 export const MENU_ITEMS: MenuItem[] = [
   {
     id: 'draw',
@@ -22,7 +22,6 @@ export const MENU_ITEMS: MenuItem[] = [
     Icon: DrawingIcon,
     accent: '#3196ff',
     sub: { mobile: '그리기 시작', pc: '새 캔버스 · 이어그리기' },
-    count: 29,
     href: '/drawing',
   },
   {
@@ -31,7 +30,6 @@ export const MENU_ITEMS: MenuItem[] = [
     Icon: EventIcon,
     accent: '#F59E0B',
     sub: { mobile: '공모전 · 배지', pc: '공모전 · 수상 내역' },
-    count: 3,
     href: '/event',
   },
   {
@@ -40,7 +38,6 @@ export const MENU_ITEMS: MenuItem[] = [
     Icon: GalleryIcon,
     accent: '#22C55E',
     sub: { mobile: '내 작품 보관함', pc: '작품 · 타임랩스' },
-    count: 29,
     href: '/my-gallery',
   },
   {
@@ -49,7 +46,6 @@ export const MENU_ITEMS: MenuItem[] = [
     Icon: NotificationIcon,
     accent: '#D85A30',
     sub: { mobile: '새 소식', pc: '새 소식 · 초대' },
-    count: 2,
     href: '/notification',
   },
   {
@@ -58,7 +54,6 @@ export const MENU_ITEMS: MenuItem[] = [
     Icon: SettingIcon,
     accent: '#6366F1',
     sub: { mobile: '계정 · 결제', pc: '계정 · 지갑 · 결제' },
-    count: 0,
     href: '/setting',
   },
 ];

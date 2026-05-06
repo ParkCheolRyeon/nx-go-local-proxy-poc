@@ -747,3 +747,110 @@ summary svg {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* ============================================================================
+   FullCalendar — 마이갤러리 캘린더 블루 톤 오버라이드
+   ============================================================================ */
+
+.mg-calendar .fc {
+  --fc-border-color: rgba(28, 122, 224, 0.12);
+  --fc-today-bg-color: rgba(49, 150, 255, 0.08);
+  --fc-neutral-bg-color: transparent;
+  --fc-page-bg-color: transparent;
+  font-family: inherit;
+}
+
+/* 외곽 그리드 라운드 */
+.mg-calendar .fc-scrollgrid {
+  border: 0 !important;
+  border-radius: 14px;
+  overflow: hidden;
+}
+.mg-calendar .fc-scrollgrid > * > tr > * {
+  border-color: rgba(28, 122, 224, 0.1) !important;
+}
+.mg-calendar .fc-theme-standard td,
+.mg-calendar .fc-theme-standard th {
+  border-color: rgba(28, 122, 224, 0.1) !important;
+}
+
+/* 요일 헤더 */
+.mg-calendar .fc-col-header-cell {
+  background: rgba(234, 242, 254, 0.5);
+  padding: 8px 0;
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: 0.6px;
+  color: #8aa0bd;
+  text-transform: uppercase;
+}
+.mg-calendar .fc-col-header-cell-cushion {
+  color: inherit !important;
+  text-decoration: none !important;
+  padding: 0 !important;
+}
+.mg-calendar .fc-col-header-cell.fc-day-sat .fc-col-header-cell-cushion {
+  color: #3196ff;
+}
+.mg-calendar .fc-col-header-cell.fc-day-sun .fc-col-header-cell-cushion {
+  color: #ff7878;
+}
+
+/* 날짜 셀 — 충분한 높이 + 깔끔한 배경 */
+.mg-calendar .fc-daygrid-day {
+  background: #ffffff;
+  transition: background 0.15s;
+}
+.mg-calendar .fc-daygrid-day.fc-day-other {
+  background: rgba(247, 250, 255, 0.5);
+  opacity: 0.6;
+}
+.mg-calendar .fc-daygrid-day.fc-day-today {
+  background: rgba(49, 150, 255, 0.06) !important;
+}
+
+/* 셀 내부 프레임 — frame 만 relative + min-height 줘서 row 높이 확보.
+   FC 가 dayCellContent 를 <a class="fc-daygrid-day-number"> 로 감싸는데
+   anchor 의 flex height 전파가 불안정해서 absolute inset:0 으로 풀 커버 강제.
+   이러면 우리 React DayCell 은 anchor 안에서 h-full 로 풀 사이즈. */
+.mg-calendar .fc-daygrid-day-frame {
+  min-height: 140px;
+  padding: 0 !important;
+  position: relative;
+}
+.mg-calendar .fc-daygrid-day-top {
+  position: absolute !important;
+  inset: 0;
+  padding: 0 !important;
+  display: block !important;
+}
+.mg-calendar .fc-daygrid-day-number {
+  position: absolute;
+  inset: 0;
+  display: flex !important;
+  flex-direction: column;
+  padding: 0 !important;
+  color: inherit !important;
+  text-decoration: none !important;
+  cursor: default;
+}
+.mg-calendar .fc-daygrid-day-events,
+.mg-calendar .fc-daygrid-day-bottom {
+  display: none !important;
+}
+
+/* hover 시 살짝 강조 */
+.mg-calendar .fc-daygrid-day:hover {
+  background: rgba(234, 242, 254, 0.5);
+}
+
+@keyframes mg-cell-fade {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
