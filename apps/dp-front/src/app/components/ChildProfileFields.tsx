@@ -1,15 +1,16 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type { Dispatch, SetStateAction } from 'react';
 
 import { CHILD_AVATARS } from '@/config/avatars';
 import { cn } from '@/lib/utils';
 import type { ChildDrawingLevel } from '@/stores/userStore';
 
-const LEVELS: { id: ChildDrawingLevel; label: string; icon: string; sub: string }[] = [
-  { id: 'beginner', label: '왕초보', icon: '🌱', sub: '처음 그려봐요' },
-  { id: 'intermediate', label: '중급', icon: '🎨', sub: '몇 번 해봤어요' },
-  { id: 'expert', label: '고급', icon: '🏆', sub: '자신 있어요' },
+const LEVELS: { id: ChildDrawingLevel; icon: string }[] = [
+  { id: 'beginner', icon: '🌱' },
+  { id: 'intermediate', icon: '🎨' },
+  { id: 'expert', icon: '🏆' },
 ];
 
 export type ChildFormState = {
@@ -57,13 +58,21 @@ type Props = {
   setState: Dispatch<SetStateAction<ChildFormState>>;
 };
 
+const LEVEL_SUB_KEY: Record<ChildDrawingLevel, string> = {
+  beginner: 'levelBeginnerSub',
+  intermediate: 'levelIntermediateSub',
+  expert: 'levelExpertSub',
+};
+
 export default function ChildProfileFields({ state, setState }: Props) {
+  const tForm = useTranslations('child.form');
+  const tLevel = useTranslations('child.level');
   return (
     <>
       <section style={{ animation: 'ac02-slide .4s ease-out 0s both' }}>
         <div className="mb-2.5 flex items-baseline justify-between">
-          <div className="text-[12px] font-bold text-[#5C6F90]">캐릭터</div>
-          <div className="text-[11px] text-[#8AA0BD]">나중에 바꿀 수 있어요</div>
+          <div className="text-[12px] font-bold text-[#5C6F90]">{tForm('characterLabel')}</div>
+          <div className="text-[11px] text-[#8AA0BD]">{tForm('characterHint')}</div>
         </div>
         <div className="grid grid-cols-8 gap-2">
           {CHILD_AVATARS.map((a, i) => {
@@ -99,14 +108,14 @@ export default function ChildProfileFields({ state, setState }: Props) {
       </section>
 
       <label className="block" style={{ animation: 'ac02-slide .4s ease-out .08s both' }}>
-        <div className="mb-1.5 text-[12px] font-bold text-[#5C6F90]">이름</div>
+        <div className="mb-1.5 text-[12px] font-bold text-[#5C6F90]">{tForm('nameLabel')}</div>
         <div className="ac02-field flex h-[50px] items-center gap-2.5 rounded-[14px] border-[1.5px] border-[#DCE8FB] bg-[#F6F9FF] px-3.5">
           <span className="text-[16px] text-[#8AA0BD]">✏️</span>
           <input
             value={state.name}
             onChange={(e) => setState((s) => ({ ...s, name: e.target.value }))}
             type="text"
-            placeholder="자녀 이름 혹은 별명"
+            placeholder={tForm('namePlaceholder')}
             maxLength={12}
             className="h-full flex-1 border-0 bg-transparent text-[14px] text-[#0b2a63] outline-none"
           />
@@ -116,8 +125,8 @@ export default function ChildProfileFields({ state, setState }: Props) {
 
       <section style={{ animation: 'ac02-slide .4s ease-out .16s both' }}>
         <div className="mb-1.5 flex items-center justify-between">
-          <div className="text-[12px] font-bold text-[#5C6F90]">생년월일</div>
-          <div className="text-[10px] text-[#8AA0BD]">만 14세 미만 · 법정대리인 동의 필요</div>
+          <div className="text-[12px] font-bold text-[#5C6F90]">{tForm('birthLabel')}</div>
+          <div className="text-[10px] text-[#8AA0BD]">{tForm('birthHint')}</div>
         </div>
         <div className="grid grid-cols-[1.2fr_1fr_1fr] gap-2">
           <DobInput
@@ -142,7 +151,7 @@ export default function ChildProfileFields({ state, setState }: Props) {
       </section>
 
       <section style={{ animation: 'ac02-slide .4s ease-out .24s both' }}>
-        <div className="mb-2 text-[12px] font-bold text-[#5C6F90]">그림 실력</div>
+        <div className="mb-2 text-[12px] font-bold text-[#5C6F90]">{tForm('drawingLabel')}</div>
         <div className="grid grid-cols-3 gap-2">
           {LEVELS.map((lv) => {
             const on = state.level === lv.id;
@@ -161,9 +170,9 @@ export default function ChildProfileFields({ state, setState }: Props) {
               >
                 <div className="text-[22px]">{lv.icon}</div>
                 <div className={cn('text-[13px] font-bold', on ? 'text-[#1C7AE0]' : 'text-[#0b2a63]')}>
-                  {lv.label}
+                  {tLevel(lv.id)}
                 </div>
-                <div className="text-[10px] text-[#8AA0BD]">{lv.sub}</div>
+                <div className="text-[10px] text-[#8AA0BD]">{tForm(LEVEL_SUB_KEY[lv.id])}</div>
               </button>
             );
           })}

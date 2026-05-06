@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import type { FC, SVGProps } from 'react';
 import { useState } from 'react';
@@ -47,6 +48,7 @@ export default function SigninPage() {
   const [error, setError] = useState<string | null>(null);
 
   const router = useRouter();
+  const t = useTranslations('auth.signin');
 
   const [submitting, setSubmitting] = useState(false);
   const { signIn: storeSignIn } = useUserActions();
@@ -62,9 +64,9 @@ export default function SigninPage() {
       router.replace('/my-gallery');
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
-        setError('이메일 또는 비밀번호가 올바르지 않습니다.');
+        setError(t('errorInvalid'));
       } else {
-        setError('로그인에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+        setError(t('errorGeneric'));
       }
     } finally {
       setSubmitting(false);
@@ -80,13 +82,13 @@ export default function SigninPage() {
       <div className="relative z-10 flex items-center justify-between px-11 pt-9">
         <MainLogo isExpanded onClick={() => router.replace('/')} />
         <div className="text-[13px] text-[#5C6F90]">
-          처음 오셨나요?{' '}
+          {t('newHere')}{' '}
           <button
             type="button"
             onClick={() => router.push('/signup')}
             className="ac02-link cursor-pointer border-0 bg-transparent p-0 font-bold text-[#1C7AE0]"
           >
-            회원가입 →
+            {t('goSignup')}
           </button>
         </div>
       </div>
@@ -97,14 +99,14 @@ export default function SigninPage() {
             className="mb-3.5 inline-block rounded-full px-3 py-1 text-[11px] font-bold tracking-[0.4px] text-[#1C7AE0]"
             style={{ background: 'rgba(49,150,255,.12)' }}
           >
-            부모 계정 로그인
+            {t('tag')}
           </div>
           <div className="text-[36px] font-extrabold leading-[1.15]">
-            다시 만나서
+            {t('headingLine1')}
             <br />
-            <span className="text-[#1C7AE0]">반가워요</span> 👋
+            <span className="text-[#1C7AE0]">{t('headingLine2')}</span> 👋
           </div>
-          <div className="mt-2.5 text-[14px] leading-[1.6] text-[#5C6F90]">아이디와 비밀번호를 입력해 주세요.</div>
+          <div className="mt-2.5 text-[14px] leading-[1.6] text-[#5C6F90]">{t('subtitle')}</div>
         </div>
 
         <form
@@ -119,7 +121,7 @@ export default function SigninPage() {
           }}
         >
           <label className="block" style={{ animation: 'ac02-slide .4s ease-out 0s both' }}>
-            <div className="mb-1.5 text-[12px] font-bold text-[#5C6F90]">아이디</div>
+            <div className="mb-1.5 text-[12px] font-bold text-[#5C6F90]">{t('idLabel')}</div>
             <div className="ac02-field flex h-[52px] items-center gap-2.5 rounded-[14px] border-[1.5px] border-[#DCE8FB] bg-[#F6F9FF] px-3.5 text-[#8AA0BD]">
               <IconUserDefault width={18} height={18} aria-hidden />
               <input
@@ -129,7 +131,7 @@ export default function SigninPage() {
                   clearError();
                 }}
                 type="text"
-                placeholder="아이디를 입력하세요"
+                placeholder={t('idPlaceholder')}
                 autoComplete="username"
                 className="h-full flex-1 border-0 bg-transparent text-[14px] text-[#0b2a63] outline-none"
               />
@@ -138,12 +140,12 @@ export default function SigninPage() {
 
           <label className="block" style={{ animation: 'ac02-slide .4s ease-out .08s both' }}>
             <div className="mb-1.5 flex items-center justify-between">
-              <div className="text-[12px] font-bold text-[#5C6F90]">비밀번호</div>
+              <div className="text-[12px] font-bold text-[#5C6F90]">{t('passwordLabel')}</div>
               <button
                 type="button"
                 className="ac02-link cursor-pointer border-0 bg-transparent p-0 text-[11px] font-semibold text-[#1C7AE0]"
               >
-                비밀번호를 잊으셨나요?
+                {t('forgotPassword')}
               </button>
             </div>
             <div className="ac02-field flex h-[52px] items-center gap-2.5 rounded-[14px] border-[1.5px] border-[#DCE8FB] bg-[#F6F9FF] px-3.5 text-[#8AA0BD]">
@@ -167,7 +169,7 @@ export default function SigninPage() {
                 onClick={() => setShowPw((v) => !v)}
                 className="cursor-pointer border-0 bg-transparent text-[13px] font-semibold text-[#8AA0BD]"
               >
-                {showPw ? '숨김' : '표시'}
+                {showPw ? t('hidePassword') : t('showPassword')}
               </button>
             </div>
           </label>
@@ -187,7 +189,7 @@ export default function SigninPage() {
             >
               {remember ? '✓' : ''}
             </button>
-            <span>로그인 상태 유지</span>
+            <span>{t('rememberMe')}</span>
           </label>
 
           {error && (
@@ -210,7 +212,7 @@ export default function SigninPage() {
             )}
             style={{ animation: 'ac02-slide .4s ease-out .24s both' }}
           >
-            로그인 →
+            {t('submit')}
           </button>
 
           <div
@@ -223,7 +225,7 @@ export default function SigninPage() {
                 background: 'linear-gradient(90deg, transparent, #CFDFF4, transparent)',
               }}
             />
-            <span className="text-[11px] tracking-[0.5px] text-[#8AA0BD]">간편 로그인</span>
+            <span className="text-[11px] tracking-[0.5px] text-[#8AA0BD]">{t('easyLogin')}</span>
             <div
               className="h-px flex-1"
               style={{
@@ -255,21 +257,21 @@ export default function SigninPage() {
           className="text-center text-[11px] text-[#8AA0BD]"
           style={{ animation: 'ac02-fade .5s ease-out .3s both' }}
         >
-          로그인 시{' '}
+          {t('agreementPrefix')}{' '}
           <button
             type="button"
             className="ac02-link cursor-pointer border-0 bg-transparent p-0 text-[11px] font-semibold text-[#5C6F90]"
           >
-            이용약관
+            {t('termsLink')}
           </button>{' '}
           ·{' '}
           <button
             type="button"
             className="ac02-link cursor-pointer border-0 bg-transparent p-0 text-[11px] font-semibold text-[#5C6F90]"
           >
-            개인정보 처리방침
+            {t('privacyLink')}
           </button>
-          에 동의하게 됩니다.
+          {t('agreementSuffix')}
         </div>
       </div>
     </AuthBackdrop>

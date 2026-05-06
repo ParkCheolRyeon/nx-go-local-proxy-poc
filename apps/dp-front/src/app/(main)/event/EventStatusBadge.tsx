@@ -1,3 +1,6 @@
+'use client';
+
+import { useTranslations } from 'next-intl';
 import React from 'react';
 
 import { EventStatus, StatusMeta } from '@/app/(main)/event/page';
@@ -10,7 +13,8 @@ type EventStatusBadgeProps = {
 
 export default function EventStatusBadge(props: EventStatusBadgeProps) {
   const { status } = props;
-  const { pillClass, label, dotClass } = props.meta;
+  const { pillClass, dotClass } = props.meta;
+  const t = useTranslations('event.status');
 
   return (
     <div
@@ -26,21 +30,17 @@ export default function EventStatusBadge(props: EventStatusBadgeProps) {
             <>
               <span
                 className="absolute inset-0 rounded-full"
-                style={{
-                  animation: 'ev-dot-pulse 1.8s ease-out infinite',
-                }}
+                style={{ animation: 'ev-dot-pulse 1.8s ease-out infinite' }}
               />
               <span
                 className="absolute inset-0 rounded-full"
-                style={{
-                  animation: 'ev-dot-pulse 1.8s ease-out 0.9s infinite',
-                }}
+                style={{ animation: 'ev-dot-pulse 1.8s ease-out 0.9s infinite' }}
               />
             </>
           )}
         </span>
       )}
-      {label}
+      {t(status)}
     </div>
   );
 }

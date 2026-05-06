@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 
 import IconArrowRight from '@/app/assets/icons/icon-arrow-right.svg';
@@ -12,8 +13,10 @@ type BackButtonProps = {
   className?: string;
 };
 
-export default function BackButton({ label = '뒤로', href, onClick, className }: BackButtonProps) {
+export default function BackButton({ label, href, onClick, className }: BackButtonProps) {
   const router = useRouter();
+  const t = useTranslations('common');
+  const resolvedLabel = label ?? t('back');
 
   const handleClick = () => {
     if (onClick) {
@@ -37,7 +40,7 @@ export default function BackButton({ label = '뒤로', href, onClick, className 
       )}
     >
       <IconArrowRight width={12} height={12} aria-hidden className="-scale-x-100" />
-      <span>{label}</span>
+      <span>{resolvedLabel}</span>
     </button>
   );
 }

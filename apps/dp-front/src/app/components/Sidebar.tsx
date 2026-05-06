@@ -12,7 +12,6 @@ import {
 } from '@/stores/sidebarStore';
 import {
   getSubscriptionRemainingDays,
-  PLAN_LABELS,
   useUser,
   useUserActions,
 } from '@/stores/userStore';
@@ -37,6 +36,7 @@ export default function Sidebar() {
 function MobileTopBar() {
   const isOpen = useSidebarIsDrawerOpen();
   const { toggleDrawer } = useSidebarActions();
+  const tSidebar = useTranslations('sidebar');
 
   return (
     <header
@@ -49,7 +49,7 @@ function MobileTopBar() {
     >
       <motion.button
         type="button"
-        aria-label="menu"
+        aria-label={tSidebar('menuAriaLabel')}
         onClick={toggleDrawer}
         whileTap={{ scale: 0.92 }}
         className="flex h-11 w-11 cursor-pointer flex-col items-center justify-center gap-[5px] rounded-[14px] border-0"
@@ -95,6 +95,8 @@ function MobileDrawer() {
   const activeId = useActiveMenuId();
   const user = useUser();
   const { signOut } = useUserActions();
+  const tSidebar = useTranslations('sidebar');
+  const tPlan = useTranslations('plan');
 
   const handleLogout = () => {
     signOut();
@@ -181,14 +183,14 @@ function MobileDrawer() {
                 </>
               ) : (
                 <>
-                  <div className="text-xl font-bold">게스트</div>
+                  <div className="text-xl font-bold">{tSidebar('guest')}</div>
                   <Link
                     href="/signup"
                     onClick={() => setTimeout(closeDrawer, 160)}
                     className="text-[11px] underline decoration-white/40 underline-offset-2"
                     style={{ color: 'rgba(255,255,255,.85)' }}
                   >
-                    로그인 / 회원가입
+                    {tSidebar('loginOrSignup')}
                   </Link>
                 </>
               )}
@@ -203,7 +205,7 @@ function MobileDrawer() {
                 border: '1px solid rgba(255,255,255,.22)',
               }}
             >
-              <span>✨ {PLAN_LABELS[user.plan]} 이용 중</span>
+              <span>{tSidebar('planUsing', { plan: tPlan(user.plan) })}</span>
               <span style={{ fontWeight: 700 }}>
                 D-{getSubscriptionRemainingDays(user.subscribeEndAt)}
               </span>
@@ -252,7 +254,7 @@ function MobileDrawer() {
                 aria-hidden
                 className="flex-none"
               />
-              <span>로그아웃</span>
+              <span>{tSidebar('logout')}</span>
             </button>
           </motion.div>
         )}

@@ -1,9 +1,22 @@
 {
   "common": {
     "save": "保存",
+    "saving": "保存中…",
     "cancel": "キャンセル",
     "back": "戻る",
-    "confirm": "確認"
+    "confirm": "確認",
+    "close": "閉じる",
+    "next": "次へ →",
+    "prev": "← 戻る",
+    "edit": "編集",
+    "delete": "削除",
+    "deleting": "削除中…",
+    "or": "または",
+    "skip": "スキップ",
+    "submit": "OK",
+    "noResult": "検索結果がありません。",
+    "appName": "iGallery DP",
+    "appDescription": "子ども向けアートボンボン・ギャラリー"
   },
   "menu": {
     "draw": "お絵かき",
@@ -22,9 +35,288 @@
     "settingSubMobile": "アカウント · 決済",
     "settingSubPc": "アカウント · ウォレット · 決済"
   },
+  "plan": {
+    "monthlySubscribe": "月額",
+    "yearlySubscribe": "年額",
+    "pro": "Proプラン"
+  },
+  "time": {
+    "justNow": "たった今",
+    "minutesAgo": "{count}分前",
+    "hoursAgo": "{count}時間前",
+    "yesterday": "昨日",
+    "daysAgo": "{count}日前"
+  },
+  "header": {
+    "loginButton": "ログイン",
+    "breadcrumbAriaLabel": "breadcrumb"
+  },
+  "sidebar": {
+    "guest": "ゲスト",
+    "loginOrSignup": "ログイン / 会員登録",
+    "logout": "ログアウト",
+    "menuAriaLabel": "menu",
+    "collapse": "折りたたむ",
+    "expand": "展開",
+    "planUsing": "✨ {plan} 利用中",
+    "tooltipPlan": "プラン",
+    "tooltipPeriod": "有効期間",
+    "monthlyCoin": "今月のコイン"
+  },
+  "splash": {
+    "char1": "ア",
+    "char2": "ー",
+    "char3": "ト",
+    "char4": "!",
+    "tagline": "子どもギャラリー",
+    "description": "一緒に描いて · 自慢して · 賞をもらおう",
+    "loadingDone": "準備完了!",
+    "loading": "作品を集めています..."
+  },
+  "dialog": {
+    "alertTitle": "お知らせ",
+    "confirmTitle": "確認が必要です",
+    "comingSoon": "準備中の機能です。",
+    "closeAriaLabel": "閉じる"
+  },
+  "auth": {
+    "signin": {
+      "tag": "保護者ログイン",
+      "headingLine1": "また会えて",
+      "headingLine2": "うれしい",
+      "subtitle": "IDとパスワードを入力してください。",
+      "newHere": "初めてですか?",
+      "goSignup": "会員登録 →",
+      "idLabel": "ID",
+      "idPlaceholder": "IDを入力してください",
+      "passwordLabel": "パスワード",
+      "forgotPassword": "パスワードをお忘れですか?",
+      "showPassword": "表示",
+      "hidePassword": "非表示",
+      "rememberMe": "ログイン状態を保持",
+      "submit": "ログイン →",
+      "easyLogin": "簡単ログイン",
+      "agreementPrefix": "ログインすると",
+      "termsLink": "利用規約",
+      "privacyLink": "プライバシーポリシー",
+      "agreementSuffix": "に同意したものとみなされます。",
+      "errorInvalid": "メールアドレスまたはパスワードが正しくありません。",
+      "errorGeneric": "ログインに失敗しました。後ほど再度お試しください。"
+    },
+    "signup": {
+      "haveAccount": "すでにアカウントをお持ちですか?",
+      "goSignin": "ログイン →",
+      "headingLine1": "わが子の",
+      "headingLine2Pre": "はじめての",
+      "headingLine2Mid": "ギャラリー",
+      "headingLine2Post": "を作りましょう",
+      "descLine1": "保護者アカウントを作成し、お子様のプロフィールを追加します。",
+      "descLine2": "3分で完了します。",
+      "footer": "登録すると、お子様のアクティビティは保護者アカウントに紐づき保護されます。",
+      "errorDuplicate": "すでに登録されているメールアドレスです。",
+      "errorGeneric": "登録に失敗しました。後ほど再度お試しください。"
+    },
+    "social": {
+      "kakao": "Kakaoで始める",
+      "naver": "Naverで始める",
+      "google": "Googleで始める",
+      "apple": "Appleで始める",
+      "email": "メールで始める"
+    },
+    "email": {
+      "back": "戻る",
+      "emailLabel": "メール",
+      "passwordLabel": "パスワード",
+      "passwordHint": "6文字以上",
+      "showPassword": "表示",
+      "hidePassword": "非表示",
+      "termsLink": "利用規約",
+      "privacyLink": "プライバシーポリシー",
+      "agreementMid": "に同意し、",
+      "guardianConfirm": "14歳未満のお子様の保護者であること",
+      "agreementEnd": "を確認します。",
+      "submit": "アカウント作成 →"
+    },
+    "childrenProfile": {
+      "back": "戻る",
+      "skip": "スキップ",
+      "headingPre": "お子様のプロフィール",
+      "headingPost": "を作成します",
+      "description": "後で設定から最大5名まで追加できます。",
+      "later": "あとで",
+      "submit": "完了 · コイン3個受け取る",
+      "submitting": "保存中…",
+      "errorGeneric": "プロフィールを保存できませんでした。後ほど再度お試しください。"
+    }
+  },
+  "child": {
+    "level": {
+      "beginner": "初心者",
+      "intermediate": "中級",
+      "expert": "上級"
+    },
+    "form": {
+      "characterLabel": "キャラクター",
+      "characterHint": "あとから変更できます",
+      "nameLabel": "名前",
+      "namePlaceholder": "お子様の名前またはニックネーム",
+      "birthLabel": "生年月日",
+      "birthHint": "14歳未満 · 法定代理人の同意が必要",
+      "drawingLabel": "絵のレベル",
+      "levelBeginnerSub": "はじめて描きます",
+      "levelIntermediateSub": "何度か描いたことがあります",
+      "levelExpertSub": "自信があります"
+    },
+    "switcher": {
+      "select": "お子様を選択",
+      "title": "お子様プロフィール ({count} / 5)",
+      "addMore": "お子様を追加",
+      "atMax": "最大5名まで登録可能"
+    }
+  },
+  "myGallery": {
+    "emptyChild": {
+      "title": "まだお子様が登録されていません",
+      "sub": "マイギャラリーを使うには、まずお子様プロフィールを作成してください。",
+      "cta": "お子様を追加"
+    },
+    "title": "マイギャラリー",
+    "titleWithName": "{name}のギャラリー",
+    "subtitle": "保管庫から続きを描き、公開作品で自慢して、受賞作を集めましょう。",
+    "tabsAriaLabel": "ギャラリータブ",
+    "tabs": {
+      "archive": "保管庫",
+      "public": "公開作品",
+      "awards": "受賞作"
+    },
+    "empty": {
+      "archiveTitle": "保管された作品はまだありません",
+      "archiveSub": "最初の絵を描いて保管庫を埋めましょう。",
+      "publicTitle": "公開作品はまだありません",
+      "publicSub": "完成した作品を公開して自慢しましょう。",
+      "awardsTitle": "受賞作はまだありません",
+      "awardsSub": "イベントに出品して受賞しましょう。"
+    },
+    "goDraw": "描きに行く",
+    "errorLoad": "作品を読み込めませんでした。",
+    "card": {
+      "modeColoring": "ぬり絵",
+      "modeStepwise": "ステップ",
+      "modeFreeform": "自由",
+      "modeTogether": "一緒に",
+      "rankGrand": "大賞",
+      "rankGold": "金賞",
+      "rankSilver": "銀賞",
+      "rankBronze": "銅賞",
+      "rankEncourage": "奨励賞",
+      "inProgress": "続きを描く",
+      "publicBadge": "公開",
+      "inProgressShort": "進行中"
+    },
+    "calendar": {
+      "title": "お絵かきカレンダー",
+      "prevMonthAria": "前の月",
+      "nextMonthAria": "次の月",
+      "prevImageAria": "前の絵",
+      "nextImageAria": "次の絵"
+    }
+  },
+  "drawing": {
+    "title": "Drawing"
+  },
+  "event": {
+    "tag": "IGALLERY EXCLUSIVE",
+    "headingPre": "今月の",
+    "headingHighlight": "イベント",
+    "descLine1": "ひらめきを刺激する特別企画展。",
+    "descLine2": "気になるテーマに自由に参加してみましょう。",
+    "filterAriaLabel": "イベントフィルタ",
+    "filter": {
+      "all": "すべて",
+      "open": "開催中",
+      "notOpen": "予定",
+      "end": "終了"
+    },
+    "status": {
+      "open": "開催中",
+      "notOpen": "予定",
+      "end": "終了"
+    },
+    "empty": "該当する状態のイベントはありません。",
+    "card": {
+      "participants": "参加 {count}名",
+      "more": "詳細"
+    },
+    "items": {
+      "rainy-day": {
+        "title": "雨の日に",
+        "subtitle": "雨の日は君を思い出す"
+      },
+      "stained-glass": {
+        "title": "ステンドグラス越しの世界",
+        "subtitle": "ステンドグラスから光が差したら、どんな感じ?キラキラまぶしい!"
+      },
+      "korean-table": {
+        "title": "韓国の食卓",
+        "subtitle": "おなかいっぱいの食卓を描いてみよう。"
+      },
+      "sea-sunset": {
+        "title": "海と出会った夕焼け",
+        "subtitle": "海と夕焼けが恋に落ちた。みんなで祝福を!"
+      },
+      "tiger-brother": {
+        "title": "虎の兄さん",
+        "subtitle": "怖い?それともかっこいい?考える虎を描こう。"
+      },
+      "arctic-now": {
+        "title": "北極の今",
+        "subtitle": "北極の今を描こう。イグルーとペンギンのコラボ。"
+      },
+      "dad-commute": {
+        "title": "パパの通勤路",
+        "subtitle": "パパは通勤でどこを通る?地下鉄?バス?"
+      },
+      "worldcup-2026": {
+        "title": "2026 北中米W杯",
+        "subtitle": "もうすぐ始まるワールドカップを想像してみよう。"
+      },
+      "picasso": {
+        "title": "ピカソになる",
+        "subtitle": "ピカソになったつもりで好きなものを描こう。"
+      },
+      "bukchon": {
+        "title": "韓屋村 feat. 北村",
+        "subtitle": "すべての韓屋村が北村にあるわけじゃない。でも北村には韓屋村がある!"
+      }
+    }
+  },
+  "notifications": {
+    "tag": "通知センター",
+    "headingPre": "未読通知",
+    "headingCount": "{count}件",
+    "subtitle": "過去7日間に届いた通知をまとめました",
+    "markAllRead": "すべて既読にする",
+    "tab": {
+      "all": "すべて",
+      "contest": "コンテスト",
+      "social": "ソーシャル",
+      "coin": "コイン",
+      "system": "システム"
+    },
+    "groupToday": "今日",
+    "groupEarlier": "それ以前",
+    "empty": "該当する通知はありません",
+    "emptySub": "ほかのタブを確認してください",
+    "footerAuto": "7日経過した通知は自動的に整理されます",
+    "footerSetting": "通知設定 →",
+    "errorRead": "既読にできませんでした。",
+    "errorReadAll": "すべて既読にできませんでした。"
+  },
   "setting": {
     "title": "設定",
     "subtitle": "アカウント、サブスク、通知と安全オプションをここで管理。",
+    "tag": "SETTINGS",
+    "groupAriaLabel": "設定グループ",
     "groups": {
       "account": { "label": "アカウント", "sub": "プロフィール · お子様" },
       "billing": { "label": "サブスク", "sub": "Pro · コイン" },
@@ -34,11 +326,488 @@
       "danger": { "label": "アカウント管理", "sub": "ログアウト · 退会" }
     },
     "account": {
+      "loggedOutTitle": "ログインが必要です",
+      "loggedOutSub": "アカウント情報を表示するにはログインしてください。",
+      "noChildren": "登録されたお子様はいません",
+      "familyAccount": "家族アカウント",
+      "edit": "編集",
+      "childrenManage": "お子様プロフィールの管理",
+      "childrenSub": "{names} ({count} / 5名)",
       "password": "パスワード変更",
+      "passwordSub": "6か月ごとの変更を推奨",
+      "identity": "本人確認情報",
+      "identitySub": "PASS · 1年キャッシュ",
       "language": "言語",
+      "languageValue": "日本語",
       "country": "国 / 地域",
+      "countryValue": "日本",
       "languageSavedToast": "言語を {name} に設定しました。",
-      "countrySavedToast": "国を {name} に設定しました。"
+      "countrySavedToast": "国を {name} に設定しました。",
+      "saveFailedToast": "サーバーに保存できませんでした。後ほど再度お試しください。"
+    },
+    "app": {
+      "saveFailed": "変更を保存できませんでした。後ほど再度お試しください。",
+      "boxNotif": "通知設定",
+      "drawing": "お絵かき",
+      "drawingSub": "リマインダーと完成通知",
+      "event": "イベント",
+      "eventSub": "新規イベント、出品、結果通知",
+      "system": "システム",
+      "systemSub": "重要なお知らせとアップデート通知",
+      "marketing": "マーケティング",
+      "marketingSub": "プロモーションと新機能のお知らせ",
+      "boxDnd": "おやすみモード",
+      "dnd": "おやすみモード",
+      "dndSub": "指定の時間帯にプッシュ通知を遮断します。",
+      "dndStart": "開始時刻",
+      "dndEnd": "終了時刻",
+      "dndStartAria": "おやすみモード開始時刻",
+      "dndEndAria": "おやすみモード終了時刻"
+    },
+    "billing": {
+      "tag": "IGALLERY PRO",
+      "monthlyTitle": "月額利用中",
+      "nextPayment": "次回決済 · 2026.05.15 · 4,900ウォン",
+      "switchYearly": "年額に切り替え",
+      "cancel": "サブスク解約",
+      "wallet": "コインウォレット",
+      "walletSub": "登録後7日間、毎日1個自動チャージ",
+      "coinUnit": "個",
+      "buy": "コイン購入",
+      "buySub": "10個 9,900ウォン",
+      "history": "決済履歴",
+      "historySub": "直近の決済 · 2026.04.15",
+      "refund": "返金申請",
+      "refundSub": "決済日から30日以内",
+      "receiptEmail": "領収メール",
+      "receiptEmailValue": "kim.minsu@email.com"
+    },
+    "kid": {
+      "safeMode": "お子様保護モード",
+      "safeModeSub": "安全なコンテンツのみ表示",
+      "timeLimit": "利用時間の制限",
+      "timeLimitSub": "1日1時間30分",
+      "paymentLock": "決済パスワード",
+      "paymentLockSub": "お子様の決済をブロック",
+      "togetherChat": "一緒に描くチャット",
+      "togetherChatSub": "2人ルームでの会話を許可",
+      "consent": "法定代理人の同意履歴",
+      "consentSub": "14歳未満のお子様1名",
+      "saveFailed": "変更を保存できませんでした。後ほど再度お試しください。"
+    },
+    "support": {
+      "faqHeading": "よくある質問",
+      "contact": "お問い合わせ",
+      "contactSub": "help@artbonbon.com · 平日10:00 ~ 18:00",
+      "terms": "利用規約",
+      "privacy": "プライバシーポリシー",
+      "copyright": "イベント著作権の案内",
+      "version": "バージョン",
+      "versionValue": "1.0.0"
+    },
+    "faq": [
+      {
+        "q": "サブスクはどう解約しますか?",
+        "a": "設定 → サブスク管理で「解約」をタップしてください。今期の決済期間終了までサービスを利用できます。"
+      },
+      {
+        "q": "削除した絵を復元できますか?",
+        "a": "退会から30日以内に取消すれば全データを復元できます。30日経過後は完全削除されます。"
+      },
+      {
+        "q": "コインはどう使いますか?",
+        "a": "1回の利用でコイン1個を消費します。毎日無料コインがチャージされ、サブスク中は無制限で利用できます。"
+      },
+      {
+        "q": "お子様プロフィールはどう追加しますか?",
+        "a": "設定 → アカウント → お子様プロフィール追加で最大5名まで追加できます。"
+      },
+      {
+        "q": "イベントへはどう参加しますか?",
+        "a": "イベントタブから希望のイベントを選び、出品手順に従ってください。本人確認が必要な場合があります。"
+      }
+    ],
+    "contact": {
+      "tag": "SUPPORT",
+      "title": "1:1 お問い合わせ",
+      "subtitle": "平日10:00 ~ 18:00 · 通常1営業日内に返信",
+      "subjectLabel": "件名",
+      "subjectPlaceholder": "お問い合わせの件名を入力してください",
+      "messageLabel": "内容",
+      "messagePlaceholder": "お問い合わせ内容を詳しくご記入ください",
+      "submit": "送信",
+      "submitting": "送信中…",
+      "successToast": "お問い合わせを受け付けました。早めにご返信いたします。",
+      "errorToast": "お問い合わせの送信に失敗しました。後ほど再度お試しください。"
+    },
+    "danger": {
+      "logout": "ログアウト",
+      "logoutSub": "この端末からのみログアウトします",
+      "logoutConfirmMsg": "この端末からログアウトしますか?",
+      "logoutConfirmTitle": "ログアウト",
+      "logoutConfirmYes": "ログアウト",
+      "deleteChildren": "お子様プロフィールの削除",
+      "deleteChildrenSub": "{count}名から選択して削除 · 作品·コインも整理",
+      "deleteChildrenEmpty": "登録されたお子様はいません",
+      "noChildrenAlert": "登録されたお子様プロフィールがありません。",
+      "withdrawTitle": "アカウント退会",
+      "withdrawDescLine1": "退会時に作品·コイン·サブスクが整理されます。即時削除または30日猶予を選択できます。",
+      "withdrawDescLine2": "GDPR · COPPAに従いZIPダウンロードと即時削除のオプションを提供します。",
+      "withdrawCta": "退会を進める"
+    },
+    "passwordPage": {
+      "tag": "SECURITY",
+      "title": "パスワード変更",
+      "subtitle": "安全のため6か月ごとの変更を推奨します。",
+      "currentLabel": "現在のパスワード",
+      "currentPlaceholder": "現在お使いのパスワード",
+      "newLabel": "新しいパスワード",
+      "newPlaceholder": "新しく使うパスワード",
+      "confirmLabel": "新しいパスワードの確認",
+      "confirmPlaceholder": "もう一度入力してください",
+      "mismatch": "パスワードが一致しません",
+      "strengthLabel": "パスワード強度",
+      "ruleLen": "8文字以上",
+      "ruleMix": "英字/数字の組み合わせ",
+      "ruleSpc": "特殊文字を1つ以上",
+      "ruleDiff": "現在のパスワードと異なる",
+      "infoNote": "パスワードは家族アカウントの決済·お子様保護設定を守る鍵です。推測されやすい単語ではなく英数字·特殊文字を組み合わせてください。",
+      "showAria": "パスワードを表示",
+      "hideAria": "パスワードを隠す",
+      "submit": "パスワード変更",
+      "submitting": "変更中…",
+      "errorMismatch": "現在のパスワードが一致しません。",
+      "errorChangeFailed": "パスワードを変更できませんでした。",
+      "errorGeneric": "パスワード変更に失敗しました。後ほど再度お試しください。",
+      "successToast": "パスワードを変更しました。再度ログインしてください。",
+      "strength1": "弱い",
+      "strength2": "普通",
+      "strength3": "強い",
+      "strength4": "とても強い"
+    },
+    "languagePage": {
+      "tag": "LANGUAGE",
+      "title": "言語設定",
+      "subtitle": "アプリ全体のインターフェース言語を選択してください。",
+      "previewLabel": "PREVIEW",
+      "previewNote": "すべてのテキストと通知に即時適用されます。",
+      "ko": "한국어",
+      "koSub": "韓国語",
+      "koPreview": "アートボンボン・ギャラリーへようこそ!",
+      "en": "English",
+      "enSub": "英語",
+      "enPreview": "Welcome to ArtBongBong Gallery!",
+      "ja": "日本語",
+      "jaSub": "日本語",
+      "jaPreview": "アートボンボン・ギャラリーへようこそ!"
+    },
+    "countryPage": {
+      "tag": "REGION",
+      "title": "国 / 地域設定",
+      "subtitle": "決済通貨、タイムゾーン、コンテンツ推薦に影響します。",
+      "currentLabel": "現在の設定",
+      "appliedBadge": "適用中",
+      "searchPlaceholder": "国または地域を検索",
+      "regionAsia": "アジア",
+      "regionNa": "北米",
+      "regionEurope": "ヨーロッパ",
+      "regionOceania": "オセアニア",
+      "country": {
+        "KR": "韓国",
+        "JP": "日本",
+        "CN": "中国",
+        "VN": "ベトナム",
+        "TH": "タイ",
+        "US": "アメリカ",
+        "CA": "カナダ",
+        "GB": "イギリス",
+        "FR": "フランス",
+        "DE": "ドイツ",
+        "AU": "オーストラリア"
+      }
+    },
+    "childrenPage": {
+      "tag": "CHILDREN",
+      "title": "お子様プロフィール",
+      "subtitle": "家族アカウントごとに最大{max}名まで登録できます。現在 {count} / {max}名。",
+      "emptyTitle": "まだお子様が追加されていません",
+      "emptySub": "お子様を追加すると絵を描いて保管できます。",
+      "addChild": "お子様を追加",
+      "atMaxLabel": "最大{max}名まで登録可能",
+      "ageSuffix": " · {age}歳",
+      "deleteFailed": "削除に失敗しました。後ほど再度お試しください。"
+    },
+    "childrenEditPage": {
+      "tag": "EDIT",
+      "title": "お子様プロフィールの編集",
+      "subtitle": "キャラクター·名前·生年月日·絵のレベルを変更できます。",
+      "loadError404": "お子様プロフィールが見つかりません。",
+      "loadErrorGeneric": "お子様プロフィールを読み込めませんでした。",
+      "saveError404": "お子様プロフィールが見つかりません。",
+      "saveErrorGeneric": "保存に失敗しました。後ほど再度お試しください。",
+      "backToList": "一覧へ"
+    }
+  },
+  "childDelete": {
+    "headerTag": "DELETE CHILD PROFILE",
+    "title": "どのお子様プロフィールを削除しますか?",
+    "subtitle": "個別に選んで削除するか、すべてのお子様プロフィールを一度に削除できます。",
+    "emptyTitle": "登録されたお子様はいません",
+    "emptySub": "削除できるお子様プロフィールがありません。",
+    "modeIndividualTitle": "選んで削除",
+    "modeIndividualSub": "カードを選んで1名以上を削除",
+    "modeAllTitle": "すべてのお子様を削除",
+    "modeAllSub": "{count}名のお子様プロフィールを一括削除",
+    "linkedCount": "連携中のお子様 {count}名",
+    "selectAll": "すべて選択",
+    "ageSuffix": "{age}歳",
+    "summaryEmptyTag": "NO TARGET SELECTED",
+    "summaryEmptyMsg": "カードを選ぶか「すべてのお子様を削除」を選択してください",
+    "summaryWillDelete": "{count}名 削除予定",
+    "summaryHelp": "下のチップの ✕ で1人ずつ除外できます。",
+    "drawingsLabel": "🎨 作品",
+    "awardsLabel": "🏆 受賞",
+    "removeChipAria": "{name} を除外",
+    "back": "← お子様管理に戻る",
+    "submitNoTarget": "対象を選択してください",
+    "submitAll": "{count}名すべて削除 →",
+    "submitOne": "{name} を削除 →",
+    "submitMany": "{count}名を削除 →",
+    "submitting": "削除中…",
+    "successOne": "{name} のプロフィールを削除しました。",
+    "successMany": "{count}名のお子様プロフィールを削除しました。",
+    "partialFailureTitle": "一部のお子様を削除できませんでした。",
+    "errorServer": "サーバーに接続できません。",
+    "modal": {
+      "headerSubAll": "DELETE ALL CHILD PROFILES",
+      "headerSubMulti": "DELETE SELECTED CHILD PROFILES",
+      "headerSubSingle": "DELETE CHILD PROFILE",
+      "askAll": "すべてのお子様プロフィールを削除しますか?",
+      "askMulti": "選択した{count}名を削除しますか?",
+      "askSingle": "{name} のプロフィールを削除しますか?",
+      "fallbackName": "このお子様",
+      "downloadHint": "削除前に作品をZIPでダウンロードできます。",
+      "downloadCta": "作品ダウンロード →",
+      "agree1": "削除後は作品·受賞·進行中の絵を復元できないことを理解しました。",
+      "agree2All": "{count}名すべてのお子様プロフィールがなくなり、家族アカウントのみ残ることを確認しました。",
+      "agree2Multi": "選択した{count}名のお子様プロフィールがなくなることを確認しました。",
+      "agree2Single": "進行中の絵や未受け取りの報酬がすべてなくなることを確認しました。",
+      "phraseLabelPre": "確認のため",
+      "phraseLabelMid": "「{phrase}」",
+      "phraseLabelPost": "を入力してください",
+      "phrase": "すべて削除",
+      "phraseMismatch": "正確に一致する必要があります",
+      "footerNote": "🛡 削除後30日以内ならサポートで復旧依頼可能",
+      "submitAll": "{count}名すべて削除",
+      "submitMulti": "{count}名を削除",
+      "submitSingle": "{name} を削除",
+      "fallbackChild": "お子様",
+      "targetsAll": "削除対象 {count}名 (全員)",
+      "targetsMulti": "選択中のお子様 {count}名",
+      "drawingsCount": "🎨 {count}作",
+      "awardsCount": "🏆 {count}回受賞",
+      "compactStats": "🎨 {drawings} · 🏆 {awards}",
+      "impactHeading": "削除すると次のデータも一緒になくなります",
+      "impact": {
+        "drawings": "絵の作品",
+        "drawingsValue": "{count}作",
+        "awards": "受賞履歴",
+        "awardsValue": "{count}回",
+        "coins": "コイン残高",
+        "coinsValue": "消滅",
+        "timelapse": "タイムラプス記録",
+        "timelapseValue": "完全削除"
+      }
+    }
+  },
+  "withdraw": {
+    "stepLabel": "STEP {step} / 7 · {title}",
+    "estimated": "目安2分",
+    "stepTitle": {
+      "1": "ちょっと待って、本当に退会しますか?",
+      "2": "お子様プロフィールはどうしますか?",
+      "3": "削除方法を選んでください",
+      "4": "絵をZIPで受け取りましょう",
+      "5": "なくなるデータを確認してください",
+      "6": "本人確認が必要です",
+      "7": "最後にもう一度確認します"
+    },
+    "heroSub": {
+      "1": "退会の理由を教えていただけると、より良いサービス作りに役立ちます。",
+      "2": "家族アカウントにお子様が紐づいています。どう処理するか選んでください。",
+      "3": "いつデータを削除するか決められます。心変わりの可能性があれば30日猶予をおすすめ。",
+      "4": "削除前の最後のチャンス。お子様の作品と活動履歴をダウンロードできます。",
+      "5": "退会が完了すると下記が完全削除されます。もう一度ご確認ください。",
+      "6": "アカウントの安全のため、パスワードと登録済み携帯認証をもう一度行います。",
+      "7": "今[完全削除]を押すと30日猶予が始まります。その間に再ログインすれば取消可能です。"
+    },
+    "exitConfirmMsg": "退会手続きを終了しますか?入力内容は失われます。",
+    "exitConfirmTitle": "退会手続き終了",
+    "exitYes": "退出",
+    "exitNo": "続ける",
+    "successInstant": "退会リクエストを受け付けました。すべてのデータを直ちに削除します。(BE未実装 — モック)",
+    "successGrace": "退会リクエストを受け付けました。30日以内に再ログインすれば取消できます。(BE未実装 — モック)",
+    "footerExit": "退出",
+    "footerNext": "次へ →",
+    "footerKeepFreeLocker": "1か月無料保管庫を受け取る",
+    "step1": {
+      "statsTitle": "これまでに描いた作品は",
+      "statsTitleCount": "24点",
+      "statsTitleSuffix": "です",
+      "statsSub": "受賞2回 · 累計活動時間18時間27分",
+      "tipTitle": "ちょっと、こんな方法はどうですか?",
+      "reasons": {
+        "price": {
+          "label": "料金が負担です",
+          "hint": "月4,900ウォンが負担ですか?年間プランで最大33%お得になります。"
+        },
+        "use": {
+          "label": "あまり使わなくなりました",
+          "hint": "1か月無料保管庫を受け取れば、いつでも再開できます。"
+        },
+        "quality": {
+          "label": "テンプレートが足りません",
+          "hint": "毎週新しいテンプレートを追加しています。どんな種類が必要でしたか?"
+        },
+        "privacy": {
+          "label": "プライバシーが心配です",
+          "hint": "お子様保護モードと最小限のデータ収集について再案内します。"
+        },
+        "kid": {
+          "label": "子どもが興味を失いました",
+          "hint": "ステップ別/一緒に描くモードがおすすめ。年齢に合うテンプレートもあります。"
+        },
+        "other": {
+          "label": "その他",
+          "hint": "残念だった点を直接お聞かせください。"
+        }
+      },
+      "otherPlaceholder": "自由にご記入ください(最大500文字)"
+    },
+    "step2": {
+      "options": {
+        "all": {
+          "title": "お子様と一緒に退会",
+          "desc": "すべてのお子様プロフィールと作品·受賞履歴を削除します。一般的な選択です。",
+          "tag": "推奨"
+        },
+        "keep": {
+          "title": "家族アカウントのみ退会、お子様は保存",
+          "desc": "家族アカウント1つを整理し、お子様プロフィール·作品は別の保護者(共同養育者)に委任します。",
+          "tag": "委任"
+        },
+        "partial": {
+          "title": "一部のお子様のみ削除",
+          "desc": "選択したお子様のみ削除します。次の手順で誰を削除するか選べます。"
+        }
+      },
+      "delegationNote": "「家族アカウントのみ退会」を選ぶと、共同養育者のメールに委任案内が送信されます。"
+    },
+    "step3": {
+      "options": {
+        "grace": {
+          "title": "30日猶予後に削除",
+          "desc": "30日間は再ログインで退会を取消できます。その後自動削除。",
+          "badge": "推奨",
+          "list1": "いつでも復元可能",
+          "list2": "30日後に自動でhard-delete",
+          "list3": "サブスクは即時解約"
+        },
+        "instant": {
+          "title": "即時削除",
+          "desc": "リクエスト直後にすべてのデータが完全削除されます。GDPR第17条 / COPPAに基づく権利です。",
+          "badge": "復元不可",
+          "list1": "取消不可",
+          "list2": "即時hard-delete",
+          "list3": "サブスク·コインも消滅"
+        }
+      },
+      "legalNote": "GDPR第17条「忘れられる権利」と米COPPAに基づき、削除依頼から14日以内に処理·バックアップシステムからデータを除去します。ただし決済記録など法令上5年保管が必要な項目は分離·暗号化保管します。"
+    },
+    "step4": {
+      "tag": "BACKUP ARCHIVE",
+      "fileLabel": "artbongbong-backup-2026-05-06.zip",
+      "sizeNote": "予想サイズ約{total} MB · 24時間以内にメールで送信",
+      "include": "含める項目",
+      "items": {
+        "drawings": { "label": "絵の作品 (PNG, 元解像度)", "sub": "24作 · 約245 MB" },
+        "awards": { "label": "受賞履歴 + 認定書PDF", "sub": "2件 · 約12 MB" },
+        "timelapse": { "label": "タイムラプス映像 (MP4)", "sub": "18本 · 約1,280 MB" },
+        "profile": { "label": "プロフィールメタ (JSON)", "sub": "お子様プロフィール除く · 約4 MB" }
+      },
+      "downloadCta": "📥 ZIPダウンロードを依頼",
+      "downloadToast": "ZIPダウンロードを依頼しました。登録メールに24時間以内に送信されます。(BE未実装 — モック)",
+      "rightNote": "GDPR第20条データポータビリティ権による権利です。無料です。"
+    },
+    "step5": {
+      "tiles": {
+        "drawings": { "title": "絵の作品", "value": "24作", "sub": "お子様プロフィール作品全体" },
+        "awards": { "title": "受賞履歴", "value": "2回", "sub": "認定書含む" },
+        "coins": { "title": "コイン残高", "value": "24個", "sub": "返金不可 · 即時消滅" },
+        "subscription": { "title": "サブスク", "value": "月4,900ウォン", "sub": "即時解約 · 残日数返金不可" },
+        "timelapse": { "title": "タイムラプス", "value": "18本", "sub": "復元不可" },
+        "notification": { "title": "通知 / メッセージ", "value": "全部", "sub": "送信履歴含む" }
+      },
+      "kept": {
+        "heading": "法令上保管される項目",
+        "row1Title": "決済 / 精算記録",
+        "row1Sub": "電子商取引法 · 5年",
+        "row2Title": "本人確認認証ログ",
+        "row2Sub": "情報通信網法 · 6か月",
+        "row3Title": "不正利用通報記録",
+        "row3Sub": "必要時 · 3年",
+        "footnote": "* これらは分離された暗号化保管庫に保管され、追加認証なしでは復元されません。"
+      }
+    },
+    "step6": {
+      "passwordLabel": "現在のパスワード",
+      "otpLabel": "携帯認証番号",
+      "otpPlaceholder": "登録番号に送信された6桁",
+      "otpSend": "認証番号を受け取る",
+      "otpToast": "認証番号を送信しました。(BE未実装 — モック)",
+      "otpTimerPre": "⏱ 02:48 残り · 認証番号が届かない場合は",
+      "otpTimerLink": "再送",
+      "securityNote": "本人確認情報は認証直後に破棄されます。5回失敗するとアカウントが24時間ロックされます。",
+      "lostPhonePre": "携帯を紛失しましたか?",
+      "lostPhoneLink": "サポートに問い合わせる"
+    },
+    "step7": {
+      "summaryHeading": "リクエスト内容",
+      "rowMethod": "削除方法",
+      "rowChildren": "お子様の処理",
+      "rowZip": "ZIPバックアップ",
+      "rowZipValue": "依頼済 · 24時間以内にメール送信",
+      "rowComplete": "完了予定",
+      "completionGrace": "30日後",
+      "completionInstant": "リクエスト直後",
+      "methodGrace": "30日猶予後に自動削除",
+      "methodInstant": "即時削除 (復元不可)",
+      "childrenAll": "お子様と一緒に退会",
+      "childrenKeep": "家族アカウントのみ退会、お子様は保存",
+      "childrenPartial": "一部のお子様のみ削除",
+      "agree1": "上記内容をすべて確認し、結果に同意します。",
+      "agree2": "お子様の作品·受賞履歴が完全削除されることを理解しました。",
+      "agree3": "残コイン·サブスク残日数が返金されないことを理解しました。",
+      "phrase": "アートボンボン退会",
+      "phraseLabelPre": "確認のため",
+      "phraseLabelMid": "「{phrase}」",
+      "phraseLabelPost": "をそのまま入力してください",
+      "submit": "🗑 完全に削除する"
+    },
+    "cancelPage": {
+      "remainingDays": "⏰ 退会まで18日",
+      "title": "おかえりなさい!",
+      "description": "現在30日猶予期間中です。今取消すれば作品·お子様プロフィール·サブスクがそのまま復元されます。18日後には自動削除され取消できなくなります。",
+      "stat1": "絵の作品",
+      "stat1Value": "24作",
+      "stat2": "受賞履歴",
+      "stat2Value": "2回",
+      "stat3": "コイン",
+      "stat3Value": "24個",
+      "proceed": "そのまま進める",
+      "cancel": "✨ 退会を取消して使い続ける",
+      "footer": "取消すると即時すべての機能が復旧します · 別途課金なし",
+      "successToast": "退会を取消しました。すべての機能が即時復旧しました。(BE未実装 — モック)"
     }
   },
   "breadcrumb": {
@@ -55,5 +824,15 @@
     "settingAccountCountry": "国 / 地域",
     "settingWithdraw": "アカウント削除",
     "settingWithdrawCancel": "削除をキャンセル"
+  },
+  "session": {
+    "expired": "セッションが期限切れです。"
+  },
+  "users": {
+    "createTitle": "ユーザー作成",
+    "namePlaceholder": "名前",
+    "create": "作成",
+    "lookupTitle": "ユーザー照会",
+    "lookup": "照会"
   }
 }

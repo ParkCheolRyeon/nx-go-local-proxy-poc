@@ -1,33 +1,36 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 
 import Row from '@/app/(main)/setting/Row';
 import UserAvatar from '@/app/components/UserAvatar';
 import { alert } from '@/dialog';
-import { PLAN_LABELS, useUser } from '@/stores/userStore';
-
-const COMING_SOON_MSG = '준비 중인 기능이에요.';
-const notifyComingSoon = () => {
-  void alert(COMING_SOON_MSG);
-};
+import { useUser } from '@/stores/userStore';
 
 export default function AccountTab() {
   const router = useRouter();
   const user = useUser();
+  const t = useTranslations('setting.account');
+  const tDialog = useTranslations('dialog');
+  const tPlan = useTranslations('plan');
+
+  const notifyComingSoon = () => {
+    void alert(tDialog('comingSoon'));
+  };
 
   if (!user) {
     return (
       <div className="rounded-[14px] border border-dashed border-[#1C7AE0]/[0.24] bg-white/70 px-4 py-10 text-center">
-        <div className="text-[14px] font-semibold text-[#0b2a63]">로그인이 필요해요</div>
-        <p className="mt-1 text-[12px] text-[#5C6F90]">계정 정보를 보려면 로그인해 주세요.</p>
+        <div className="text-[14px] font-semibold text-[#0b2a63]">{t('loggedOutTitle')}</div>
+        <p className="mt-1 text-[12px] text-[#5C6F90]">{t('loggedOutSub')}</p>
       </div>
     );
   }
 
-  const planLabel = PLAN_LABELS[user.plan];
+  const planLabel = tPlan(user.plan);
   const childNames =
-    user.children.length > 0 ? user.children.map((c) => c.name).join(' · ') : '추가된 자녀가 없어요';
+    user.children.length > 0 ? user.children.map((c) => c.name).join(' · ') : t('noChildren');
 
   return (
     <>
@@ -51,7 +54,7 @@ export default function AccountTab() {
           <div className="mt-0.5 truncate text-[11.5px] text-[#5C6F90]">{user.description}</div>
           <div className="mt-2 flex flex-wrap gap-1.5">
             <span className="rounded-full border border-[#3196ff]/[0.24] bg-white px-2.5 py-[3px] text-[10.5px] font-bold text-[#1C7AE0]">
-              가족 계정
+              {t('familyAccount')}
             </span>
             <span
               className="rounded-full px-2.5 py-[3px] text-[10.5px] font-bold text-[#7a4a06]"
@@ -66,32 +69,32 @@ export default function AccountTab() {
           onClick={notifyComingSoon}
           className="flex-none cursor-pointer rounded-full border-[1.5px] border-[#1C7AE0]/[0.24] bg-white px-3.5 py-2 text-[12px] font-bold text-[#1C7AE0]"
         >
-          편집
+          {t('edit')}
         </button>
       </div>
       <Row
         icon="👶"
-        title="자녀 프로필 관리"
-        sub={`${childNames} (${user.children.length} / 5명)`}
+        title={t('childrenManage')}
+        sub={t('childrenSub', { names: childNames, count: user.children.length })}
         onClick={() => router.push('/setting/children')}
       />
       <Row
         icon="🔐"
-        title="비밀번호 변경"
-        sub="6개월마다 변경 권장"
+        title={t('password')}
+        sub={t('passwordSub')}
         onClick={() => router.push('/setting/account/password')}
       />
-      <Row icon="🪪" title="본인확인 정보" sub="PASS · 1년 캐시" onClick={notifyComingSoon} />
+      <Row icon="🪪" title={t('identity')} sub={t('identitySub')} onClick={notifyComingSoon} />
       <Row
         icon="🌐"
-        title="언어"
-        sub="한국어"
+        title={t('language')}
+        sub={t('languageValue')}
         onClick={() => router.push('/setting/account/language')}
       />
       <Row
         icon="🇰🇷"
-        title="국가 / 지역"
-        sub="대한민국"
+        title={t('country')}
+        sub={t('countryValue')}
         onClick={() => router.push('/setting/account/country')}
         last
       />

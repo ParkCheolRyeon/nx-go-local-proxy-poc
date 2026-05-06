@@ -1,9 +1,22 @@
 {
   "common": {
     "save": "저장",
+    "saving": "저장 중…",
     "cancel": "취소",
     "back": "뒤로",
-    "confirm": "확인"
+    "confirm": "확인",
+    "close": "닫기",
+    "next": "다음 →",
+    "prev": "← 이전",
+    "edit": "편집",
+    "delete": "삭제",
+    "deleting": "삭제 중…",
+    "or": "또는",
+    "skip": "건너뛰기",
+    "submit": "확인",
+    "noResult": "검색 결과가 없어요.",
+    "appName": "iGallery DP",
+    "appDescription": "어린이 아트봉봉 갤러리"
   },
   "menu": {
     "draw": "드로잉",
@@ -22,9 +35,288 @@
     "settingSubMobile": "계정 · 결제",
     "settingSubPc": "계정 · 지갑 · 결제"
   },
+  "plan": {
+    "monthlySubscribe": "월 구독",
+    "yearlySubscribe": "연 구독",
+    "pro": "Pro 플랜"
+  },
+  "time": {
+    "justNow": "방금",
+    "minutesAgo": "{count}분 전",
+    "hoursAgo": "{count}시간 전",
+    "yesterday": "어제",
+    "daysAgo": "{count}일 전"
+  },
+  "header": {
+    "loginButton": "로그인",
+    "breadcrumbAriaLabel": "breadcrumb"
+  },
+  "sidebar": {
+    "guest": "게스트",
+    "loginOrSignup": "로그인 / 회원가입",
+    "logout": "로그아웃",
+    "menuAriaLabel": "menu",
+    "collapse": "접기",
+    "expand": "펼치기",
+    "planUsing": "✨ {plan} 이용 중",
+    "tooltipPlan": "구독상품",
+    "tooltipPeriod": "구독기간",
+    "monthlyCoin": "이번 달 코인"
+  },
+  "splash": {
+    "char1": "아",
+    "char2": "트",
+    "char3": "봉",
+    "char4": "봉",
+    "tagline": "어린이 갤러리",
+    "description": "함께 그리고 · 자랑하고 · 상 받아요",
+    "loadingDone": "준비 완료!",
+    "loading": "작품 모으는 중..."
+  },
+  "dialog": {
+    "alertTitle": "알림",
+    "confirmTitle": "확인이 필요해요",
+    "comingSoon": "준비 중인 기능이에요.",
+    "closeAriaLabel": "닫기"
+  },
+  "auth": {
+    "signin": {
+      "tag": "부모 계정 로그인",
+      "headingLine1": "다시 만나서",
+      "headingLine2": "반가워요",
+      "subtitle": "아이디와 비밀번호를 입력해 주세요.",
+      "newHere": "처음 오셨나요?",
+      "goSignup": "회원가입 →",
+      "idLabel": "아이디",
+      "idPlaceholder": "아이디를 입력하세요",
+      "passwordLabel": "비밀번호",
+      "forgotPassword": "비밀번호를 잊으셨나요?",
+      "showPassword": "표시",
+      "hidePassword": "숨김",
+      "rememberMe": "로그인 상태 유지",
+      "submit": "로그인 →",
+      "easyLogin": "간편 로그인",
+      "agreementPrefix": "로그인 시",
+      "termsLink": "이용약관",
+      "privacyLink": "개인정보 처리방침",
+      "agreementSuffix": "에 동의하게 됩니다.",
+      "errorInvalid": "이메일 또는 비밀번호가 올바르지 않습니다.",
+      "errorGeneric": "로그인에 실패했습니다. 잠시 후 다시 시도해 주세요."
+    },
+    "signup": {
+      "haveAccount": "이미 계정이 있나요?",
+      "goSignin": "로그인 →",
+      "headingLine1": "우리 아이",
+      "headingLine2Pre": "첫",
+      "headingLine2Mid": "갤러리",
+      "headingLine2Post": "를 만들어요",
+      "descLine1": "부모님 계정을 먼저 만들고, 자녀 프로필을 추가합니다.",
+      "descLine2": "3분이면 충분해요.",
+      "footer": "가입 시 자녀의 활동은 부모 계정과 연결되어 보호받아요.",
+      "errorDuplicate": "이미 가입된 이메일입니다.",
+      "errorGeneric": "가입에 실패했습니다. 잠시 후 다시 시도해 주세요."
+    },
+    "social": {
+      "kakao": "카카오로 시작하기",
+      "naver": "네이버로 시작하기",
+      "google": "Google로 시작하기",
+      "apple": "Apple로 시작하기",
+      "email": "이메일로 시작하기"
+    },
+    "email": {
+      "back": "뒤로",
+      "emailLabel": "이메일",
+      "passwordLabel": "비밀번호",
+      "passwordHint": "6자 이상",
+      "showPassword": "표시",
+      "hidePassword": "숨김",
+      "termsLink": "이용약관",
+      "privacyLink": "개인정보 처리방침",
+      "agreementMid": "에 동의하며,",
+      "guardianConfirm": "만 14세 미만 자녀의 보호자임",
+      "agreementEnd": "을 확인합니다.",
+      "submit": "계정 만들기 →"
+    },
+    "childrenProfile": {
+      "back": "이전",
+      "skip": "건너뛰기",
+      "headingPre": "자녀 프로필",
+      "headingPost": "을 만들어요",
+      "description": "나중에 설정에서 최대 5명까지 추가할 수 있어요.",
+      "later": "나중에",
+      "submit": "완료 · 코인 3개 받기",
+      "submitting": "저장 중…",
+      "errorGeneric": "자녀 프로필 저장에 실패했어요. 잠시 후 다시 시도해 주세요."
+    }
+  },
+  "child": {
+    "level": {
+      "beginner": "왕초보",
+      "intermediate": "중급",
+      "expert": "고급"
+    },
+    "form": {
+      "characterLabel": "캐릭터",
+      "characterHint": "나중에 바꿀 수 있어요",
+      "nameLabel": "이름",
+      "namePlaceholder": "자녀 이름 혹은 별명",
+      "birthLabel": "생년월일",
+      "birthHint": "만 14세 미만 · 법정대리인 동의 필요",
+      "drawingLabel": "그림 실력",
+      "levelBeginnerSub": "처음 그려봐요",
+      "levelIntermediateSub": "몇 번 해봤어요",
+      "levelExpertSub": "자신 있어요"
+    },
+    "switcher": {
+      "select": "자녀 선택",
+      "title": "자녀 프로필 ({count} / 5)",
+      "addMore": "자녀 추가하기",
+      "atMax": "최대 5명까지 등록 가능"
+    }
+  },
+  "myGallery": {
+    "emptyChild": {
+      "title": "아직 등록된 자녀가 없어요",
+      "sub": "자녀 프로필을 먼저 만들어야 마이갤러리를 사용할 수 있어요.",
+      "cta": "자녀 추가하기"
+    },
+    "title": "마이 갤러리",
+    "titleWithName": "{name}의 갤러리",
+    "subtitle": "보관함에서 이어 그리고, 공개작품으로 자랑하고, 수상작으로 모아둬요.",
+    "tabsAriaLabel": "갤러리 탭",
+    "tabs": {
+      "archive": "보관함",
+      "public": "공개작품",
+      "awards": "수상작"
+    },
+    "empty": {
+      "archiveTitle": "아직 보관된 작품이 없어요",
+      "archiveSub": "첫 그림을 그려서 보관함을 채워보세요.",
+      "publicTitle": "공개한 작품이 없어요",
+      "publicSub": "완성한 작품을 공개로 전환해 자랑해보세요.",
+      "awardsTitle": "수상한 작품이 없어요",
+      "awardsSub": "이벤트에 출품해서 수상해보세요."
+    },
+    "goDraw": "그리러 가기",
+    "errorLoad": "작품을 불러오지 못했어요.",
+    "card": {
+      "modeColoring": "컬러링",
+      "modeStepwise": "단계별",
+      "modeFreeform": "자유",
+      "modeTogether": "함께",
+      "rankGrand": "대상",
+      "rankGold": "금상",
+      "rankSilver": "은상",
+      "rankBronze": "동상",
+      "rankEncourage": "장려상",
+      "inProgress": "이어그리기",
+      "publicBadge": "공개",
+      "inProgressShort": "진행 중"
+    },
+    "calendar": {
+      "title": "그림 캘린더",
+      "prevMonthAria": "이전 달",
+      "nextMonthAria": "다음 달",
+      "prevImageAria": "이전 그림",
+      "nextImageAria": "다음 그림"
+    }
+  },
+  "drawing": {
+    "title": "Drawing"
+  },
+  "event": {
+    "tag": "IGALLERY EXCLUSIVE",
+    "headingPre": "이번 달의",
+    "headingHighlight": "이벤트",
+    "descLine1": "영감을 자극하는 특별 기획전.",
+    "descLine2": "마음에 드는 주제에 자유롭게 참여해 보세요.",
+    "filterAriaLabel": "이벤트 필터",
+    "filter": {
+      "all": "전체",
+      "open": "진행 중",
+      "notOpen": "오픈 예정",
+      "end": "종료"
+    },
+    "status": {
+      "open": "진행 중",
+      "notOpen": "오픈 예정",
+      "end": "종료"
+    },
+    "empty": "해당 상태의 이벤트가 없습니다.",
+    "card": {
+      "participants": "참여 {count}명",
+      "more": "자세히"
+    },
+    "items": {
+      "rainy-day": {
+        "title": "비가 오는날에",
+        "subtitle": "비가 오는날엔 나는 널 그리워해"
+      },
+      "stained-glass": {
+        "title": "스테인드글라스로 보는 세상",
+        "subtitle": "스테인드 글라스로 햇살이 들어온다면 어떤 느낌일까요? 너무 반짝반짝 눈이 부셔"
+      },
+      "korean-table": {
+        "title": "한국인의 밥상",
+        "subtitle": "속이 든든 맛도리 식탁을 그려보세요. 든든하게 먹어봐요."
+      },
+      "sea-sunset": {
+        "title": "바다와 만난 노을",
+        "subtitle": "바다랑 노을이 사귄데요. 여러분의 축하가 필요해요."
+      },
+      "tiger-brother": {
+        "title": "호랑이 형님",
+        "subtitle": "무서울까요? 아님 멋있을까요? 생각하는 호랭이를 그려봐요."
+      },
+      "arctic-now": {
+        "title": "북극의 지금",
+        "subtitle": "북극의 지금을 그려봐요. 이글루와 펭귄의 콜라보."
+      },
+      "dad-commute": {
+        "title": "아빠가 지나는 출근길",
+        "subtitle": "아빠는 출근길에 어딜 지나가나요. 지하철? 버스?"
+      },
+      "worldcup-2026": {
+        "title": "2026 북중미 월드컵",
+        "subtitle": "두둥 곧 시작하는 월드컵을 상상해봐요."
+      },
+      "picasso": {
+        "title": "피카소가 될꺼야",
+        "subtitle": "피카소가 됐다치고 여러분이 그리고 싶은걸 아무거나 골라서 그려봐요."
+      },
+      "bukchon": {
+        "title": "한옥마을 feat.북촌",
+        "subtitle": "모든 한옥마을이 북촌에 있는건 아니다. 하지만 북촌엔 한옥마을이 있쥬?"
+      }
+    }
+  },
+  "notifications": {
+    "tag": "알림 센터",
+    "headingPre": "안 읽은 알림",
+    "headingCount": "{count}개",
+    "subtitle": "최근 7일 동안 받은 알림을 모았어요",
+    "markAllRead": "모두 읽음 처리",
+    "tab": {
+      "all": "전체",
+      "contest": "대회",
+      "social": "소셜",
+      "coin": "코인",
+      "system": "시스템"
+    },
+    "groupToday": "오늘",
+    "groupEarlier": "이전 알림",
+    "empty": "해당 알림이 없어요",
+    "emptySub": "다른 탭을 확인해 보세요",
+    "footerAuto": "7일이 지난 알림은 자동으로 정리돼요",
+    "footerSetting": "알림 설정 →",
+    "errorRead": "읽음 처리에 실패했어요.",
+    "errorReadAll": "전체 읽음 처리에 실패했어요."
+  },
   "setting": {
     "title": "설정",
     "subtitle": "계정, 구독, 알림과 안전 옵션을 한곳에서 관리해요.",
+    "tag": "SETTINGS",
+    "groupAriaLabel": "설정 그룹",
     "groups": {
       "account": { "label": "계정", "sub": "프로필 · 자녀" },
       "billing": { "label": "구독 · 결제", "sub": "Pro · 코인" },
@@ -34,11 +326,488 @@
       "danger": { "label": "계정 관리", "sub": "로그아웃 · 탈퇴" }
     },
     "account": {
+      "loggedOutTitle": "로그인이 필요해요",
+      "loggedOutSub": "계정 정보를 보려면 로그인해 주세요.",
+      "noChildren": "추가된 자녀가 없어요",
+      "familyAccount": "가족 계정",
+      "edit": "편집",
+      "childrenManage": "자녀 프로필 관리",
+      "childrenSub": "{names} ({count} / 5명)",
       "password": "비밀번호 변경",
+      "passwordSub": "6개월마다 변경 권장",
+      "identity": "본인확인 정보",
+      "identitySub": "PASS · 1년 캐시",
       "language": "언어",
+      "languageValue": "한국어",
       "country": "국가 / 지역",
+      "countryValue": "대한민국",
       "languageSavedToast": "언어가 {name}(으)로 설정됐어요.",
-      "countrySavedToast": "국가가 {name}(으)로 설정됐어요."
+      "countrySavedToast": "국가가 {name}(으)로 설정됐어요.",
+      "saveFailedToast": "서버에 저장하지 못했어요. 잠시 후 다시 시도해 주세요."
+    },
+    "app": {
+      "saveFailed": "변경사항을 저장하지 못했어요. 잠시 후 다시 시도해 주세요.",
+      "boxNotif": "알림 설정",
+      "drawing": "드로잉",
+      "drawingSub": "그림 리마인더 및 완성 알림",
+      "event": "이벤트",
+      "eventSub": "신규 이벤트, 출품 및 결과 알림",
+      "system": "시스템",
+      "systemSub": "중요 서비스 공지 및 업데이트 알림",
+      "marketing": "마케팅",
+      "marketingSub": "프로모션 및 새 기능 소식 알림",
+      "boxDnd": "방해금지",
+      "dnd": "방해금지 모드",
+      "dndSub": "설정 시간대에 푸시 알림을 차단합니다.",
+      "dndStart": "시작시간",
+      "dndEnd": "종료시간",
+      "dndStartAria": "방해금지 시작시간",
+      "dndEndAria": "방해금지 종료시간"
+    },
+    "billing": {
+      "tag": "IGALLERY PRO",
+      "monthlyTitle": "월 구독 중",
+      "nextPayment": "다음 결제 · 2026.05.15 · 4,900원",
+      "switchYearly": "연 구독으로 변경",
+      "cancel": "구독 취소",
+      "wallet": "코인 지갑",
+      "walletSub": "가입 후 7일간 매일 1개 자동 충전",
+      "coinUnit": "개",
+      "buy": "코인 구매",
+      "buySub": "10개 9,900원",
+      "history": "결제 내역",
+      "historySub": "최근 결제 · 2026.04.15",
+      "refund": "환불 신청",
+      "refundSub": "결제일 30일 이내",
+      "receiptEmail": "영수증 이메일",
+      "receiptEmailValue": "kim.minsu@email.com"
+    },
+    "kid": {
+      "safeMode": "자녀 보호 모드",
+      "safeModeSub": "안전한 콘텐츠만 노출",
+      "timeLimit": "이용 시간 제한",
+      "timeLimitSub": "하루 1시간 30분",
+      "paymentLock": "결제 비밀번호",
+      "paymentLockSub": "자녀 결제 차단",
+      "togetherChat": "함께 그리기 채팅",
+      "togetherChatSub": "2인 합방에서의 대화 허용",
+      "consent": "법정대리인 동의 이력",
+      "consentSub": "만 14세 미만 자녀 1명",
+      "saveFailed": "변경사항을 저장하지 못했어요. 잠시 후 다시 시도해 주세요."
+    },
+    "support": {
+      "faqHeading": "자주 묻는 질문",
+      "contact": "문의하기",
+      "contactSub": "help@artbonbon.com · 평일 10:00 ~ 18:00",
+      "terms": "이용약관",
+      "privacy": "개인정보 처리방침",
+      "copyright": "이벤트 저작권 안내",
+      "version": "버전",
+      "versionValue": "1.0.0"
+    },
+    "faq": [
+      {
+        "q": "구독을 어떻게 해지하나요?",
+        "a": "설정 → 구독 관리에서 '구독 해지'를 탭하세요. 현재 결제 기간이 끝날 때까지 서비스를 이용할 수 있습니다."
+      },
+      {
+        "q": "삭제된 그림을 복구할 수 있나요?",
+        "a": "계정 탈퇴 후 30일 이내에는 탈퇴 취소로 모든 데이터를 복구할 수 있습니다. 30일 경과 후에는 영구 삭제됩니다."
+      },
+      {
+        "q": "코인은 어떻게 사용하나요?",
+        "a": "그림 1회 이용 시 코인 1개가 소모됩니다. 매일 무료 코인이 충전되며, 구독 시 무제한으로 이용할 수 있습니다."
+      },
+      {
+        "q": "자녀 프로필은 어떻게 추가하나요?",
+        "a": "설정 → 계정 정보 → 자녀 프로필 추가에서 최대 5개까지 추가할 수 있습니다."
+      },
+      {
+        "q": "이벤트에 어떻게 참가하나요?",
+        "a": "이벤트 탭에서 원하는 이벤트를 선택하고 출품 단계를 따라가세요. 본인확인이 필요할 수 있습니다."
+      }
+    ],
+    "contact": {
+      "tag": "SUPPORT",
+      "title": "1:1 문의하기",
+      "subtitle": "평일 10:00 ~ 18:00 · 보통 1영업일 내 답변",
+      "subjectLabel": "제목",
+      "subjectPlaceholder": "문의 제목을 입력해 주세요",
+      "messageLabel": "내용",
+      "messagePlaceholder": "문의 내용을 자세히 적어 주세요",
+      "submit": "문의하기",
+      "submitting": "전송 중…",
+      "successToast": "문의가 접수되었어요. 빠른 시일 내에 답변 드릴게요.",
+      "errorToast": "문의 등록에 실패했어요. 잠시 후 다시 시도해 주세요."
+    },
+    "danger": {
+      "logout": "로그아웃",
+      "logoutSub": "이 기기에서만 로그아웃합니다",
+      "logoutConfirmMsg": "이 기기에서 로그아웃할까요?",
+      "logoutConfirmTitle": "로그아웃",
+      "logoutConfirmYes": "로그아웃",
+      "deleteChildren": "자녀 프로필 삭제",
+      "deleteChildrenSub": "{count}명 중 선택해서 삭제 · 작품·코인 함께 정리",
+      "deleteChildrenEmpty": "등록된 자녀 없음",
+      "noChildrenAlert": "등록된 자녀 프로필이 없어요.",
+      "withdrawTitle": "계정 탈퇴",
+      "withdrawDescLine1": "탈퇴 시 작품·코인·구독이 정리됩니다. 즉시 삭제 또는 30일 유예 중 선택할 수 있어요.",
+      "withdrawDescLine2": "GDPR · COPPA에 따라 ZIP 다운로드와 즉시 삭제 옵션을 제공해요.",
+      "withdrawCta": "탈퇴 진행"
+    },
+    "passwordPage": {
+      "tag": "SECURITY",
+      "title": "비밀번호 변경",
+      "subtitle": "안전한 보관함을 위해 6개월마다 변경을 권장해요.",
+      "currentLabel": "현재 비밀번호",
+      "currentPlaceholder": "현재 사용 중인 비밀번호",
+      "newLabel": "새 비밀번호",
+      "newPlaceholder": "새로 사용할 비밀번호",
+      "confirmLabel": "새 비밀번호 확인",
+      "confirmPlaceholder": "다시 한 번 입력해 주세요",
+      "mismatch": "비밀번호가 일치하지 않아요",
+      "strengthLabel": "비밀번호 강도",
+      "ruleLen": "8자 이상",
+      "ruleMix": "영문/숫자 조합",
+      "ruleSpc": "특수문자 1자 이상",
+      "ruleDiff": "현재 비밀번호와 다름",
+      "infoNote": "비밀번호는 가족 계정의 결제·자녀 보호 설정을 보호하는 열쇠입니다. 쉽게 추측되는 단어 대신 영문·숫자·특수문자를 섞어 주세요.",
+      "showAria": "비밀번호 보기",
+      "hideAria": "비밀번호 숨기기",
+      "submit": "비밀번호 변경",
+      "submitting": "변경 중…",
+      "errorMismatch": "현재 비밀번호가 일치하지 않아요.",
+      "errorChangeFailed": "비밀번호를 변경하지 못했어요.",
+      "errorGeneric": "비밀번호 변경에 실패했어요. 잠시 후 다시 시도해 주세요.",
+      "successToast": "비밀번호가 변경되었어요. 다시 로그인해 주세요.",
+      "strength1": "약함",
+      "strength2": "보통",
+      "strength3": "안전",
+      "strength4": "아주 안전"
+    },
+    "languagePage": {
+      "tag": "LANGUAGE",
+      "title": "언어 설정",
+      "subtitle": "앱 전체 인터페이스 언어를 선택하세요.",
+      "previewLabel": "PREVIEW",
+      "previewNote": "모든 텍스트와 알림에 즉시 적용돼요.",
+      "ko": "한국어",
+      "koSub": "Korean",
+      "koPreview": "아트봉봉 갤러리에 오신 걸 환영해요!",
+      "en": "English",
+      "enSub": "영어",
+      "enPreview": "Welcome to ArtBongBong Gallery!",
+      "ja": "日本語",
+      "jaSub": "일본어",
+      "jaPreview": "アートボンボン・ギャラリーへようこそ!"
+    },
+    "countryPage": {
+      "tag": "REGION",
+      "title": "국가 / 지역 설정",
+      "subtitle": "결제 통화, 시간대, 콘텐츠 추천에 영향을 줍니다.",
+      "currentLabel": "현재 설정",
+      "appliedBadge": "적용 중",
+      "searchPlaceholder": "국가 또는 지역 검색",
+      "regionAsia": "아시아",
+      "regionNa": "북미",
+      "regionEurope": "유럽",
+      "regionOceania": "오세아니아",
+      "country": {
+        "KR": "대한민국",
+        "JP": "일본",
+        "CN": "중국",
+        "VN": "베트남",
+        "TH": "태국",
+        "US": "미국",
+        "CA": "캐나다",
+        "GB": "영국",
+        "FR": "프랑스",
+        "DE": "독일",
+        "AU": "호주"
+      }
+    },
+    "childrenPage": {
+      "tag": "CHILDREN",
+      "title": "자녀 프로필",
+      "subtitle": "가족 계정당 최대 {max}명까지 등록할 수 있어요. 현재 {count} / {max}명.",
+      "emptyTitle": "아직 추가된 자녀가 없어요",
+      "emptySub": "자녀를 추가하면 그림을 그리고 보관할 수 있어요.",
+      "addChild": "자녀 추가",
+      "atMaxLabel": "최대 {max}명까지 등록 가능",
+      "ageSuffix": " · 만 {age}세",
+      "deleteFailed": "삭제에 실패했어요. 잠시 후 다시 시도해 주세요."
+    },
+    "childrenEditPage": {
+      "tag": "EDIT",
+      "title": "자녀 프로필 수정",
+      "subtitle": "캐릭터·이름·생년월일·그림 실력을 바꿀 수 있어요.",
+      "loadError404": "자녀 프로필을 찾을 수 없어요.",
+      "loadErrorGeneric": "자녀 프로필을 불러오지 못했어요.",
+      "saveError404": "자녀 프로필을 찾을 수 없어요.",
+      "saveErrorGeneric": "자녀 프로필 저장에 실패했어요. 잠시 후 다시 시도해 주세요.",
+      "backToList": "목록으로"
+    }
+  },
+  "childDelete": {
+    "headerTag": "DELETE CHILD PROFILE",
+    "title": "어떤 자녀 프로필을 삭제할까요?",
+    "subtitle": "개별 자녀를 골라 삭제하거나, 모든 자녀 프로필을 한 번에 삭제할 수 있어요.",
+    "emptyTitle": "등록된 자녀가 없어요",
+    "emptySub": "자녀 프로필이 없으면 삭제할 게 없어요.",
+    "modeIndividualTitle": "선택해서 삭제",
+    "modeIndividualSub": "자녀 카드를 골라 1명 또는 여러 명을 삭제",
+    "modeAllTitle": "모든 자녀 삭제",
+    "modeAllSub": "{count}명의 자녀 프로필을 모두 한 번에 삭제",
+    "linkedCount": "연결된 자녀 {count}명",
+    "selectAll": "전체 선택",
+    "ageSuffix": "{age}세",
+    "summaryEmptyTag": "NO TARGET SELECTED",
+    "summaryEmptyMsg": "카드를 선택하거나 \"모든 자녀 삭제\"를 골라 주세요",
+    "summaryWillDelete": "{count}명 삭제 예정",
+    "summaryHelp": "아래 칩의 ✕로 한 명씩 제외할 수 있어요.",
+    "drawingsLabel": "🎨 작품",
+    "awardsLabel": "🏆 수상",
+    "removeChipAria": "{name} 제외",
+    "back": "← 자녀 관리로 돌아가기",
+    "submitNoTarget": "대상을 선택해 주세요",
+    "submitAll": "{count}명 모두 삭제하기 →",
+    "submitOne": "{name} 삭제하기 →",
+    "submitMany": "{count}명 삭제하기 →",
+    "submitting": "삭제 중…",
+    "successOne": "{name} 프로필이 삭제되었어요.",
+    "successMany": "{count}명의 자녀 프로필이 삭제되었어요.",
+    "partialFailureTitle": "일부 자녀를 삭제하지 못했어요.",
+    "errorServer": "서버에 연결할 수 없어요.",
+    "modal": {
+      "headerSubAll": "DELETE ALL CHILD PROFILES",
+      "headerSubMulti": "DELETE SELECTED CHILD PROFILES",
+      "headerSubSingle": "DELETE CHILD PROFILE",
+      "askAll": "자녀 프로필을 모두 삭제할까요?",
+      "askMulti": "선택한 {count}명을 삭제할까요?",
+      "askSingle": "{name} 프로필을 삭제할까요?",
+      "fallbackName": "이 자녀",
+      "downloadHint": "삭제 전에 그림 작품을 ZIP으로 내려받을 수 있어요.",
+      "downloadCta": "작품 다운로드 →",
+      "agree1": "삭제 후에는 작품·수상·진행 중 그림을 복구할 수 없음을 이해했어요.",
+      "agree2All": "{count}명의 자녀 프로필이 모두 사라지며, 가족 계정만 남는다는 점을 확인했어요.",
+      "agree2Multi": "선택한 {count}명의 자녀 프로필이 사라진다는 점을 확인했어요.",
+      "agree2Single": "진행 중이던 그림과 미수령 보상은 모두 사라진다는 점을 확인했어요.",
+      "phraseLabelPre": "확인을 위해",
+      "phraseLabelMid": "\"{phrase}\"",
+      "phraseLabelPost": "를 입력해 주세요",
+      "phrase": "모두 삭제",
+      "phraseMismatch": "정확하게 일치해야 해요",
+      "footerNote": "🛡 삭제 후 30일간 고객센터로 복구 요청 가능",
+      "submitAll": "{count}명 모두 삭제",
+      "submitMulti": "{count}명 삭제하기",
+      "submitSingle": "{name} 삭제하기",
+      "fallbackChild": "자녀",
+      "targetsAll": "삭제 대상 자녀 {count}명 (전체)",
+      "targetsMulti": "선택된 자녀 {count}명",
+      "drawingsCount": "🎨 {count}작",
+      "awardsCount": "🏆 {count}회 수상",
+      "compactStats": "🎨 {drawings} · 🏆 {awards}",
+      "impactHeading": "삭제하면 다음 데이터가 함께 사라져요",
+      "impact": {
+        "drawings": "그림 작품",
+        "drawingsValue": "{count}작",
+        "awards": "수상 이력",
+        "awardsValue": "{count}회",
+        "coins": "코인 잔액",
+        "coinsValue": "소멸",
+        "timelapse": "타임랩스 기록",
+        "timelapseValue": "영구 삭제"
+      }
+    }
+  },
+  "withdraw": {
+    "stepLabel": "STEP {step} / 7 · {title}",
+    "estimated": "예상 소요 2분",
+    "stepTitle": {
+      "1": "잠시만요, 정말 떠나시나요?",
+      "2": "자녀 프로필은 어떻게 할까요?",
+      "3": "삭제 방식을 선택해 주세요",
+      "4": "그림을 ZIP으로 받아두세요",
+      "5": "사라지는 데이터를 확인해 주세요",
+      "6": "본인 확인이 필요해요",
+      "7": "마지막으로 한 번만 더 확인할게요"
+    },
+    "heroSub": {
+      "1": "떠나시는 이유를 알려주시면 더 좋은 서비스를 만드는 데 큰 도움이 돼요.",
+      "2": "가족 계정에 자녀가 연결되어 있어요. 어떻게 처리할지 선택해 주세요.",
+      "3": "언제 데이터를 삭제할지 결정할 수 있어요. 마음이 바뀌실 수 있다면 30일 유예를 추천해요.",
+      "4": "삭제 전 마지막 기회예요. 자녀의 작품과 활동 기록을 다운로드할 수 있어요.",
+      "5": "탈퇴가 완료되면 아래 항목들이 영구 삭제돼요. 한 번 더 확인 부탁드려요.",
+      "6": "계정 보안을 위해, 비밀번호와 등록된 휴대전화 인증을 한 번 더 진행할게요.",
+      "7": "지금 [영구 삭제하기]를 누르면 30일 유예 기간이 시작돼요. 그 안에 다시 로그인하면 취소할 수 있어요."
+    },
+    "exitConfirmMsg": "탈퇴 절차를 그만둘까요? 입력하신 내용은 사라져요.",
+    "exitConfirmTitle": "탈퇴 절차 종료",
+    "exitYes": "나가기",
+    "exitNo": "계속 진행",
+    "successInstant": "탈퇴 요청이 접수되었어요. 모든 데이터가 즉시 삭제됩니다. (BE 미구현 — mock)",
+    "successGrace": "탈퇴 요청이 접수되었어요. 30일 안에 다시 로그인하시면 취소할 수 있어요. (BE 미구현 — mock)",
+    "footerExit": "나가기",
+    "footerNext": "다음 →",
+    "footerKeepFreeLocker": "한 달 무료 보관함 받기",
+    "step1": {
+      "statsTitle": "지금까지 그린 작품은",
+      "statsTitleCount": "24점",
+      "statsTitleSuffix": "이에요",
+      "statsSub": "수상 2회 · 누적 활동 시간 18시간 27분",
+      "tipTitle": "잠깐, 이런 방법은 어때요?",
+      "reasons": {
+        "price": {
+          "label": "요금이 부담돼요",
+          "hint": "월 4,900원이 부담되시나요? 연간 요금제로 최대 33% 절약하실 수 있어요."
+        },
+        "use": {
+          "label": "잘 사용하지 않게 돼요",
+          "hint": "한 달 무료 보관함을 받아두면 언제든 다시 시작할 수 있어요."
+        },
+        "quality": {
+          "label": "도안·콘텐츠가 부족해요",
+          "hint": "매주 새로운 도안이 추가돼요. 어떤 종류가 더 필요하셨나요?"
+        },
+        "privacy": {
+          "label": "개인정보가 걱정돼요",
+          "hint": "자녀 보호 모드와 데이터 최소 수집을 다시 안내해 드릴게요."
+        },
+        "kid": {
+          "label": "아이가 흥미를 잃었어요",
+          "hint": "단계별/함께 그리기 모드를 추천해요. 아이 연령에 맞는 도안도 있어요."
+        },
+        "other": {
+          "label": "기타",
+          "hint": "어떤 점이 아쉬우셨는지 직접 알려 주세요."
+        }
+      },
+      "otherPlaceholder": "자유롭게 알려 주세요 (최대 500자)"
+    },
+    "step2": {
+      "options": {
+        "all": {
+          "title": "자녀와 함께 모두 탈퇴",
+          "desc": "모든 자녀 프로필과 작품·수상 이력이 함께 삭제돼요. 가장 일반적인 선택이에요.",
+          "tag": "권장"
+        },
+        "keep": {
+          "title": "가족 계정만 탈퇴, 자녀는 보존",
+          "desc": "가족 계정 1개만 정리하고, 자녀 프로필·작품은 다른 보호자(공동 양육자)에게 위임돼요.",
+          "tag": "양육 위임"
+        },
+        "partial": {
+          "title": "일부 자녀만 함께 삭제",
+          "desc": "여러 자녀 중 직접 선택한 자녀만 삭제해요. 다음 단계에서 누구를 삭제할지 고를 수 있어요."
+        }
+      },
+      "delegationNote": "\"가족 계정만 탈퇴\"를 선택하시면, 공동 양육자 이메일로 위임 안내가 발송돼요."
+    },
+    "step3": {
+      "options": {
+        "grace": {
+          "title": "30일 유예 후 삭제",
+          "desc": "30일 동안은 다시 로그인하면 탈퇴를 취소할 수 있어요. 그 후 자동 삭제돼요.",
+          "badge": "추천",
+          "list1": "언제든 복구 가능",
+          "list2": "30일 후 자동 hard-delete",
+          "list3": "구독은 즉시 해지"
+        },
+        "instant": {
+          "title": "즉시 삭제",
+          "desc": "요청 즉시 모든 데이터가 영구 삭제돼요. GDPR 제17조 / COPPA에 따른 권리예요.",
+          "badge": "복구 불가",
+          "list1": "되돌릴 수 없음",
+          "list2": "즉시 hard-delete",
+          "list3": "구독·코인 동시 소멸"
+        }
+      },
+      "legalNote": "GDPR 제17조 \"잊혀질 권리\" 및 미국 COPPA에 따라, 삭제 요청 시 14일 이내에 모든 처리·백업 시스템에서 데이터를 제거합니다. 단, 결제 기록 등 법령상 5년 보관이 의무인 항목은 분리·암호화 보관됩니다."
+    },
+    "step4": {
+      "tag": "BACKUP ARCHIVE",
+      "fileLabel": "artbongbong-backup-2026-05-06.zip",
+      "sizeNote": "예상 크기 약 {total} MB · 최대 24시간 안에 메일로 전송",
+      "include": "포함할 항목",
+      "items": {
+        "drawings": { "label": "그림 작품 (PNG, 원본 해상도)", "sub": "24작 · 약 245 MB" },
+        "awards": { "label": "수상 이력 + 인증서 PDF", "sub": "2건 · 약 12 MB" },
+        "timelapse": { "label": "타임랩스 영상 (MP4)", "sub": "18편 · 약 1,280 MB" },
+        "profile": { "label": "프로필 메타데이터 (JSON)", "sub": "자녀 프로필 외 · 약 4 MB" }
+      },
+      "downloadCta": "📥 ZIP 다운로드 요청하기",
+      "downloadToast": "ZIP 다운로드가 요청됐어요. 가입 시 등록된 이메일로 24시간 안에 발송됩니다. (BE 미구현 — mock)",
+      "rightNote": "GDPR 제20조 데이터 이동권에 따른 권리예요. 무료입니다."
+    },
+    "step5": {
+      "tiles": {
+        "drawings": { "title": "그림 작품", "value": "24작", "sub": "자녀 프로필 작품 전체" },
+        "awards": { "title": "수상 이력", "value": "2회", "sub": "인증서 포함" },
+        "coins": { "title": "코인 잔액", "value": "24개", "sub": "환불 불가 · 즉시 소멸" },
+        "subscription": { "title": "구독", "value": "월 4,900원", "sub": "즉시 해지 · 잔여일 환불 X" },
+        "timelapse": { "title": "타임랩스", "value": "18편", "sub": "복구 불가" },
+        "notification": { "title": "알림 / 메시지", "value": "전체", "sub": "발송 기록 포함" }
+      },
+      "kept": {
+        "heading": "법령상 보관되는 항목",
+        "row1Title": "결제 / 정산 기록",
+        "row1Sub": "전자상거래법 · 5년",
+        "row2Title": "본인확인 인증 로그",
+        "row2Sub": "정보통신망법 · 6개월",
+        "row3Title": "부정 사용 신고 기록",
+        "row3Sub": "필요 시 3년",
+        "footnote": "* 이 항목들은 분리된 암호화 저장소에 보관되며, 별도 인증 없이는 복원되지 않아요."
+      }
+    },
+    "step6": {
+      "passwordLabel": "현재 비밀번호",
+      "otpLabel": "휴대전화 인증번호",
+      "otpPlaceholder": "등록된 번호로 발송된 6자리",
+      "otpSend": "인증번호 받기",
+      "otpToast": "인증번호가 발송됐어요. (BE 미구현 — mock)",
+      "otpTimerPre": "⏱ 02:48 남음 · 인증번호가 오지 않으면",
+      "otpTimerLink": "다시 받기",
+      "securityNote": "본인 확인 정보는 인증 직후 폐기돼요. 5회 실패 시 계정이 24시간 잠깁니다.",
+      "lostPhonePre": "휴대전화를 분실하셨나요?",
+      "lostPhoneLink": "고객센터로 문의하기"
+    },
+    "step7": {
+      "summaryHeading": "요청 내용",
+      "rowMethod": "삭제 방식",
+      "rowChildren": "자녀 처리",
+      "rowZip": "ZIP 백업",
+      "rowZipValue": "요청됨 · 24시간 내 메일 발송",
+      "rowComplete": "예상 완료",
+      "completionGrace": "30일 후",
+      "completionInstant": "요청 즉시",
+      "methodGrace": "30일 유예 후 자동 삭제",
+      "methodInstant": "즉시 삭제 (복구 불가)",
+      "childrenAll": "자녀와 함께 모두 탈퇴",
+      "childrenKeep": "가족 계정만 탈퇴, 자녀는 보존",
+      "childrenPartial": "일부 자녀만 함께 삭제",
+      "agree1": "위 내용을 모두 확인했고, 결과에 동의해요.",
+      "agree2": "자녀의 작품·수상 이력이 영구 삭제됨을 알고 있어요.",
+      "agree3": "잔여 코인·구독 잔여일은 환불되지 않음을 이해했어요.",
+      "phrase": "아트봉봉 갤러리 탈퇴",
+      "phraseLabelPre": "확인을 위해",
+      "phraseLabelMid": "\"{phrase}\"",
+      "phraseLabelPost": "를 그대로 입력해 주세요",
+      "submit": "🗑 영구 삭제하기"
+    },
+    "cancelPage": {
+      "remainingDays": "⏰ 탈퇴 18일 남음",
+      "title": "다시 돌아오신 걸 환영해요!",
+      "description": "현재 30일 유예 기간 중이에요. 지금 취소하시면 모든 작품·자녀 프로필·구독이 그대로 복구돼요. 18일 후에는 자동 삭제되어 되돌릴 수 없어요.",
+      "stat1": "그림 작품",
+      "stat1Value": "24작",
+      "stat2": "수상 이력",
+      "stat2Value": "2회",
+      "stat3": "코인",
+      "stat3Value": "24개",
+      "proceed": "그대로 진행",
+      "cancel": "✨ 탈퇴 취소하고 계속 쓸래요",
+      "footer": "취소 시 즉시 모든 기능이 복구돼요 · 별도 결제 없음",
+      "successToast": "탈퇴가 취소되었어요. 모든 기능이 즉시 복구됐어요. (BE 미구현 — mock)"
     }
   },
   "breadcrumb": {
@@ -55,5 +824,15 @@
     "settingAccountCountry": "국가 / 지역",
     "settingWithdraw": "계정 탈퇴",
     "settingWithdrawCancel": "탈퇴 취소"
+  },
+  "session": {
+    "expired": "세션이 만료되었습니다."
+  },
+  "users": {
+    "createTitle": "사용자 생성",
+    "namePlaceholder": "이름",
+    "create": "생성",
+    "lookupTitle": "사용자 조회",
+    "lookup": "조회"
   }
 }

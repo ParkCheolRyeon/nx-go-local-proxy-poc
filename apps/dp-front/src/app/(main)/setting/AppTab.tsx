@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 
 import Row from '@/app/(main)/setting/Row';
@@ -40,6 +41,7 @@ export default function AppTab() {
   const [tweaks, setTweaks] = useState<Pick<Preferences, AppKey>>(FALLBACK);
   const [loaded, setLoaded] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const t = useTranslations('setting.app');
 
   useEffect(() => {
     let cancelled = false;
@@ -58,7 +60,6 @@ export default function AppTab() {
       })
       .catch((err) => {
         if (cancelled) return;
-        // 401은 AuthBootstrap이 처리. 그 외는 fallback 그대로 표시.
         if (!(err instanceof ApiError) || err.status !== 401) {
           console.error('preferences load failed', err);
         }
@@ -75,10 +76,9 @@ export default function AppTab() {
     try {
       await patchMyPreferences(patch);
     } catch (err) {
-      // 실패 시 롤백
       setTweaks(prev);
       if (err instanceof ApiError && err.status === 401) return;
-      void alert('변경사항을 저장하지 못했어요. 잠시 후 다시 시도해 주세요.', { tone: 'warning' });
+      void alert(t('saveFailed'), { tone: 'warning' });
     }
   };
 
@@ -87,7 +87,6 @@ export default function AppTab() {
     setTweaks((cur) => {
       const prev = cur;
       const next = { ...cur, [key]: value };
-      // 토글류는 즉시, TimeField는 디바운스
       if (key === 'dndStart' || key === 'dndEnd') {
         if (debounceRef.current) clearTimeout(debounceRef.current);
         debounceRef.current = setTimeout(() => {
@@ -102,39 +101,39 @@ export default function AppTab() {
 
   return (
     <>
-      <SettingBox icon="🔔" title="알림 설정">
+      <SettingBox icon="🔔" title={t('boxNotif')}>
         <Row
           icon="🎨"
-          title="드로잉"
-          sub="그림 리마인더 및 완성 알림"
+          title={t('drawing')}
+          sub={t('drawingSub')}
           right={<Toggle on={tweaks.notifDrawing} onClick={() => setT('notifDrawing', !tweaks.notifDrawing)} />}
         />
         <Row
           icon="🏆"
-          title="이벤트"
-          sub="신규 이벤트, 출품 및 결과 알림"
+          title={t('event')}
+          sub={t('eventSub')}
           right={<Toggle on={tweaks.notifEvent} onClick={() => setT('notifEvent', !tweaks.notifEvent)} />}
         />
         <Row
           icon="🛎"
-          title="시스템"
-          sub="중요 서비스 공지 및 업데이트 알림"
+          title={t('system')}
+          sub={t('systemSub')}
           right={<Toggle on={tweaks.notifSystem} onClick={() => setT('notifSystem', !tweaks.notifSystem)} />}
         />
         <Row
           icon="📢"
-          title="마케팅"
-          sub="프로모션 및 새 기능 소식 알림"
+          title={t('marketing')}
+          sub={t('marketingSub')}
           right={<Toggle on={tweaks.notifMarketing} onClick={() => setT('notifMarketing', !tweaks.notifMarketing)} />}
           last
         />
       </SettingBox>
 
-      <SettingBox icon="🌙" title="방해금지">
+      <SettingBox icon="🌙" title={t('boxDnd')}>
         <Row
           icon="🌙"
-          title="방해금지 모드"
-          sub="설정 시간대에 푸시 알림을 차단합니다."
+          title={t('dnd')}
+          sub={t('dndSub')}
           right={<Toggle on={tweaks.dndEnabled} onClick={() => setT('dndEnabled', !tweaks.dndEnabled)} />}
           last={!tweaks.dndEnabled}
         />
@@ -142,20 +141,20 @@ export default function AppTab() {
           <>
             <Row
               icon="⏰"
-              title="시작시간"
+              title={t('dndStart')}
               right={
                 <TimeField
                   value={tweaks.dndStart}
                   onChange={(v) => setT('dndStart', v)}
-                  ariaLabel="방해금지 시작시간"
+                  ariaLabel={t('dndStartAria')}
                 />
               }
             />
             <Row
               icon="🌅"
-              title="종료시간"
+              title={t('dndEnd')}
               right={
-                <TimeField value={tweaks.dndEnd} onChange={(v) => setT('dndEnd', v)} ariaLabel="방해금지 종료시간" />
+                <TimeField value={tweaks.dndEnd} onChange={(v) => setT('dndEnd', v)} ariaLabel={t('dndEndAria')} />
               }
               last
             />

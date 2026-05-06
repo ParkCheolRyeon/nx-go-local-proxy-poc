@@ -6,15 +6,66 @@
   "targets": {
     "dev": {
       "executor": "nx:run-commands",
+      "continuous": true,
       "options": {
-        "command": "go run main.go",
+        "command": "air",
         "cwd": "apps/dp-back"
       }
     },
     "build": {
       "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": [
+        "default",
+        "{projectRoot}/**/*.go",
+        "{projectRoot}/go.mod",
+        "{projectRoot}/go.sum"
+      ],
+      "outputs": ["{workspaceRoot}/dist/apps/dp-back"],
       "options": {
         "command": "go build -o ../../dist/apps/dp-back/dp-back",
+        "cwd": "apps/dp-back"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": [
+        "default",
+        "{projectRoot}/**/*.go",
+        "{projectRoot}/go.mod",
+        "{projectRoot}/go.sum"
+      ],
+      "options": {
+        "command": "go vet ./...",
+        "cwd": "apps/dp-back"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": [
+        "default",
+        "{projectRoot}/**/*.go",
+        "{projectRoot}/go.mod",
+        "{projectRoot}/go.sum"
+      ],
+      "options": {
+        "command": "go vet ./...",
+        "cwd": "apps/dp-back"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": [
+        "default",
+        "{projectRoot}/**/*.go",
+        "{projectRoot}/go.mod",
+        "{projectRoot}/go.sum"
+      ],
+      "options": {
+        "command": "go test ./...",
         "cwd": "apps/dp-back"
       }
     },
@@ -27,6 +78,13 @@
     },
     "sqlc:gen": {
       "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": [
+        "{projectRoot}/sqlc.yaml",
+        "{projectRoot}/internal/db/queries/**/*.sql",
+        "{projectRoot}/internal/db/migrations/**/*.sql"
+      ],
+      "outputs": ["{projectRoot}/internal/db/sqlc"],
       "options": {
         "command": "sqlc generate",
         "cwd": "apps/dp-back"

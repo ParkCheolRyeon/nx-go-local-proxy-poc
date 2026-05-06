@@ -3,6 +3,7 @@
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import FullCalendar from '@fullcalendar/react';
+import { useLocale, useTranslations } from 'next-intl';
 import { useMemo, useRef, useState } from 'react';
 
 import IconArrowRight from '@/app/assets/icons/icon-arrow-right.svg';
@@ -24,6 +25,8 @@ type Props = {
 
 export default function MonthCalendar({ initialMonth }: Props) {
   const calRef = useRef<FullCalendar>(null);
+  const t = useTranslations('myGallery.calendar');
+  const locale = useLocale();
 
   const initial = useMemo(() => {
     if (initialMonth) return initialMonth;
@@ -58,14 +61,14 @@ export default function MonthCalendar({ initialMonth }: Props) {
       <header className="flex items-center justify-between border-b border-[#1C7AE0]/10 bg-[#EAF2FE]/40 px-5 py-3.5">
         <div className="flex items-center gap-2">
           <span className="text-[16px]">📅</span>
-          <span className="text-[13.5px] font-extrabold text-[#0b2a63]">그림 캘린더</span>
+          <span className="text-[13.5px] font-extrabold text-[#0b2a63]">{t('title')}</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <NavButton onClick={goPrev} ariaLabel="이전 달" direction="left" />
+          <NavButton onClick={goPrev} ariaLabel={t('prevMonthAria')} direction="left" />
           <div className="min-w-[88px] text-center text-[13px] font-extrabold tabular-nums text-[#0b2a63]">
             {view.year}.{String(view.month).padStart(2, '0')}
           </div>
-          <NavButton onClick={goNext} ariaLabel="다음 달" direction="right" />
+          <NavButton onClick={goNext} ariaLabel={t('nextMonthAria')} direction="right" />
         </div>
       </header>
 
@@ -80,7 +83,7 @@ export default function MonthCalendar({ initialMonth }: Props) {
           height="auto"
           fixedWeekCount={false}
           showNonCurrentDates={true}
-          locale="ko"
+          locale={locale}
           dayHeaderFormat={{ weekday: 'short' }}
           dayCellContent={(arg) => {
             const dateStr = formatLocalDate(arg.date);
@@ -121,6 +124,7 @@ type DayCellProps = {
 function DayCell({ dateStr, dayNumber, isOtherMonth, isToday, drawings }: DayCellProps) {
   const [idx, setIdx] = useState(0);
   const total = drawings.length;
+  const t = useTranslations('myGallery.calendar');
   const safeIdx = total === 0 ? 0 : idx % total;
   const current = drawings[safeIdx];
 
@@ -186,7 +190,7 @@ function DayCell({ dateStr, dayNumber, isOtherMonth, isToday, drawings }: DayCel
               <button
                 type="button"
                 onClick={goPrev}
-                aria-label="이전 그림"
+                aria-label={t('prevImageAria')}
                 className="absolute left-1 top-1/2 z-10 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-white/85 opacity-0 shadow-[0_2px_6px_rgba(0,0,0,0.18)] transition-opacity duration-150 group-hover/cell:opacity-100 hover:bg-white"
               >
                 <IconArrowRight
@@ -199,7 +203,7 @@ function DayCell({ dateStr, dayNumber, isOtherMonth, isToday, drawings }: DayCel
               <button
                 type="button"
                 onClick={goNext}
-                aria-label="다음 그림"
+                aria-label={t('nextImageAria')}
                 className="absolute right-1 top-1/2 z-10 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-white/85 opacity-0 shadow-[0_2px_6px_rgba(0,0,0,0.18)] transition-opacity duration-150 group-hover/cell:opacity-100 hover:bg-white"
               >
                 <IconArrowRight width={10} height={10} aria-hidden className="text-[#1C7AE0]" />

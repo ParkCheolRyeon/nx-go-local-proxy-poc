@@ -6,9 +6,42 @@
     "production": [
       "default",
       "!{projectRoot}/.eslintrc.json",
-      "!{projectRoot}/eslint.config.mjs"
+      "!{projectRoot}/eslint.config.mjs",
+      "!{projectRoot}/**/*.test.{ts,tsx,go}",
+      "!{projectRoot}/**/*_test.go"
     ],
-    "sharedGlobals": []
+    "sharedGlobals": [
+      "{workspaceRoot}/tsconfig.base.json",
+      "{workspaceRoot}/eslint.config.mjs"
+    ]
+  },
+  "targetDefaults": {
+    "build": {
+      "cache": true,
+      "dependsOn": ["^build"],
+      "inputs": ["production", "^production"]
+    },
+    "typecheck": {
+      "cache": true,
+      "dependsOn": ["^build"],
+      "inputs": [
+        "default",
+        "^default",
+        { "externalDependencies": ["typescript"] }
+      ]
+    },
+    "lint": {
+      "cache": true,
+      "inputs": [
+        "default",
+        "{workspaceRoot}/eslint.config.mjs",
+        { "externalDependencies": ["eslint"] }
+      ]
+    },
+    "test": {
+      "cache": true,
+      "inputs": ["default", "^production"]
+    }
   },
   "plugins": [
     {
@@ -50,5 +83,6 @@
         "linter": "eslint"
       }
     }
-  }
+  },
+  "defaultBase": "main"
 }

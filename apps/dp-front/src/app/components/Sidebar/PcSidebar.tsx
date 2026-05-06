@@ -11,7 +11,6 @@ import {
 } from '@/stores/sidebarStore';
 import {
   getSubscriptionRemainingDays,
-  PLAN_LABELS,
   useUser,
   useUserActions,
 } from '@/stores/userStore';
@@ -45,6 +44,7 @@ export default function PcSidebar() {
   const user = useUser();
   const { signOut } = useUserActions();
   const counts = useMenuCounts();
+  const tSidebar = useTranslations('sidebar');
 
   return (
     <motion.aside
@@ -73,7 +73,7 @@ export default function PcSidebar() {
       <motion.button
         type="button"
         onClick={toggleRail}
-        aria-label={isExpanded ? '접기' : '펼치기'}
+        aria-label={isExpanded ? tSidebar('collapse') : tSidebar('expand')}
         className="absolute top-[60px] -right-4 z-30 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border-0 text-base font-bold"
         style={{
           background: '#fff',
@@ -129,7 +129,7 @@ export default function PcSidebar() {
           <button
             type="button"
             onClick={signOut}
-            aria-label="로그아웃"
+            aria-label={tSidebar('logout')}
             className="group relative block w-full overflow-visible rounded-[14px] text-left text-white/75 transition-colors duration-200 hover:bg-white/10 hover:text-white"
           >
             <div className="relative flex items-center gap-3 px-3.5 py-2.5">
@@ -146,7 +146,7 @@ export default function PcSidebar() {
                     transition={isExpanded ? FADE_IN : FADE_OUT}
                     className="flex-1 overflow-hidden text-[13px] font-semibold whitespace-nowrap"
                   >
-                    로그아웃
+                    {tSidebar('logout')}
                   </motion.span>
                 )}
               </AnimatePresence>
@@ -160,6 +160,8 @@ export default function PcSidebar() {
 
 function PCProfileCard({ isExpanded }: { isExpanded: boolean }) {
   const user = useUser();
+  const tSidebar = useTranslations('sidebar');
+  const tPlan = useTranslations('plan');
   const remainingDays = user
     ? getSubscriptionRemainingDays(user.subscribeEndAt)
     : 0;
@@ -198,20 +200,20 @@ function PCProfileCard({ isExpanded }: { isExpanded: boolean }) {
                   className="text-[10px] whitespace-nowrap"
                   style={{ color: 'rgba(255,255,255,.75)' }}
                 >
-                  ✨ {PLAN_LABELS[user.plan]} · D-{remainingDays}
+                  ✨ {tPlan(user.plan)} · D-{remainingDays}
                 </div>
               </>
             ) : (
               <>
                 <div className="text-sm font-bold whitespace-nowrap">
-                  게스트
+                  {tSidebar('guest')}
                 </div>
                 <Link
                   href="/signup"
                   className="inline-block text-[10px] whitespace-nowrap underline decoration-white/40 underline-offset-2"
                   style={{ color: 'rgba(255,255,255,.85)' }}
                 >
-                  로그인 / 회원가입
+                  {tSidebar('loginOrSignup')}
                 </Link>
               </>
             )}
@@ -358,6 +360,8 @@ function PCMenuLink({
 
 function ProfileTooltip() {
   const user = useUser();
+  const tSidebar = useTranslations('sidebar');
+  const tPlan = useTranslations('plan');
   if (!user) return null;
   const remainingDays = getSubscriptionRemainingDays(user.subscribeEndAt);
   const endDate = user.subscribeEndAt.slice(0, 10);
@@ -392,11 +396,11 @@ function ProfileTooltip() {
         style={{ background: 'rgba(255,255,255,.15)' }}
       />
       <div className="flex items-center justify-between text-[11px]">
-        <span style={{ color: 'rgba(255,255,255,.65)' }}>구독상품</span>
-        <span className="font-bold">✨ {PLAN_LABELS[user.plan]}</span>
+        <span style={{ color: 'rgba(255,255,255,.65)' }}>{tSidebar('tooltipPlan')}</span>
+        <span className="font-bold">✨ {tPlan(user.plan)}</span>
       </div>
       <div className="mt-1 flex items-center justify-between text-[11px]">
-        <span style={{ color: 'rgba(255,255,255,.65)' }}>구독기간</span>
+        <span style={{ color: 'rgba(255,255,255,.65)' }}>{tSidebar('tooltipPeriod')}</span>
         <span className="font-bold">
           {endDate} (D-{remainingDays})
         </span>

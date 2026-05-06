@@ -1,3 +1,6 @@
+'use client';
+
+import { useFormatter, useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -15,6 +18,8 @@ export default function EventCard(props: EventCardProps) {
   const { event, number, stagger } = props;
   const meta = STATUS_META[event.status];
   const dimmed = event.status === 'end';
+  const t = useTranslations('event');
+  const f = useFormatter();
 
   function formatDateRange(startAt: string, endAt: string) {
     const fmt = (iso: string) => {
@@ -24,9 +29,8 @@ export default function EventCard(props: EventCardProps) {
     return `${fmt(startAt)} ~ ${fmt(endAt)}`;
   }
 
-  function formatParticipant(n: number) {
-    return new Intl.NumberFormat('ko-KR').format(n);
-  }
+  const title = t(`items.${event.id}.title` as 'items.rainy-day.title');
+  const subtitle = t(`items.${event.id}.subtitle` as 'items.rainy-day.subtitle');
 
   return (
     <Link
@@ -41,7 +45,7 @@ export default function EventCard(props: EventCardProps) {
     >
       <Image
         src={event.image}
-        alt={event.title}
+        alt={title}
         fill
         sizes="(min-width: 1280px) 400px, (min-width: 640px) 50vw, 100vw"
         className={cn(
@@ -61,12 +65,12 @@ export default function EventCard(props: EventCardProps) {
 
       <div className="relative mt-auto flex flex-col gap-2 px-[20px] pb-[18px] pt-5 text-white">
         <div className="break-keep text-[22px] font-extrabold leading-[1.2] tracking-[-0.3px] drop-shadow-[0_2px_6px_rgba(0,0,0,0.45)]">
-          {event.title}
+          {title}
         </div>
 
         <div className="grid -translate-y-1 grid-rows-[0fr] overflow-hidden opacity-0 blur-[2px] transition-[grid-template-rows,opacity,transform,filter] duration-[500ms] ease-[cubic-bezier(0.4,0,0.2,1)] group-hover:translate-y-0 group-hover:grid-rows-[1fr] group-hover:opacity-100 group-hover:blur-0">
           <div className="line-clamp-2 min-h-0 break-keep text-[12.5px] leading-[1.5] text-white/85">
-            {event.subtitle}
+            {subtitle}
           </div>
         </div>
 
@@ -74,10 +78,10 @@ export default function EventCard(props: EventCardProps) {
           <div className="flex items-center gap-2.5 text-[11px] font-semibold text-white/80">
             <span>{formatDateRange(event.startAt, event.endAt)}</span>
             <span className="opacity-40">|</span>
-            <span>참여 {formatParticipant(event.participant)}명</span>
+            <span>{t('card.participants', { count: f.number(event.participant) })}</span>
           </div>
           <div className="flex translate-x-1 items-center gap-1 text-[12px] font-bold text-white/0 transition-[color,transform] duration-300 group-hover:translate-x-0 group-hover:gap-1.5 group-hover:text-white">
-            <span>자세히</span>
+            <span>{t('card.more')}</span>
             <span>→</span>
           </div>
         </div>

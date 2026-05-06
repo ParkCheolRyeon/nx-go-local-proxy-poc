@@ -4,11 +4,23 @@
   "license": "MIT",
   "scripts": {
     "local-proxy": "pnpm --filter @tool/local-proxy",
-    "gen": "pnpm nx run-many -t gen",
-    "dev:fe": "pnpm --filter @igallery/dp-front run dev",
-    "dev:be": "cd apps/dp-back && air"
+    "dev:fe": "nx dev @igallery/dp-front",
+    "dev:be": "nx dev dp-back",
+    "build": "nx run-many -t build",
+    "typecheck": "nx run-many -t typecheck",
+    "lint": "nx run-many -t lint",
+    "test": "nx run-many -t test",
+    "gen": "nx run-many -t gen",
+    "graph": "nx graph",
+    "affected": "nx affected -t typecheck lint test build",
+    "affected:typecheck": "nx affected -t typecheck",
+    "affected:lint": "nx affected -t lint",
+    "affected:build": "nx affected -t build",
+    "affected:graph": "nx graph --affected",
+    "reset": "nx reset"
   },
   "private": true,
+  "packageManager": "pnpm@10.33.0",
   "dependencies": {
     "next": "~16.1.6",
     "react": "^19.0.0",

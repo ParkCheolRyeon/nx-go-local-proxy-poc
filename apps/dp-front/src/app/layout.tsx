@@ -1,5 +1,5 @@
 import { NextIntlClientProvider } from 'next-intl';
-import { getLocale, getMessages } from 'next-intl/server';
+import { getLocale, getMessages, getTranslations } from 'next-intl/server';
 import localFont from 'next/font/local';
 
 import RootLayoutContainer from '@/components/RootLayout';
@@ -33,33 +33,22 @@ const nanumRound = localFont({
   display: 'swap',
 });
 
-export const metadata = {
-  title: 'iGallery DP',
-  description: '어린이 아트봉봉 갤러리',
-  manifest: '/favicon/site.webmanifest',
-  icons: {
-    icon: [
-      { url: '/favicon/favicon.ico', sizes: 'any' },
-      {
-        url: '/favicon/favicon-16x16.png',
-        sizes: '16x16',
-        type: 'image/png',
-      },
-      {
-        url: '/favicon/favicon-32x32.png',
-        sizes: '32x32',
-        type: 'image/png',
-      },
-    ],
-    apple: [
-      {
-        url: '/favicon/apple-touch-icon.png',
-        sizes: '180x180',
-        type: 'image/png',
-      },
-    ],
-  },
-};
+export async function generateMetadata() {
+  const t = await getTranslations('common');
+  return {
+    title: t('appName'),
+    description: t('appDescription'),
+    manifest: '/favicon/site.webmanifest',
+    icons: {
+      icon: [
+        { url: '/favicon/favicon.ico', sizes: 'any' },
+        { url: '/favicon/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+        { url: '/favicon/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+      ],
+      apple: [{ url: '/favicon/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
+    },
+  };
+}
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const locale = await getLocale();

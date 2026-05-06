@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -17,22 +18,22 @@ import { cn } from '@/lib/utils';
 
 type LangOption = {
   id: SupportedLocale;
-  name: string;
-  sub: string;
   flag: string;
-  preview: string;
 };
 
 const LANGS: LangOption[] = [
-  { id: 'ko', name: '한국어', sub: 'Korean', flag: '🇰🇷', preview: '아트봉봉 갤러리에 오신 걸 환영해요!' },
-  { id: 'en', name: 'English', sub: '영어', flag: '🇺🇸', preview: 'Welcome to ArtBongBong Gallery!' },
-  { id: 'ja', name: '日本語', sub: '일본어', flag: '🇯🇵', preview: 'アートボンボン・ギャラリーへようこそ!' },
+  { id: 'ko', flag: '🇰🇷' },
+  { id: 'en', flag: '🇺🇸' },
+  { id: 'ja', flag: '🇯🇵' },
 ];
 
 export default function LanguagePage() {
   const router = useRouter();
   const [lang, setLang] = useState<SupportedLocale>(DEFAULT_LOCALE);
   const [submitting, setSubmitting] = useState(false);
+  const t = useTranslations('setting.languagePage');
+  const tAccount = useTranslations('setting.account');
+  const tCommon = useTranslations('common');
 
   useEffect(() => {
     const stored = readLocaleCookie();
@@ -40,6 +41,8 @@ export default function LanguagePage() {
   }, []);
 
   const cur = LANGS.find((l) => l.id === lang) ?? LANGS[0];
+  const curName = t(cur.id);
+  const curPreview = t(`${cur.id}Preview` as 'koPreview' | 'enPreview' | 'jaPreview');
 
   const handleSave = async () => {
     setSubmitting(true);
@@ -47,15 +50,14 @@ export default function LanguagePage() {
     try {
       await patchMe({ locale: lang });
     } catch (err) {
-      // 비로그인 사용자(401)는 cookie만으로도 동작 — 다른 에러만 사용자에게 표시.
       if (!(err instanceof ApiError) || err.status !== 401) {
         setSubmitting(false);
-        await alert('서버에 저장하지 못했어요. 잠시 후 다시 시도해 주세요.', { tone: 'warning' });
+        await alert(tAccount('saveFailedToast'), { tone: 'warning' });
         return;
       }
     }
     setSubmitting(false);
-    await alert(`언어가 ${cur.name}(으)로 설정됐어요.`, { tone: 'success' });
+    await alert(tAccount('languageSavedToast', { name: curName }), { tone: 'success' });
     router.replace('/setting/account');
     router.refresh();
   };
@@ -66,10 +68,10 @@ export default function LanguagePage() {
         <header>
           <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-[#3196ff]/25 bg-[#3196ff]/[0.12] px-3 py-[5px] text-[11px] font-bold tracking-[0.8px] text-[#1C7AE0]">
             <span>🌐</span>
-            <span>LANGUAGE</span>
+            <span>{t('tag')}</span>
           </div>
-          <h2 className="text-[22px] font-extrabold leading-[1.15] tracking-[-0.3px] text-[#0b2a63]">언어 설정</h2>
-          <p className="mt-1 text-[12px] text-[#5C6F90]">앱 전체 인터페이스 언어를 선택하세요.</p>
+          <h2 className="text-[22px] font-extrabold leading-[1.15] tracking-[-0.3px] text-[#0b2a63]">{t('title')}</h2>
+          <p className="mt-1 text-[12px] text-[#5C6F90]">{t('subtitle')}</p>
         </header>
         <BackButton href="/setting/account" />
       </div>
@@ -87,12 +89,12 @@ export default function LanguagePage() {
             style={{ background: 'rgba(255,255,255,0.12)' }}
           />
           <div className="relative">
-            <div className="text-[11px] font-bold tracking-[1px] opacity-85">PREVIEW · {cur.name}</div>
+            <div className="text-[11px] font-bold tracking-[1px] opacity-85">{t('previewLabel')} · {curName}</div>
             <div className="mt-2 flex items-center gap-3">
               <span className="text-[36px]">{cur.flag}</span>
               <div>
-                <div className="text-[18px] font-extrabold leading-[1.2]">{cur.preview}</div>
-                <div className="mt-1 text-[12px] opacity-80">모든 텍스트와 알림에 즉시 적용돼요.</div>
+                <div className="text-[18px] font-extrabold leading-[1.2]">{curPreview}</div>
+                <div className="mt-1 text-[12px] opacity-80">{t('previewNote')}</div>
               </div>
             </div>
           </div>
@@ -116,8 +118,8 @@ export default function LanguagePage() {
               >
                 <span className="text-[24px]">{l.flag}</span>
                 <div className="min-w-0 flex-1">
-                  <div className="text-[14px] font-bold text-[#0b2a63]">{l.name}</div>
-                  <div className="text-[11.5px] text-[#8AA0BD]">{l.sub}</div>
+                  <div className="text-[14px] font-bold text-[#0b2a63]">{t(l.id)}</div>
+                  <div className="text-[11.5px] text-[#8AA0BD]">{t(`${l.id}Sub` as 'koSub' | 'enSub' | 'jaSub')}</div>
                 </div>
                 <div
                   className={cn(
@@ -147,7 +149,7 @@ export default function LanguagePage() {
           onClick={() => router.replace('/setting/account')}
           className="cursor-pointer rounded-full border-[1.5px] border-[#1C7AE0]/[0.18] bg-white px-[22px] py-3 text-[13.5px] font-bold text-[#5C6F90] transition-colors hover:bg-[#3196ff]/[0.06]"
         >
-          취소
+          {tCommon('cancel')}
         </button>
         <button
           type="button"
@@ -160,7 +162,7 @@ export default function LanguagePage() {
               : 'cursor-pointer bg-[linear-gradient(135deg,#3196ff,#1C7AE0)] shadow-[0_10px_22px_rgba(28,122,224,0.32)] hover:-translate-y-px hover:shadow-[0_12px_24px_rgba(28,122,224,0.34)]',
           )}
         >
-          {submitting ? '저장 중…' : '저장'}
+          {submitting ? tCommon('saving') : tCommon('save')}
         </button>
       </div>
     </section>

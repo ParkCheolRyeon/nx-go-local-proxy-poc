@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { motion } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
@@ -304,6 +305,7 @@ function IntroMorph({
 
 export default function Splash() {
   const router = useRouter();
+  const t = useTranslations('splash');
   const stageRef = useRef<HTMLDivElement>(null);
   const logoAnchorRef = useRef<HTMLDivElement>(null);
   const loadingFrameRef = useRef<number | null>(null);
@@ -537,7 +539,7 @@ export default function Splash() {
               lineHeight: 1,
             }}
           >
-            {['아', '트', '봉', '봉'].map((character, index) => (
+            {[t('char1'), t('char2'), t('char3'), t('char4')].map((character, index) => (
               <span
                 key={`${character}-${index}`}
                 style={{
@@ -560,7 +562,7 @@ export default function Splash() {
               animation: 'bb-fade .6s ease-out .5s both',
             }}
           >
-            어린이 갤러리
+            {t('tagline')}
           </div>
         </div>
 
@@ -577,7 +579,7 @@ export default function Splash() {
             animation: 'bb-fade .6s ease-out .9s both',
           }}
         >
-          함께 그리고 · 자랑하고 · 상 받아요
+          {t('description')}
         </div>
 
         <div
@@ -622,7 +624,7 @@ export default function Splash() {
             }}
           >
             <div style={{ color: '#fff', fontSize: 12, fontWeight: 700 }}>
-              {done ? '준비 완료!' : '작품 모으는 중...'}
+              {done ? t('loadingDone') : t('loading')}
             </div>
             <div style={{ color: '#fff', fontSize: 13, fontWeight: 800 }}>
               {progress}%

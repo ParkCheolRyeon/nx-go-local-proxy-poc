@@ -1,3 +1,7 @@
+'use client';
+
+import { useTranslations } from 'next-intl';
+
 import IconArrowRight from '@/app/assets/icons/icon-arrow-right.svg';
 import IconPassword from '@/app/assets/icons/icon-password.svg';
 import IconEmail from '@/app/assets/icons/sns/icon-email.svg';
@@ -33,6 +37,7 @@ export default function EmailMode(props: EmailModeProps) {
     onBack,
     onSubmit,
   } = props;
+  const t = useTranslations('auth.email');
 
   const strengthClass =
     pw.length < 6
@@ -54,7 +59,7 @@ export default function EmailMode(props: EmailModeProps) {
           aria-hidden
           className="-scale-x-100"
         />
-        뒤로
+        {t('back')}
       </button>
 
       <label
@@ -62,7 +67,7 @@ export default function EmailMode(props: EmailModeProps) {
         style={{ animation: 'ac02-slide .4s ease-out 0s both' }}
       >
         <div className="mb-1.5 text-[12px] font-bold text-[#5C6F90]">
-          이메일
+          {t('emailLabel')}
         </div>
         <div className="ac02-field flex h-[52px] items-center gap-2.5 rounded-[14px] border-[1.5px] border-[#DCE8FB] bg-[#F6F9FF] px-3.5 text-[#8AA0BD]">
           <IconEmail width={18} height={18} aria-hidden />
@@ -81,8 +86,8 @@ export default function EmailMode(props: EmailModeProps) {
         style={{ animation: 'ac02-slide .4s ease-out .08s both' }}
       >
         <div className="mb-1.5 flex items-center justify-between">
-          <div className="text-[12px] font-bold text-[#5C6F90]">비밀번호</div>
-          <div className="text-[11px] text-[#8AA0BD]">6자 이상</div>
+          <div className="text-[12px] font-bold text-[#5C6F90]">{t('passwordLabel')}</div>
+          <div className="text-[11px] text-[#8AA0BD]">{t('passwordHint')}</div>
         </div>
         <div className="ac02-field flex h-[52px] items-center gap-2.5 rounded-[14px] border-[1.5px] border-[#DCE8FB] bg-[#F6F9FF] px-3.5 text-[#8AA0BD]">
           <IconPassword width={18} height={18} aria-hidden />
@@ -101,7 +106,7 @@ export default function EmailMode(props: EmailModeProps) {
             onClick={onToggleShowPw}
             className="cursor-pointer border-0 bg-transparent text-[13px] font-semibold text-[#8AA0BD]"
           >
-            {showPw ? '숨김' : '표시'}
+            {showPw ? t('hidePassword') : t('showPassword')}
           </button>
         </div>
         <div className="mt-2 flex gap-1">
@@ -138,10 +143,9 @@ export default function EmailMode(props: EmailModeProps) {
           {agreed ? '✓' : ''}
         </button>
         <div>
-          <span className="text-[#0b2a63]">이용약관</span> ·{' '}
-          <span className="text-[#0b2a63]">개인정보 처리방침</span>에 동의하며,{' '}
-          <span className="text-[#5C6F90]">만 14세 미만 자녀의 보호자임</span>을
-          확인합니다.
+          <span className="text-[#0b2a63]">{t('termsLink')}</span> ·{' '}
+          <span className="text-[#0b2a63]">{t('privacyLink')}</span>{t('agreementMid')}{' '}
+          <span className="text-[#5C6F90]">{t('guardianConfirm')}</span>{t('agreementEnd')}
         </div>
       </label>
 
@@ -166,7 +170,7 @@ export default function EmailMode(props: EmailModeProps) {
         )}
         style={{ animation: 'ac02-slide .4s ease-out .24s both' }}
       >
-        계정 만들기 →
+        {t('submit')}
       </button>
     </div>
   );

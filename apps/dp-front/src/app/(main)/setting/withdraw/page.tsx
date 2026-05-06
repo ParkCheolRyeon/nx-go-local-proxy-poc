@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState, type ChangeEvent, type ReactNode } from 'react';
 
@@ -9,16 +10,6 @@ import { cn } from '@/lib/utils';
 import { useUserActions } from '@/stores/userStore';
 
 type Step = 1 | 2 | 3 | 4 | 5 | 6 | 7;
-
-const STEP_TITLES: Record<Step, string> = {
-  1: '잠시만요, 정말 떠나시나요?',
-  2: '자녀 프로필은 어떻게 할까요?',
-  3: '삭제 방식을 선택해 주세요',
-  4: '그림을 ZIP으로 받아두세요',
-  5: '사라지는 데이터를 확인해 주세요',
-  6: '본인 확인이 필요해요',
-  7: '마지막으로 한 번만 더 확인할게요',
-};
 
 type ReasonKey = 'price' | 'use' | 'quality' | 'privacy' | 'kid' | 'other';
 type ChildrenHandling = 'all' | 'keep' | 'partial';
@@ -59,13 +50,12 @@ const INITIAL: WithdrawState = {
   phrase: '',
 };
 
-const CONFIRM_PHRASE = '아트봉봉 갤러리 탈퇴';
-
 export default function WithdrawPage() {
   const router = useRouter();
   const { signOut } = useUserActions();
   const [step, setStep] = useState<Step>(1);
   const [s, setS] = useState<WithdrawState>(INITIAL);
+  const t = useTranslations('withdraw');
 
   const update = <K extends keyof WithdrawState>(key: K, value: WithdrawState[K]) =>
     setS((prev) => ({ ...prev, [key]: value }));
@@ -73,10 +63,10 @@ export default function WithdrawPage() {
   const goto = (next: Step) => setStep(next);
   const handlePrev = async () => {
     if (step === 1) {
-      const ok = await confirm('탈퇴 절차를 그만둘까요? 입력하신 내용은 사라져요.', {
-        title: '탈퇴 절차 종료',
-        yesButtonText: '나가기',
-        noButtonText: '계속 진행',
+      const ok = await confirm(t('exitConfirmMsg'), {
+        title: t('exitConfirmTitle'),
+        yesButtonText: t('exitYes'),
+        noButtonText: t('exitNo'),
       });
       if (ok) router.replace('/setting/danger');
       return;
@@ -89,13 +79,7 @@ export default function WithdrawPage() {
       setStep((step + 1) as Step);
       return;
     }
-    // 최종 확정. 실제 hard-delete/유예 등록은 R14 본격 진입 시 BE 구현.
-    await alert(
-      s.method === 'instant'
-        ? '탈퇴 요청이 접수되었어요. 모든 데이터가 즉시 삭제됩니다. (BE 미구현 — mock)'
-        : '탈퇴 요청이 접수되었어요. 30일 안에 다시 로그인하시면 취소할 수 있어요. (BE 미구현 — mock)',
-      { tone: 'success' },
-    );
+    await alert(s.method === 'instant' ? t('successInstant') : t('successGrace'), { tone: 'success' });
     signOutLocal();
     signOut();
     router.replace('/signin');
@@ -140,13 +124,15 @@ export default function WithdrawPage() {
 // ---------- Progress + Hero ----------
 
 function ProgressBar({ step }: { step: Step }) {
+  const t = useTranslations('withdraw');
+  const stepTitle = t(`stepTitle.${step}` as `stepTitle.${1 | 2 | 3 | 4 | 5 | 6 | 7}`);
   return (
     <div>
       <div className="mb-2 flex items-center justify-between">
         <div className="text-[11px] font-bold tracking-[0.6px] text-[#1C7AE0]">
-          STEP {step} / 7 · {STEP_TITLES[step]}
+          {t('stepLabel', { step, title: stepTitle })}
         </div>
-        <div className="text-[11px] text-[#8AA0BD]">예상 소요 2분</div>
+        <div className="text-[11px] text-[#8AA0BD]">{t('estimated')}</div>
       </div>
       <div className="flex gap-1">
         {[1, 2, 3, 4, 5, 6, 7].map((i) => {
@@ -171,23 +157,16 @@ function ProgressBar({ step }: { step: Step }) {
   );
 }
 
-const HERO_SUB: Record<Step, string> = {
-  1: '떠나시는 이유를 알려주시면 더 좋은 서비스를 만드는 데 큰 도움이 돼요.',
-  2: '가족 계정에 자녀가 연결되어 있어요. 어떻게 처리할지 선택해 주세요.',
-  3: '언제 데이터를 삭제할지 결정할 수 있어요. 마음이 바뀌실 수 있다면 30일 유예를 추천해요.',
-  4: '삭제 전 마지막 기회예요. 자녀의 작품과 활동 기록을 다운로드할 수 있어요.',
-  5: '탈퇴가 완료되면 아래 항목들이 영구 삭제돼요. 한 번 더 확인 부탁드려요.',
-  6: '계정 보안을 위해, 비밀번호와 등록된 휴대전화 인증을 한 번 더 진행할게요.',
-  7: '지금 [영구 삭제하기]를 누르면 30일 유예 기간이 시작돼요. 그 안에 다시 로그인하면 취소할 수 있어요.',
-};
-
 function Hero({ step }: { step: Step }) {
+  const t = useTranslations('withdraw');
   return (
     <div>
       <div className="text-[28px] font-extrabold leading-[1.18] tracking-[-0.4px] text-[#0b2a63]">
-        {STEP_TITLES[step]}
+        {t(`stepTitle.${step}` as `stepTitle.${1 | 2 | 3 | 4 | 5 | 6 | 7}`)}
       </div>
-      <div className="mt-1.5 text-[13.5px] leading-[1.5] text-[#5C6F90]">{HERO_SUB[step]}</div>
+      <div className="mt-1.5 text-[13.5px] leading-[1.5] text-[#5C6F90]">
+        {t(`heroSub.${step}` as `heroSub.${1 | 2 | 3 | 4 | 5 | 6 | 7}`)}
+      </div>
     </div>
   );
 }
@@ -196,9 +175,7 @@ function Hero({ step }: { step: Step }) {
 
 function Card({ children }: { children: ReactNode }) {
   return (
-    <div
-      className="rounded-[22px] border border-[#1C7AE0]/[0.14] bg-white/90 p-[22px] shadow-[0_14px_36px_rgba(28,122,224,0.12)] backdrop-blur-[14px]"
-    >
+    <div className="rounded-[22px] border border-[#1C7AE0]/[0.14] bg-white/90 p-[22px] shadow-[0_14px_36px_rgba(28,122,224,0.12)] backdrop-blur-[14px]">
       {children}
     </div>
   );
@@ -214,6 +191,8 @@ type FooterProps = {
 };
 
 function Footer({ step, onPrev, onNext, nextDisabled, nextLabel, danger }: FooterProps) {
+  const t = useTranslations('withdraw');
+  const tCommon = useTranslations('common');
   return (
     <div className="flex items-center justify-between gap-3 pb-4 pt-1">
       <button
@@ -221,7 +200,7 @@ function Footer({ step, onPrev, onNext, nextDisabled, nextLabel, danger }: Foote
         onClick={onPrev}
         className="inline-flex h-11 flex-none cursor-pointer items-center justify-center whitespace-nowrap rounded-full border-[1.5px] border-[#1C7AE0]/[0.18] bg-transparent px-[22px] text-[13.5px] font-bold leading-none text-[#5C6F90] transition-colors hover:bg-[#3196ff]/[0.06]"
       >
-        {step === 1 ? '나가기' : '← 이전'}
+        {step === 1 ? t('footerExit') : tCommon('prev')}
       </button>
       <div className="flex flex-none items-center gap-2.5">
         {step === 1 && (
@@ -229,7 +208,7 @@ function Footer({ step, onPrev, onNext, nextDisabled, nextLabel, danger }: Foote
             type="button"
             className="inline-flex h-11 flex-none cursor-pointer items-center justify-center whitespace-nowrap rounded-full border-[1.5px] border-[#3196ff]/[0.32] bg-white px-[22px] text-[13.5px] font-bold leading-none text-[#1C7AE0]"
           >
-            한 달 무료 보관함 받기
+            {t('footerKeepFreeLocker')}
           </button>
         )}
         <button
@@ -245,14 +224,12 @@ function Footer({ step, onPrev, onNext, nextDisabled, nextLabel, danger }: Foote
                 : 'cursor-pointer bg-[linear-gradient(135deg,#3196ff,#1C7AE0)] shadow-[0_10px_22px_rgba(28,122,224,0.32)] hover:-translate-y-px',
           )}
         >
-          {nextLabel ?? '다음 →'}
+          {nextLabel ?? t('footerNext')}
         </button>
       </div>
     </div>
   );
 }
-
-// ---------- Step Props ----------
 
 type StepProps = {
   step: Step;
@@ -263,19 +240,20 @@ type StepProps = {
   goto: (next: Step) => void;
 };
 
-// ---------- Step 1 만류 ----------
+// ---------- Step 1 ----------
 
-const REASONS: { k: ReasonKey; i: string; l: string; h: string }[] = [
-  { k: 'price', i: '💰', l: '요금이 부담돼요', h: '월 4,900원이 부담되시나요? 연간 요금제로 최대 33% 절약하실 수 있어요.' },
-  { k: 'use', i: '🌙', l: '잘 사용하지 않게 돼요', h: '한 달 무료 보관함을 받아두면 언제든 다시 시작할 수 있어요.' },
-  { k: 'quality', i: '🎨', l: '도안·콘텐츠가 부족해요', h: '매주 새로운 도안이 추가돼요. 어떤 종류가 더 필요하셨나요?' },
-  { k: 'privacy', i: '🔒', l: '개인정보가 걱정돼요', h: '자녀 보호 모드와 데이터 최소 수집을 다시 안내해 드릴게요.' },
-  { k: 'kid', i: '🧒', l: '아이가 흥미를 잃었어요', h: '단계별/함께 그리기 모드를 추천해요. 아이 연령에 맞는 도안도 있어요.' },
-  { k: 'other', i: '✏️', l: '기타', h: '어떤 점이 아쉬우셨는지 직접 알려 주세요.' },
+const REASON_KEYS: { k: ReasonKey; i: string }[] = [
+  { k: 'price', i: '💰' },
+  { k: 'use', i: '🌙' },
+  { k: 'quality', i: '🎨' },
+  { k: 'privacy', i: '🔒' },
+  { k: 'kid', i: '🧒' },
+  { k: 'other', i: '✏️' },
 ];
 
 function Step1({ step, state, update, onPrev, onNext }: StepProps) {
-  const sel = REASONS.find((r) => r.k === state.reason);
+  const t = useTranslations('withdraw.step1');
+  const sel = REASON_KEYS.find((r) => r.k === state.reason);
   return (
     <>
       <Card>
@@ -292,14 +270,15 @@ function Step1({ step, state, update, onPrev, onNext }: StepProps) {
             </div>
             <div className="min-w-0 flex-1">
               <div className="text-[13px] font-bold text-[#0b2a63]">
-                지금까지 그린 작품은 <span className="text-[#1C7AE0]">24점</span>이에요
+                {t('statsTitle')} <span className="text-[#1C7AE0]">{t('statsTitleCount')}</span>
+                {t('statsTitleSuffix')}
               </div>
-              <div className="mt-0.5 text-[11.5px] text-[#8AA0BD]">수상 2회 · 누적 활동 시간 18시간 27분</div>
+              <div className="mt-0.5 text-[11.5px] text-[#8AA0BD]">{t('statsSub')}</div>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-2">
-            {REASONS.map((r) => {
+            {REASON_KEYS.map((r) => {
               const on = state.reason === r.k;
               return (
                 <button
@@ -315,7 +294,9 @@ function Step1({ step, state, update, onPrev, onNext }: StepProps) {
                   )}
                 >
                   <span className="text-[18px]">{r.i}</span>
-                  <span className="flex-1 text-[13px] font-semibold text-[#0b2a63]">{r.l}</span>
+                  <span className="flex-1 text-[13px] font-semibold text-[#0b2a63]">
+                    {t(`reasons.${r.k}.label`)}
+                  </span>
                   <div
                     className={cn(
                       'flex h-[18px] w-[18px] items-center justify-center rounded-full text-[9px] font-extrabold text-white',
@@ -337,8 +318,8 @@ function Step1({ step, state, update, onPrev, onNext }: StepProps) {
             >
               <span className="text-[22px]">💡</span>
               <div className="flex-1">
-                <div className="mb-1 text-[12px] font-bold text-[#92400E]">잠깐, 이런 방법은 어때요?</div>
-                <div className="text-[13px] leading-[1.55] text-[#5C6F90]">{sel.h}</div>
+                <div className="mb-1 text-[12px] font-bold text-[#92400E]">{t('tipTitle')}</div>
+                <div className="text-[13px] leading-[1.55] text-[#5C6F90]">{t(`reasons.${sel.k}.hint`)}</div>
               </div>
             </div>
           )}
@@ -347,7 +328,7 @@ function Step1({ step, state, update, onPrev, onNext }: StepProps) {
             <textarea
               value={state.reasonOther}
               onChange={(e: ChangeEvent<HTMLTextAreaElement>) => update('reasonOther', e.target.value)}
-              placeholder="자유롭게 알려 주세요 (최대 500자)"
+              placeholder={t('otherPlaceholder')}
               maxLength={500}
               className="min-h-[80px] w-full resize-y rounded-[12px] border-[1.5px] border-[#1C7AE0]/[0.18] bg-white px-3.5 py-3 text-[13px] text-[#0b2a63] outline-none transition-[border-color,box-shadow] placeholder:text-[#8AA0BD] focus:border-[#3196ff] focus:shadow-[0_0_0_4px_rgba(49,150,255,0.14)]"
             />
@@ -359,48 +340,26 @@ function Step1({ step, state, update, onPrev, onNext }: StepProps) {
   );
 }
 
-// ---------- Step 2 자녀 처리 ----------
+// ---------- Step 2 ----------
 
-const CHILD_OPTS: {
+const CHILD_OPT_KEYS: {
   k: ChildrenHandling;
   i: string;
-  t: string;
-  d: string;
-  tag: string | null;
+  hasTag: boolean;
   tagBg: string;
 }[] = [
-  {
-    k: 'all',
-    i: '👨‍👩‍👧‍👦',
-    t: '자녀와 함께 모두 탈퇴',
-    d: '모든 자녀 프로필과 작품·수상 이력이 함께 삭제돼요. 가장 일반적인 선택이에요.',
-    tag: '권장',
-    tagBg: '#1C7AE0',
-  },
-  {
-    k: 'keep',
-    i: '🛟',
-    t: '가족 계정만 탈퇴, 자녀는 보존',
-    d: '가족 계정 1개만 정리하고, 자녀 프로필·작품은 다른 보호자(공동 양육자)에게 위임돼요.',
-    tag: '양육 위임',
-    tagBg: '#10B981',
-  },
-  {
-    k: 'partial',
-    i: '✂️',
-    t: '일부 자녀만 함께 삭제',
-    d: '여러 자녀 중 직접 선택한 자녀만 삭제해요. 다음 단계에서 누구를 삭제할지 고를 수 있어요.',
-    tag: null,
-    tagBg: '',
-  },
+  { k: 'all', i: '👨‍👩‍👧‍👦', hasTag: true, tagBg: '#1C7AE0' },
+  { k: 'keep', i: '🛟', hasTag: true, tagBg: '#10B981' },
+  { k: 'partial', i: '✂️', hasTag: false, tagBg: '' },
 ];
 
 function Step2({ step, state, update, onPrev, onNext }: StepProps) {
+  const t = useTranslations('withdraw.step2');
   return (
     <>
       <Card>
         <div className="flex flex-col gap-2.5">
-          {CHILD_OPTS.map((o) => {
+          {CHILD_OPT_KEYS.map((o) => {
             const on = state.childrenHandling === o.k;
             return (
               <button
@@ -426,17 +385,21 @@ function Step2({ step, state, update, onPrev, onNext }: StepProps) {
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="mb-1 flex items-center gap-2">
-                    <div className="text-[16px] font-extrabold text-[#0b2a63]">{o.t}</div>
-                    {o.tag && (
+                    <div className="text-[16px] font-extrabold text-[#0b2a63]">
+                      {t(`options.${o.k}.title`)}
+                    </div>
+                    {o.hasTag && (
                       <span
                         className="rounded-full px-2 py-[2px] text-[10px] font-bold text-white"
                         style={{ background: o.tagBg }}
                       >
-                        {o.tag}
+                        {t(`options.${o.k}.tag` as `options.all.tag` | `options.keep.tag`)}
                       </span>
                     )}
                   </div>
-                  <div className="text-[12.5px] leading-[1.55] text-[#5C6F90]">{o.d}</div>
+                  <div className="text-[12.5px] leading-[1.55] text-[#5C6F90]">
+                    {t(`options.${o.k}.desc`)}
+                  </div>
                 </div>
                 <div
                   className={cn(
@@ -453,7 +416,7 @@ function Step2({ step, state, update, onPrev, onNext }: StepProps) {
 
           <div className="mt-1 flex gap-2 rounded-[10px] border border-[#1C7AE0]/[0.10] bg-slate-50/80 px-3 py-2.5 text-[11.5px] text-[#8AA0BD]">
             <span>ℹ️</span>
-            <span>"가족 계정만 탈퇴"를 선택하시면, 공동 양육자 이메일로 위임 안내가 발송돼요.</span>
+            <span>{t('delegationNote')}</span>
           </div>
         </div>
       </Card>
@@ -462,50 +425,44 @@ function Step2({ step, state, update, onPrev, onNext }: StepProps) {
   );
 }
 
-// ---------- Step 3 삭제 방식 ----------
+// ---------- Step 3 ----------
 
-const METHOD_OPTS: {
+const METHOD_OPT_KEYS: {
   k: DeletionMethod;
   i: string;
-  t: string;
-  d: string;
-  badge: string;
   badgeBg: string;
-  list: string[];
   accent: string;
   accentBg: string;
 }[] = [
   {
     k: 'grace',
     i: '🗓',
-    t: '30일 유예 후 삭제',
-    d: '30일 동안은 다시 로그인하면 탈퇴를 취소할 수 있어요. 그 후 자동 삭제돼요.',
-    badge: '추천',
     badgeBg: '#1C7AE0',
-    list: ['언제든 복구 가능', '30일 후 자동 hard-delete', '구독은 즉시 해지'],
     accent: '#1C7AE0',
     accentBg: 'rgba(28,122,224,0.10)',
   },
   {
     k: 'instant',
     i: '⚡',
-    t: '즉시 삭제',
-    d: '요청 즉시 모든 데이터가 영구 삭제돼요. GDPR 제17조 / COPPA에 따른 권리예요.',
-    badge: '복구 불가',
     badgeBg: '#EF4444',
-    list: ['되돌릴 수 없음', '즉시 hard-delete', '구독·코인 동시 소멸'],
     accent: '#EF4444',
     accentBg: 'rgba(239,68,68,0.10)',
   },
 ];
 
 function Step3({ step, state, update, onPrev, onNext }: StepProps) {
+  const t = useTranslations('withdraw.step3');
   return (
     <>
       <Card>
         <div className="grid grid-cols-2 gap-3">
-          {METHOD_OPTS.map((o) => {
+          {METHOD_OPT_KEYS.map((o) => {
             const on = state.method === o.k;
+            const list = [
+              t(`options.${o.k}.list1` as 'options.grace.list1' | 'options.instant.list1'),
+              t(`options.${o.k}.list2` as 'options.grace.list2' | 'options.instant.list2'),
+              t(`options.${o.k}.list3` as 'options.grace.list3' | 'options.instant.list3'),
+            ];
             return (
               <button
                 key={o.k}
@@ -533,13 +490,15 @@ function Step3({ step, state, update, onPrev, onNext }: StepProps) {
                     className="rounded-full px-2.5 py-[3px] text-[10px] font-bold text-white"
                     style={{ background: o.badgeBg }}
                   >
-                    {o.badge}
+                    {t(`options.${o.k}.badge`)}
                   </span>
                 </div>
-                <div className="text-[17px] font-extrabold leading-[1.2] text-[#0b2a63]">{o.t}</div>
-                <div className="text-[12.5px] leading-[1.55] text-[#5C6F90]">{o.d}</div>
+                <div className="text-[17px] font-extrabold leading-[1.2] text-[#0b2a63]">
+                  {t(`options.${o.k}.title`)}
+                </div>
+                <div className="text-[12.5px] leading-[1.55] text-[#5C6F90]">{t(`options.${o.k}.desc`)}</div>
                 <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
-                  {o.list.map((x, i) => (
+                  {list.map((x, i) => (
                     <li key={i} className="flex items-center gap-1.5 text-[11.5px] text-[#5C6F90]">
                       <span
                         className="flex h-[14px] w-[14px] items-center justify-center rounded-full text-[8px] font-extrabold text-white"
@@ -558,10 +517,7 @@ function Step3({ step, state, update, onPrev, onNext }: StepProps) {
 
         <div className="mt-3.5 flex gap-2.5 rounded-[12px] border border-dashed border-[#3196ff]/[0.36] bg-[#3196ff]/[0.06] px-3.5 py-3 text-[11.5px] leading-[1.55] text-[#5C6F90]">
           <span>📜</span>
-          <div>
-            GDPR 제17조 "잊혀질 권리" 및 미국 COPPA에 따라, 삭제 요청 시 14일 이내에 모든 처리·백업 시스템에서 데이터를 제거합니다.
-            단, 결제 기록 등 법령상 5년 보관이 의무인 항목은 분리·암호화 보관됩니다.
-          </div>
+          <div>{t('legalNote')}</div>
         </div>
       </Card>
       <Footer step={step} onPrev={onPrev} onNext={onNext} />
@@ -569,18 +525,19 @@ function Step3({ step, state, update, onPrev, onNext }: StepProps) {
   );
 }
 
-// ---------- Step 4 ZIP 다운로드 ----------
+// ---------- Step 4 ----------
 
-const ZIP_DEFS: { k: keyof ZipItems; i: string; t: string; s: string; size: number }[] = [
-  { k: 'drawings', i: '🎨', t: '그림 작품 (PNG, 원본 해상도)', s: '24작 · 약 245 MB', size: 245 },
-  { k: 'awards', i: '🏆', t: '수상 이력 + 인증서 PDF', s: '2건 · 약 12 MB', size: 12 },
-  { k: 'timelapse', i: '🎬', t: '타임랩스 영상 (MP4)', s: '18편 · 약 1,280 MB', size: 1280 },
-  { k: 'profile', i: '👤', t: '프로필 메타데이터 (JSON)', s: '자녀 프로필 외 · 약 4 MB', size: 4 },
+const ZIP_DEF_KEYS: { k: keyof ZipItems; i: string; size: number }[] = [
+  { k: 'drawings', i: '🎨', size: 245 },
+  { k: 'awards', i: '🏆', size: 12 },
+  { k: 'timelapse', i: '🎬', size: 1280 },
+  { k: 'profile', i: '👤', size: 4 },
 ];
 
 function Step4({ step, state, update, onPrev, onNext }: StepProps) {
+  const t = useTranslations('withdraw.step4');
   const total = useMemo(
-    () => ZIP_DEFS.reduce((sum, d) => sum + (state.zipItems[d.k] ? d.size : 0), 0),
+    () => ZIP_DEF_KEYS.reduce((sum, d) => sum + (state.zipItems[d.k] ? d.size : 0), 0),
     [state.zipItems],
   );
 
@@ -601,18 +558,18 @@ function Step4({ step, state, update, onPrev, onNext }: StepProps) {
                 📦
               </div>
               <div className="min-w-0 flex-1">
-                <div className="text-[11px] font-bold tracking-[1px] opacity-85">BACKUP ARCHIVE</div>
-                <div className="text-[20px] font-extrabold leading-[1.2]">artbongbong-backup-2026-05-06.zip</div>
+                <div className="text-[11px] font-bold tracking-[1px] opacity-85">{t('tag')}</div>
+                <div className="text-[20px] font-extrabold leading-[1.2]">{t('fileLabel')}</div>
                 <div className="mt-1 text-[12px] opacity-85">
-                  예상 크기 약 {total.toLocaleString()} MB · 최대 24시간 안에 메일로 전송
+                  {t('sizeNote', { total: total.toLocaleString() })}
                 </div>
               </div>
             </div>
           </div>
 
           <div className="flex flex-col gap-2">
-            <div className="mb-0.5 text-[12px] font-bold text-[#5C6F90]">포함할 항목</div>
-            {ZIP_DEFS.map((d) => {
+            <div className="mb-0.5 text-[12px] font-bold text-[#5C6F90]">{t('include')}</div>
+            {ZIP_DEF_KEYS.map((d) => {
               const on = state.zipItems[d.k];
               return (
                 <label
@@ -633,8 +590,8 @@ function Step4({ step, state, update, onPrev, onNext }: StepProps) {
                   />
                   <span className="text-[22px]">{d.i}</span>
                   <div className="min-w-0 flex-1">
-                    <div className="text-[13.5px] font-bold text-[#0b2a63]">{d.t}</div>
-                    <div className="text-[11.5px] text-[#8AA0BD]">{d.s}</div>
+                    <div className="text-[13.5px] font-bold text-[#0b2a63]">{t(`items.${d.k}.label`)}</div>
+                    <div className="text-[11.5px] text-[#8AA0BD]">{t(`items.${d.k}.sub`)}</div>
                   </div>
                 </label>
               );
@@ -644,19 +601,14 @@ function Step4({ step, state, update, onPrev, onNext }: StepProps) {
           <button
             type="button"
             onClick={() => {
-              void alert(
-                'ZIP 다운로드가 요청됐어요. 가입 시 등록된 이메일로 24시간 안에 발송됩니다. (BE 미구현 — mock)',
-                { tone: 'success' },
-              );
+              void alert(t('downloadToast'), { tone: 'success' });
             }}
             className="flex cursor-pointer items-center justify-center gap-2 rounded-[12px] border-0 bg-[linear-gradient(135deg,#3196ff,#1C7AE0)] px-4 py-3.5 text-[13.5px] font-bold text-white shadow-[0_10px_22px_rgba(28,122,224,0.32)] transition-transform hover:-translate-y-px"
           >
-            📥 ZIP 다운로드 요청하기
+            {t('downloadCta')}
           </button>
 
-          <div className="text-center text-[11.5px] text-[#8AA0BD]">
-            GDPR 제20조 데이터 이동권에 따른 권리예요. 무료입니다.
-          </div>
+          <div className="text-center text-[11.5px] text-[#8AA0BD]">{t('rightNote')}</div>
         </div>
       </Card>
       <Footer step={step} onPrev={onPrev} onNext={onNext} />
@@ -664,41 +616,42 @@ function Step4({ step, state, update, onPrev, onNext }: StepProps) {
   );
 }
 
-// ---------- Step 5 데이터 안내 ----------
+// ---------- Step 5 ----------
 
-const DATA_TILES: { i: string; t: string; n: string; sub: string }[] = [
-  { i: '🎨', t: '그림 작품', n: '24작', sub: '자녀 프로필 작품 전체' },
-  { i: '🏆', t: '수상 이력', n: '2회', sub: '인증서 포함' },
-  { i: '🪙', t: '코인 잔액', n: '24개', sub: '환불 불가 · 즉시 소멸' },
-  { i: '💎', t: '구독', n: '월 4,900원', sub: '즉시 해지 · 잔여일 환불 X' },
-  { i: '🎬', t: '타임랩스', n: '18편', sub: '복구 불가' },
-  { i: '🔔', t: '알림 / 메시지', n: '전체', sub: '발송 기록 포함' },
+const TILE_KEYS: ('drawings' | 'awards' | 'coins' | 'subscription' | 'timelapse' | 'notification')[] = [
+  'drawings', 'awards', 'coins', 'subscription', 'timelapse', 'notification',
 ];
 
-const KEPT_BY_LAW: { t: string; s: string }[] = [
-  { t: '결제 / 정산 기록', s: '전자상거래법 · 5년' },
-  { t: '본인확인 인증 로그', s: '정보통신망법 · 6개월' },
-  { t: '부정 사용 신고 기록', s: '필요 시 3년' },
-];
+const TILE_ICONS: Record<typeof TILE_KEYS[number], string> = {
+  drawings: '🎨',
+  awards: '🏆',
+  coins: '🪙',
+  subscription: '💎',
+  timelapse: '🎬',
+  notification: '🔔',
+};
+
+const KEPT_ROWS: ('row1' | 'row2' | 'row3')[] = ['row1', 'row2', 'row3'];
 
 function Step5({ step, onPrev, onNext }: StepProps) {
+  const t = useTranslations('withdraw.step5');
   return (
     <>
       <Card>
         <div className="flex flex-col gap-3">
           <div className="grid grid-cols-2 gap-2.5">
-            {DATA_TILES.map((d, i) => (
-              <div key={i} className="rounded-[14px] border-[1.5px] border-[#1C7AE0]/[0.12] bg-white px-4 py-3.5">
+            {TILE_KEYS.map((k) => (
+              <div key={k} className="rounded-[14px] border-[1.5px] border-[#1C7AE0]/[0.12] bg-white px-4 py-3.5">
                 <div className="flex items-center gap-2.5">
                   <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#EF4444]/[0.08] text-[18px]">
-                    {d.i}
+                    {TILE_ICONS[k]}
                   </div>
                   <div className="flex-1">
-                    <div className="text-[11.5px] text-[#8AA0BD]">{d.t}</div>
-                    <div className="text-[18px] font-extrabold leading-[1.1] text-[#0b2a63]">{d.n}</div>
+                    <div className="text-[11.5px] text-[#8AA0BD]">{t(`tiles.${k}.title`)}</div>
+                    <div className="text-[18px] font-extrabold leading-[1.1] text-[#0b2a63]">{t(`tiles.${k}.value`)}</div>
                   </div>
                 </div>
-                <div className="mt-2 text-[11.5px] text-[#8AA0BD]">{d.sub}</div>
+                <div className="mt-2 text-[11.5px] text-[#8AA0BD]">{t(`tiles.${k}.sub`)}</div>
               </div>
             ))}
           </div>
@@ -706,19 +659,19 @@ function Step5({ step, onPrev, onNext }: StepProps) {
           <div className="rounded-[14px] border-[1.5px] border-[#10B981]/[0.32] bg-[#10B981]/[0.06] px-4 py-3.5">
             <div className="mb-1.5 flex items-center gap-1.5 text-[12px] font-bold text-[#047857]">
               <span>📂</span>
-              <span>법령상 보관되는 항목</span>
+              <span>{t('kept.heading')}</span>
             </div>
             <ul className="m-0 flex list-none flex-col gap-1 p-0">
-              {KEPT_BY_LAW.map((x, i) => (
-                <li key={i} className="flex items-center justify-between text-[12px] text-[#5C6F90]">
-                  <span>{x.t}</span>
-                  <span className="text-[11px] text-[#8AA0BD]">{x.s}</span>
+              {KEPT_ROWS.map((r) => (
+                <li key={r} className="flex items-center justify-between text-[12px] text-[#5C6F90]">
+                  <span>{t(`kept.${r}Title` as 'kept.row1Title' | 'kept.row2Title' | 'kept.row3Title')}</span>
+                  <span className="text-[11px] text-[#8AA0BD]">
+                    {t(`kept.${r}Sub` as 'kept.row1Sub' | 'kept.row2Sub' | 'kept.row3Sub')}
+                  </span>
                 </li>
               ))}
             </ul>
-            <div className="mt-2 text-[11px] leading-[1.5] text-[#8AA0BD]">
-              * 이 항목들은 분리된 암호화 저장소에 보관되며, 별도 인증 없이는 복원되지 않아요.
-            </div>
+            <div className="mt-2 text-[11px] leading-[1.5] text-[#8AA0BD]">{t('kept.footnote')}</div>
           </div>
         </div>
       </Card>
@@ -727,16 +680,17 @@ function Step5({ step, onPrev, onNext }: StepProps) {
   );
 }
 
-// ---------- Step 6 재인증 ----------
+// ---------- Step 6 ----------
 
 function Step6({ step, state, update, onPrev, onNext }: StepProps) {
+  const t = useTranslations('withdraw.step6');
   const ok = state.password.length >= 8 && state.otp.length === 6;
   return (
     <>
       <Card>
         <div className="flex max-w-[520px] flex-col gap-3.5">
           <label className="flex flex-col gap-1.5">
-            <span className="text-[12px] font-bold text-[#5C6F90]">현재 비밀번호</span>
+            <span className="text-[12px] font-bold text-[#5C6F90]">{t('passwordLabel')}</span>
             <input
               type="password"
               value={state.password}
@@ -748,41 +702,43 @@ function Step6({ step, state, update, onPrev, onNext }: StepProps) {
           </label>
 
           <label className="flex flex-col gap-1.5">
-            <span className="text-[12px] font-bold text-[#5C6F90]">휴대전화 인증번호</span>
+            <span className="text-[12px] font-bold text-[#5C6F90]">{t('otpLabel')}</span>
             <div className="flex gap-2">
               <input
                 value={state.otp}
                 onChange={(e: ChangeEvent<HTMLInputElement>) =>
                   update('otp', e.target.value.replace(/\D/g, '').slice(0, 6))
                 }
-                placeholder="등록된 번호로 발송된 6자리"
+                placeholder={t('otpPlaceholder')}
                 inputMode="numeric"
                 className="flex-1 rounded-[12px] border-[1.5px] border-[#1C7AE0]/[0.18] bg-white px-4 py-3.5 text-[14px] tracking-[4px] text-[#0b2a63] outline-none transition-[border-color,box-shadow] placeholder:text-[#8AA0BD] focus:border-[#3196ff] focus:shadow-[0_0_0_4px_rgba(49,150,255,0.14)]"
               />
               <button
                 type="button"
                 onClick={() => {
-                  void alert('인증번호가 발송됐어요. (BE 미구현 — mock)', { tone: 'success' });
+                  void alert(t('otpToast'), { tone: 'success' });
                 }}
                 className="cursor-pointer whitespace-nowrap rounded-[12px] border-[1.5px] border-[#3196ff]/[0.32] bg-white px-[18px] text-[12.5px] font-bold text-[#1C7AE0]"
               >
-                인증번호 받기
+                {t('otpSend')}
               </button>
             </div>
             <span className="mt-0.5 text-[11px] text-[#8AA0BD]">
-              ⏱ 02:48 남음 · 인증번호가 오지 않으면 <span className="cursor-pointer font-bold text-[#1C7AE0]">다시 받기</span>
+              {t('otpTimerPre')}{' '}
+              <span className="cursor-pointer font-bold text-[#1C7AE0]">{t('otpTimerLink')}</span>
             </span>
           </label>
 
           <div className="mt-1 flex gap-2.5 rounded-[12px] border border-[#3196ff]/[0.22] bg-[#3196ff]/[0.06] px-3.5 py-3 text-[12px] leading-[1.55] text-[#5C6F90]">
             <span>🛡</span>
-            <span>본인 확인 정보는 인증 직후 폐기돼요. 5회 실패 시 계정이 24시간 잠깁니다.</span>
+            <span>{t('securityNote')}</span>
           </div>
 
           <div className="mt-1 flex items-center gap-2 rounded-[10px] bg-slate-50/80 px-3 py-2.5 text-[11.5px] text-[#8AA0BD]">
             <span>📞</span>
             <span>
-              휴대전화를 분실하셨나요? <span className="cursor-pointer font-bold text-[#1C7AE0]">고객센터로 문의하기</span>
+              {t('lostPhonePre')}{' '}
+              <span className="cursor-pointer font-bold text-[#1C7AE0]">{t('lostPhoneLink')}</span>
             </span>
           </div>
         </div>
@@ -792,33 +748,43 @@ function Step6({ step, state, update, onPrev, onNext }: StepProps) {
   );
 }
 
-// ---------- Step 7 최종 확인 ----------
+// ---------- Step 7 ----------
 
 function Step7({ step, state, update, onPrev, onNext }: StepProps) {
+  const t = useTranslations('withdraw.step7');
+  const CONFIRM_PHRASE = t('phrase');
   const ok = state.c1 && state.c2 && state.c3 && state.phrase === CONFIRM_PHRASE;
-  const childrenLabel: Record<ChildrenHandling, string> = {
-    all: '자녀와 함께 모두 탈퇴',
-    keep: '가족 계정만 탈퇴, 자녀는 보존',
-    partial: '일부 자녀만 함께 삭제',
+  const childrenLabelMap: Record<ChildrenHandling, 'childrenAll' | 'childrenKeep' | 'childrenPartial'> = {
+    all: 'childrenAll',
+    keep: 'childrenKeep',
+    partial: 'childrenPartial',
   };
-  const methodLabel: Record<DeletionMethod, string> = {
-    grace: '30일 유예 후 자동 삭제',
-    instant: '즉시 삭제 (복구 불가)',
+  const methodLabelMap: Record<DeletionMethod, 'methodGrace' | 'methodInstant'> = {
+    grace: 'methodGrace',
+    instant: 'methodInstant',
   };
-  const completion = state.method === 'grace' ? '30일 후' : '요청 즉시';
+  const completion = state.method === 'grace' ? t('completionGrace') : t('completionInstant');
+
+  const rows = [
+    [t('rowMethod'), t(methodLabelMap[state.method])],
+    [t('rowChildren'), t(childrenLabelMap[state.childrenHandling])],
+    [t('rowZip'), t('rowZipValue')],
+    [t('rowComplete'), completion],
+  ];
+
+  const checks = [
+    { v: state.c1, key: 'c1' as const, l: t('agree1') },
+    { v: state.c2, key: 'c2' as const, l: t('agree2') },
+    { v: state.c3, key: 'c3' as const, l: t('agree3') },
+  ];
 
   return (
     <>
       <Card>
         <div className="flex flex-col gap-3.5">
           <div className="rounded-[14px] border border-[#1C7AE0]/[0.12] bg-slate-50/80 px-4 py-3.5">
-            <div className="mb-2 text-[12px] font-bold tracking-[0.6px] text-[#8AA0BD]">요청 내용</div>
-            {[
-              ['삭제 방식', methodLabel[state.method]],
-              ['자녀 처리', childrenLabel[state.childrenHandling]],
-              ['ZIP 백업', '요청됨 · 24시간 내 메일 발송'],
-              ['예상 완료', completion],
-            ].map(([k, v], i) => (
+            <div className="mb-2 text-[12px] font-bold tracking-[0.6px] text-[#8AA0BD]">{t('summaryHeading')}</div>
+            {rows.map(([k, v], i) => (
               <div
                 key={k}
                 className="flex items-center justify-between py-1.5 text-[13px]"
@@ -831,11 +797,7 @@ function Step7({ step, state, update, onPrev, onNext }: StepProps) {
           </div>
 
           <div className="flex flex-col gap-2">
-            {[
-              { v: state.c1, key: 'c1' as const, l: '위 내용을 모두 확인했고, 결과에 동의해요.' },
-              { v: state.c2, key: 'c2' as const, l: '자녀의 작품·수상 이력이 영구 삭제됨을 알고 있어요.' },
-              { v: state.c3, key: 'c3' as const, l: '잔여 코인·구독 잔여일은 환불되지 않음을 이해했어요.' },
-            ].map((c) => (
+            {checks.map((c) => (
               <label
                 key={c.key}
                 className={cn(
@@ -857,7 +819,9 @@ function Step7({ step, state, update, onPrev, onNext }: StepProps) {
 
           <div>
             <div className="mb-1.5 text-[12px] font-bold text-[#5C6F90]">
-              확인을 위해 <span className="text-[#B91C1C]">"{CONFIRM_PHRASE}"</span>를 그대로 입력해 주세요
+              {t('phraseLabelPre')}{' '}
+              <span className="text-[#B91C1C]">{t('phraseLabelMid', { phrase: CONFIRM_PHRASE })}</span>
+              {t('phraseLabelPost')}
             </div>
             <input
               value={state.phrase}
@@ -871,7 +835,7 @@ function Step7({ step, state, update, onPrev, onNext }: StepProps) {
           </div>
         </div>
       </Card>
-      <Footer step={step} onPrev={onPrev} onNext={onNext} nextLabel="🗑 영구 삭제하기" nextDisabled={!ok} danger />
+      <Footer step={step} onPrev={onPrev} onNext={onNext} nextLabel={t('submit')} nextDisabled={!ok} danger />
     </>
   );
 }

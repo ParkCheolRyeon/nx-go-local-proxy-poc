@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+
 import ModalShell, { ModalBanner, ModalBody, type ModalPalette } from '@/components/dialog/ModalShell';
 import { type DialogRequestComponentProps } from '@/stores/dialogStore';
 
@@ -36,13 +38,18 @@ const PALETTES: Record<ConfirmTone | 'danger', ModalPalette> = {
 export default function ConfirmModal({
   resolve,
   message,
-  title = '확인이 필요해요',
+  title,
   tone = 'info',
   destructive = false,
-  yesButtonText = '확인',
-  noButtonText = '취소',
+  yesButtonText,
+  noButtonText,
   allowClose = false,
 }: ConfirmModalProps) {
+  const tDialog = useTranslations('dialog');
+  const tCommon = useTranslations('common');
+  const resolvedTitle = title ?? tDialog('confirmTitle');
+  const resolvedYes = yesButtonText ?? tCommon('confirm');
+  const resolvedNo = noButtonText ?? tCommon('cancel');
   const palette = destructive ? PALETTES.danger : PALETTES[tone];
   const onConfirm = () => resolve(true);
   const onCancel = () => resolve(false);
@@ -58,7 +65,7 @@ export default function ConfirmModal({
   return (
     <ModalShell onBackdropClick={onBackdrop}>
       <ModalBanner palette={palette} />
-      <ModalBody title={title} message={message} />
+      <ModalBody title={resolvedTitle} message={message} />
       <div className="flex gap-2.5 px-[22px] pb-[22px] pt-[18px]">
         <button
           type="button"
@@ -66,7 +73,7 @@ export default function ConfirmModal({
           className="mdl-btn flex-1 rounded-[14px] bg-white px-4 py-3.5 text-[14px] font-bold text-[#5C6F90]"
           style={{ border: '1.5px solid rgba(28,122,224,0.18)' }}
         >
-          {noButtonText}
+          {resolvedNo}
         </button>
         <button
           type="button"
@@ -74,7 +81,7 @@ export default function ConfirmModal({
           className="mdl-btn flex-1 rounded-[14px] border-0 px-4 py-3.5 text-[14px] font-bold text-white"
           style={{ background: confirmGrad, boxShadow: confirmShadow }}
         >
-          {yesButtonText}
+          {resolvedYes}
         </button>
       </div>
     </ModalShell>

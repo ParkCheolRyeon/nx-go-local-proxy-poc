@@ -1,9 +1,22 @@
 {
   "common": {
     "save": "Save",
+    "saving": "Saving…",
     "cancel": "Cancel",
     "back": "Back",
-    "confirm": "Confirm"
+    "confirm": "Confirm",
+    "close": "Close",
+    "next": "Next →",
+    "prev": "← Back",
+    "edit": "Edit",
+    "delete": "Delete",
+    "deleting": "Deleting…",
+    "or": "or",
+    "skip": "Skip",
+    "submit": "OK",
+    "noResult": "No results.",
+    "appName": "iGallery DP",
+    "appDescription": "ArtBongBong Gallery for kids"
   },
   "menu": {
     "draw": "Draw",
@@ -22,9 +35,288 @@
     "settingSubMobile": "Account · Billing",
     "settingSubPc": "Account · Wallet · Billing"
   },
+  "plan": {
+    "monthlySubscribe": "Monthly",
+    "yearlySubscribe": "Yearly",
+    "pro": "Pro Plan"
+  },
+  "time": {
+    "justNow": "Just now",
+    "minutesAgo": "{count}m ago",
+    "hoursAgo": "{count}h ago",
+    "yesterday": "Yesterday",
+    "daysAgo": "{count}d ago"
+  },
+  "header": {
+    "loginButton": "Sign in",
+    "breadcrumbAriaLabel": "breadcrumb"
+  },
+  "sidebar": {
+    "guest": "Guest",
+    "loginOrSignup": "Sign in / Sign up",
+    "logout": "Sign out",
+    "menuAriaLabel": "menu",
+    "collapse": "Collapse",
+    "expand": "Expand",
+    "planUsing": "✨ {plan} active",
+    "tooltipPlan": "Plan",
+    "tooltipPeriod": "Until",
+    "monthlyCoin": "This month's coins"
+  },
+  "splash": {
+    "char1": "A",
+    "char2": "r",
+    "char3": "t",
+    "char4": "!",
+    "tagline": "Kids' Gallery",
+    "description": "Draw together · Show off · Win prizes",
+    "loadingDone": "Ready!",
+    "loading": "Gathering art..."
+  },
+  "dialog": {
+    "alertTitle": "Notice",
+    "confirmTitle": "Please confirm",
+    "comingSoon": "Coming soon.",
+    "closeAriaLabel": "Close"
+  },
+  "auth": {
+    "signin": {
+      "tag": "Parent sign in",
+      "headingLine1": "Welcome",
+      "headingLine2": "back",
+      "subtitle": "Enter your ID and password.",
+      "newHere": "First time here?",
+      "goSignup": "Sign up →",
+      "idLabel": "ID",
+      "idPlaceholder": "Enter your ID",
+      "passwordLabel": "Password",
+      "forgotPassword": "Forgot password?",
+      "showPassword": "Show",
+      "hidePassword": "Hide",
+      "rememberMe": "Stay signed in",
+      "submit": "Sign in →",
+      "easyLogin": "Quick sign in",
+      "agreementPrefix": "By signing in you agree to the",
+      "termsLink": "Terms",
+      "privacyLink": "Privacy Policy",
+      "agreementSuffix": ".",
+      "errorInvalid": "Email or password is incorrect.",
+      "errorGeneric": "Sign in failed. Please try again later."
+    },
+    "signup": {
+      "haveAccount": "Already have an account?",
+      "goSignin": "Sign in →",
+      "headingLine1": "Your child's",
+      "headingLine2Pre": "first",
+      "headingLine2Mid": "gallery",
+      "headingLine2Post": "starts here",
+      "descLine1": "Create a parent account first, then add child profiles.",
+      "descLine2": "Just 3 minutes.",
+      "footer": "Your child's activity is linked to and protected by the parent account.",
+      "errorDuplicate": "This email is already registered.",
+      "errorGeneric": "Sign up failed. Please try again later."
+    },
+    "social": {
+      "kakao": "Continue with Kakao",
+      "naver": "Continue with Naver",
+      "google": "Continue with Google",
+      "apple": "Continue with Apple",
+      "email": "Continue with email"
+    },
+    "email": {
+      "back": "Back",
+      "emailLabel": "Email",
+      "passwordLabel": "Password",
+      "passwordHint": "6+ characters",
+      "showPassword": "Show",
+      "hidePassword": "Hide",
+      "termsLink": "Terms",
+      "privacyLink": "Privacy Policy",
+      "agreementMid": " and",
+      "guardianConfirm": "I am the legal guardian of a child under 14",
+      "agreementEnd": ".",
+      "submit": "Create account →"
+    },
+    "childrenProfile": {
+      "back": "Back",
+      "skip": "Skip",
+      "headingPre": "Set up a child profile",
+      "headingPost": "",
+      "description": "You can add up to 5 profiles later in settings.",
+      "later": "Later",
+      "submit": "Done · Get 3 coins",
+      "submitting": "Saving…",
+      "errorGeneric": "Failed to save the child profile. Please try again later."
+    }
+  },
+  "child": {
+    "level": {
+      "beginner": "Beginner",
+      "intermediate": "Intermediate",
+      "expert": "Expert"
+    },
+    "form": {
+      "characterLabel": "Character",
+      "characterHint": "You can change this later",
+      "nameLabel": "Name",
+      "namePlaceholder": "Child's name or nickname",
+      "birthLabel": "Birthday",
+      "birthHint": "Under 14 · Guardian consent required",
+      "drawingLabel": "Drawing skill",
+      "levelBeginnerSub": "First time drawing",
+      "levelIntermediateSub": "Some experience",
+      "levelExpertSub": "Confident"
+    },
+    "switcher": {
+      "select": "Select child",
+      "title": "Children ({count} / 5)",
+      "addMore": "Add child",
+      "atMax": "Up to 5 children allowed"
+    }
+  },
+  "myGallery": {
+    "emptyChild": {
+      "title": "No children registered yet",
+      "sub": "Add a child profile first to use My Gallery.",
+      "cta": "Add child"
+    },
+    "title": "My Gallery",
+    "titleWithName": "{name}'s Gallery",
+    "subtitle": "Resume from your archive, share public works, and collect awards.",
+    "tabsAriaLabel": "Gallery tabs",
+    "tabs": {
+      "archive": "Archive",
+      "public": "Public",
+      "awards": "Awards"
+    },
+    "empty": {
+      "archiveTitle": "No archived works yet",
+      "archiveSub": "Draw your first work to fill your archive.",
+      "publicTitle": "No public works yet",
+      "publicSub": "Make a finished work public to show it off.",
+      "awardsTitle": "No awarded works yet",
+      "awardsSub": "Submit to events to win an award."
+    },
+    "goDraw": "Start drawing",
+    "errorLoad": "Could not load your works.",
+    "card": {
+      "modeColoring": "Coloring",
+      "modeStepwise": "Step-by-step",
+      "modeFreeform": "Freeform",
+      "modeTogether": "Together",
+      "rankGrand": "Grand",
+      "rankGold": "Gold",
+      "rankSilver": "Silver",
+      "rankBronze": "Bronze",
+      "rankEncourage": "Honorable",
+      "inProgress": "Resume",
+      "publicBadge": "Public",
+      "inProgressShort": "In progress"
+    },
+    "calendar": {
+      "title": "Drawing calendar",
+      "prevMonthAria": "Previous month",
+      "nextMonthAria": "Next month",
+      "prevImageAria": "Previous drawing",
+      "nextImageAria": "Next drawing"
+    }
+  },
+  "drawing": {
+    "title": "Drawing"
+  },
+  "event": {
+    "tag": "IGALLERY EXCLUSIVE",
+    "headingPre": "This month's",
+    "headingHighlight": "events",
+    "descLine1": "Specially curated themes to spark your imagination.",
+    "descLine2": "Pick a topic that inspires you and join in.",
+    "filterAriaLabel": "Event filter",
+    "filter": {
+      "all": "All",
+      "open": "Open",
+      "notOpen": "Upcoming",
+      "end": "Ended"
+    },
+    "status": {
+      "open": "Open",
+      "notOpen": "Upcoming",
+      "end": "Ended"
+    },
+    "empty": "No events for this filter.",
+    "card": {
+      "participants": "{count} joined",
+      "more": "Details"
+    },
+    "items": {
+      "rainy-day": {
+        "title": "On a Rainy Day",
+        "subtitle": "On rainy days I miss you"
+      },
+      "stained-glass": {
+        "title": "World Through Stained Glass",
+        "subtitle": "How would sunlight feel through stained glass? So sparkling and bright!"
+      },
+      "korean-table": {
+        "title": "A Korean Table",
+        "subtitle": "Draw a hearty, delicious Korean meal. Eat well!"
+      },
+      "sea-sunset": {
+        "title": "Sunset Meets the Sea",
+        "subtitle": "The sea and the sunset are dating — congratulate them!"
+      },
+      "tiger-brother": {
+        "title": "Tiger Brother",
+        "subtitle": "Scary or cool? Draw a thoughtful tiger."
+      },
+      "arctic-now": {
+        "title": "Arctic Today",
+        "subtitle": "Draw the Arctic now. Igloos and penguins together."
+      },
+      "dad-commute": {
+        "title": "Dad's Commute",
+        "subtitle": "Where does dad pass on his commute? Subway? Bus?"
+      },
+      "worldcup-2026": {
+        "title": "2026 NA World Cup",
+        "subtitle": "Imagine the World Cup that's about to begin!"
+      },
+      "picasso": {
+        "title": "I'll Be Picasso",
+        "subtitle": "Pretend to be Picasso and draw whatever you want."
+      },
+      "bukchon": {
+        "title": "Hanok Village feat. Bukchon",
+        "subtitle": "Not every hanok village is in Bukchon — but Bukchon has one!"
+      }
+    }
+  },
+  "notifications": {
+    "tag": "Notification center",
+    "headingPre": "Unread",
+    "headingCount": "{count}",
+    "subtitle": "Notifications received in the last 7 days",
+    "markAllRead": "Mark all read",
+    "tab": {
+      "all": "All",
+      "contest": "Contest",
+      "social": "Social",
+      "coin": "Coins",
+      "system": "System"
+    },
+    "groupToday": "Today",
+    "groupEarlier": "Earlier",
+    "empty": "No notifications here",
+    "emptySub": "Try another tab",
+    "footerAuto": "Notifications older than 7 days are cleaned up automatically",
+    "footerSetting": "Notification settings →",
+    "errorRead": "Failed to mark as read.",
+    "errorReadAll": "Failed to mark all as read."
+  },
   "setting": {
     "title": "Settings",
     "subtitle": "Manage account, subscription, notifications and safety options here.",
+    "tag": "SETTINGS",
+    "groupAriaLabel": "Settings groups",
     "groups": {
       "account": { "label": "Account", "sub": "Profile · Kids" },
       "billing": { "label": "Subscription", "sub": "Pro · Coins" },
@@ -34,11 +326,488 @@
       "danger": { "label": "Account Care", "sub": "Sign out · Delete" }
     },
     "account": {
+      "loggedOutTitle": "Sign in required",
+      "loggedOutSub": "Please sign in to view your account.",
+      "noChildren": "No children added",
+      "familyAccount": "Family account",
+      "edit": "Edit",
+      "childrenManage": "Manage child profiles",
+      "childrenSub": "{names} ({count} / 5)",
       "password": "Change password",
+      "passwordSub": "Recommended every 6 months",
+      "identity": "Identity verification",
+      "identitySub": "PASS · 1-year cache",
       "language": "Language",
+      "languageValue": "English",
       "country": "Country / Region",
+      "countryValue": "United States",
       "languageSavedToast": "Language set to {name}.",
-      "countrySavedToast": "Country set to {name}."
+      "countrySavedToast": "Country set to {name}.",
+      "saveFailedToast": "Could not save to the server. Please try again later."
+    },
+    "app": {
+      "saveFailed": "Could not save changes. Please try again later.",
+      "boxNotif": "Notifications",
+      "drawing": "Drawing",
+      "drawingSub": "Reminders and completion alerts",
+      "event": "Events",
+      "eventSub": "New events, submissions, results",
+      "system": "System",
+      "systemSub": "Important service notices and updates",
+      "marketing": "Marketing",
+      "marketingSub": "Promotions and new feature news",
+      "boxDnd": "Do Not Disturb",
+      "dnd": "Do Not Disturb mode",
+      "dndSub": "Block push notifications during the chosen hours.",
+      "dndStart": "Start time",
+      "dndEnd": "End time",
+      "dndStartAria": "Do Not Disturb start time",
+      "dndEndAria": "Do Not Disturb end time"
+    },
+    "billing": {
+      "tag": "IGALLERY PRO",
+      "monthlyTitle": "Monthly subscription",
+      "nextPayment": "Next charge · 2026.05.15 · ₩4,900",
+      "switchYearly": "Switch to yearly",
+      "cancel": "Cancel subscription",
+      "wallet": "Coin wallet",
+      "walletSub": "Auto-tops up 1 coin daily for 7 days after sign-up",
+      "coinUnit": "coins",
+      "buy": "Buy coins",
+      "buySub": "10 coins for ₩9,900",
+      "history": "Payment history",
+      "historySub": "Last charge · 2026.04.15",
+      "refund": "Request refund",
+      "refundSub": "Within 30 days of payment",
+      "receiptEmail": "Receipt email",
+      "receiptEmailValue": "kim.minsu@email.com"
+    },
+    "kid": {
+      "safeMode": "Safe mode",
+      "safeModeSub": "Show only safe content",
+      "timeLimit": "Time limit",
+      "timeLimitSub": "1h 30m per day",
+      "paymentLock": "Payment password",
+      "paymentLockSub": "Block payments by children",
+      "togetherChat": "Together chat",
+      "togetherChatSub": "Allow chat in 2-player rooms",
+      "consent": "Guardian consent history",
+      "consentSub": "1 child under 14",
+      "saveFailed": "Could not save changes. Please try again later."
+    },
+    "support": {
+      "faqHeading": "Frequently asked questions",
+      "contact": "Contact us",
+      "contactSub": "help@artbonbon.com · Mon–Fri 10:00–18:00",
+      "terms": "Terms of Service",
+      "privacy": "Privacy Policy",
+      "copyright": "Event copyright notice",
+      "version": "Version",
+      "versionValue": "1.0.0"
+    },
+    "faq": [
+      {
+        "q": "How do I cancel my subscription?",
+        "a": "Settings → Subscription → tap 'Cancel subscription'. Service continues until the end of the current billing period."
+      },
+      {
+        "q": "Can I recover deleted artworks?",
+        "a": "Within 30 days of withdrawal you can cancel and recover everything. After 30 days, data is permanently deleted."
+      },
+      {
+        "q": "How do I use coins?",
+        "a": "1 coin is consumed per drawing. Free coins are topped up daily, and subscribers get unlimited use."
+      },
+      {
+        "q": "How do I add a child profile?",
+        "a": "Settings → Account → Add child profile. Up to 5 profiles per family account."
+      },
+      {
+        "q": "How do I join an event?",
+        "a": "Pick an event from the Events tab and follow the submission steps. Identity verification may be required."
+      }
+    ],
+    "contact": {
+      "tag": "SUPPORT",
+      "title": "1:1 Contact",
+      "subtitle": "Mon–Fri 10:00–18:00 · Usually within 1 business day",
+      "subjectLabel": "Subject",
+      "subjectPlaceholder": "Enter a subject",
+      "messageLabel": "Message",
+      "messagePlaceholder": "Describe your inquiry in detail",
+      "submit": "Send",
+      "submitting": "Sending…",
+      "successToast": "Your inquiry was received. We'll get back to you soon.",
+      "errorToast": "Could not submit your inquiry. Please try again later."
+    },
+    "danger": {
+      "logout": "Sign out",
+      "logoutSub": "Sign out only on this device",
+      "logoutConfirmMsg": "Sign out from this device?",
+      "logoutConfirmTitle": "Sign out",
+      "logoutConfirmYes": "Sign out",
+      "deleteChildren": "Delete child profiles",
+      "deleteChildrenSub": "Pick from {count} to delete · works · coins cleared",
+      "deleteChildrenEmpty": "No children registered",
+      "noChildrenAlert": "No child profiles registered.",
+      "withdrawTitle": "Delete account",
+      "withdrawDescLine1": "On withdrawal, works · coins · subscription will be cleared. Choose immediate or 30-day grace.",
+      "withdrawDescLine2": "Per GDPR · COPPA we offer a ZIP download and immediate deletion.",
+      "withdrawCta": "Start withdrawal"
+    },
+    "passwordPage": {
+      "tag": "SECURITY",
+      "title": "Change password",
+      "subtitle": "We recommend changing your password every 6 months.",
+      "currentLabel": "Current password",
+      "currentPlaceholder": "Your current password",
+      "newLabel": "New password",
+      "newPlaceholder": "New password",
+      "confirmLabel": "Confirm new password",
+      "confirmPlaceholder": "Enter again",
+      "mismatch": "Passwords do not match",
+      "strengthLabel": "Password strength",
+      "ruleLen": "8+ characters",
+      "ruleMix": "Letters & numbers",
+      "ruleSpc": "1+ special character",
+      "ruleDiff": "Different from current",
+      "infoNote": "Your password protects family billing and child safety settings. Mix letters, numbers, and symbols instead of guessable words.",
+      "showAria": "Show password",
+      "hideAria": "Hide password",
+      "submit": "Change password",
+      "submitting": "Changing…",
+      "errorMismatch": "Current password is incorrect.",
+      "errorChangeFailed": "Could not change the password.",
+      "errorGeneric": "Failed to change the password. Please try again later.",
+      "successToast": "Password changed. Please sign in again.",
+      "strength1": "Weak",
+      "strength2": "Fair",
+      "strength3": "Strong",
+      "strength4": "Very strong"
+    },
+    "languagePage": {
+      "tag": "LANGUAGE",
+      "title": "Language settings",
+      "subtitle": "Choose the interface language for the whole app.",
+      "previewLabel": "PREVIEW",
+      "previewNote": "Applied immediately to all text and notifications.",
+      "ko": "한국어",
+      "koSub": "Korean",
+      "koPreview": "Welcome to ArtBongBong Gallery!",
+      "en": "English",
+      "enSub": "English",
+      "enPreview": "Welcome to ArtBongBong Gallery!",
+      "ja": "日本語",
+      "jaSub": "Japanese",
+      "jaPreview": "Welcome to ArtBongBong Gallery!"
+    },
+    "countryPage": {
+      "tag": "REGION",
+      "title": "Country / Region settings",
+      "subtitle": "Affects payment currency, time zone, and content recommendations.",
+      "currentLabel": "Current",
+      "appliedBadge": "Applied",
+      "searchPlaceholder": "Search country or region",
+      "regionAsia": "Asia",
+      "regionNa": "North America",
+      "regionEurope": "Europe",
+      "regionOceania": "Oceania",
+      "country": {
+        "KR": "South Korea",
+        "JP": "Japan",
+        "CN": "China",
+        "VN": "Vietnam",
+        "TH": "Thailand",
+        "US": "United States",
+        "CA": "Canada",
+        "GB": "United Kingdom",
+        "FR": "France",
+        "DE": "Germany",
+        "AU": "Australia"
+      }
+    },
+    "childrenPage": {
+      "tag": "CHILDREN",
+      "title": "Child profiles",
+      "subtitle": "Up to {max} profiles per family account. Currently {count} / {max}.",
+      "emptyTitle": "No children added yet",
+      "emptySub": "Add a child to start drawing and saving works.",
+      "addChild": "Add child",
+      "atMaxLabel": "Up to {max} children allowed",
+      "ageSuffix": " · Age {age}",
+      "deleteFailed": "Failed to delete. Please try again later."
+    },
+    "childrenEditPage": {
+      "tag": "EDIT",
+      "title": "Edit child profile",
+      "subtitle": "You can change character, name, birthday, and skill level.",
+      "loadError404": "Child profile not found.",
+      "loadErrorGeneric": "Could not load the child profile.",
+      "saveError404": "Child profile not found.",
+      "saveErrorGeneric": "Failed to save. Please try again later.",
+      "backToList": "Back to list"
+    }
+  },
+  "childDelete": {
+    "headerTag": "DELETE CHILD PROFILE",
+    "title": "Which child profile would you like to delete?",
+    "subtitle": "Pick individuals or delete all child profiles at once.",
+    "emptyTitle": "No children registered",
+    "emptySub": "There are no child profiles to delete.",
+    "modeIndividualTitle": "Pick to delete",
+    "modeIndividualSub": "Pick child cards to delete one or more",
+    "modeAllTitle": "Delete all children",
+    "modeAllSub": "Delete all {count} child profiles at once",
+    "linkedCount": "{count} linked children",
+    "selectAll": "Select all",
+    "ageSuffix": "Age {age}",
+    "summaryEmptyTag": "NO TARGET SELECTED",
+    "summaryEmptyMsg": "Pick cards or choose \"Delete all children\"",
+    "summaryWillDelete": "Deleting {count}",
+    "summaryHelp": "Tap ✕ on a chip to remove one.",
+    "drawingsLabel": "🎨 Works",
+    "awardsLabel": "🏆 Awards",
+    "removeChipAria": "Remove {name}",
+    "back": "← Back to children",
+    "submitNoTarget": "Pick a target",
+    "submitAll": "Delete all {count} →",
+    "submitOne": "Delete {name} →",
+    "submitMany": "Delete {count} →",
+    "submitting": "Deleting…",
+    "successOne": "{name}'s profile was deleted.",
+    "successMany": "{count} child profiles were deleted.",
+    "partialFailureTitle": "Some children could not be deleted.",
+    "errorServer": "Could not reach the server.",
+    "modal": {
+      "headerSubAll": "DELETE ALL CHILD PROFILES",
+      "headerSubMulti": "DELETE SELECTED CHILD PROFILES",
+      "headerSubSingle": "DELETE CHILD PROFILE",
+      "askAll": "Delete all child profiles?",
+      "askMulti": "Delete the {count} selected children?",
+      "askSingle": "Delete {name}'s profile?",
+      "fallbackName": "this child",
+      "downloadHint": "You can download artworks as a ZIP before deletion.",
+      "downloadCta": "Download works →",
+      "agree1": "I understand that works, awards, and in-progress drawings cannot be recovered after deletion.",
+      "agree2All": "I confirm that all {count} child profiles will be removed and only the family account remains.",
+      "agree2Multi": "I confirm that the {count} selected child profiles will be removed.",
+      "agree2Single": "I confirm that in-progress drawings and unclaimed rewards will all be lost.",
+      "phraseLabelPre": "Type",
+      "phraseLabelMid": "\"{phrase}\"",
+      "phraseLabelPost": "to confirm",
+      "phrase": "delete all",
+      "phraseMismatch": "Must match exactly",
+      "footerNote": "🛡 Recoverable via support within 30 days after deletion",
+      "submitAll": "Delete all {count}",
+      "submitMulti": "Delete {count}",
+      "submitSingle": "Delete {name}",
+      "fallbackChild": "child",
+      "targetsAll": "Targets: {count} children (all)",
+      "targetsMulti": "Selected children: {count}",
+      "drawingsCount": "🎨 {count} works",
+      "awardsCount": "🏆 {count} awards",
+      "compactStats": "🎨 {drawings} · 🏆 {awards}",
+      "impactHeading": "Deleting will also remove the following",
+      "impact": {
+        "drawings": "Drawings",
+        "drawingsValue": "{count} works",
+        "awards": "Awards",
+        "awardsValue": "{count}",
+        "coins": "Coin balance",
+        "coinsValue": "Lost",
+        "timelapse": "Timelapse records",
+        "timelapseValue": "Permanently deleted"
+      }
+    }
+  },
+  "withdraw": {
+    "stepLabel": "STEP {step} / 7 · {title}",
+    "estimated": "About 2 min",
+    "stepTitle": {
+      "1": "Wait, are you really leaving?",
+      "2": "What about your child profiles?",
+      "3": "Choose a deletion method",
+      "4": "Save your art as a ZIP",
+      "5": "Review the data that will be removed",
+      "6": "Identity verification required",
+      "7": "One last confirmation"
+    },
+    "heroSub": {
+      "1": "Telling us why you're leaving really helps us improve.",
+      "2": "Children are linked to your family account. Choose how to handle them.",
+      "3": "Decide when to delete your data. If you might change your mind, we recommend the 30-day grace.",
+      "4": "Last chance before deletion. You can download your child's works and activity logs.",
+      "5": "Once withdrawn, the items below will be permanently deleted. Please confirm again.",
+      "6": "For account security, we'll re-verify your password and registered phone.",
+      "7": "Pressing [Permanently delete] starts the 30-day grace. Sign in within that time to cancel."
+    },
+    "exitConfirmMsg": "Stop the withdrawal flow? Your input will be lost.",
+    "exitConfirmTitle": "Stop withdrawal",
+    "exitYes": "Exit",
+    "exitNo": "Continue",
+    "successInstant": "Withdrawal received. All data will be deleted immediately. (BE not implemented — mock)",
+    "successGrace": "Withdrawal received. Sign back in within 30 days to cancel. (BE not implemented — mock)",
+    "footerExit": "Exit",
+    "footerNext": "Next →",
+    "footerKeepFreeLocker": "Get a free 1-month locker",
+    "step1": {
+      "statsTitle": "You've created",
+      "statsTitleCount": "24 works",
+      "statsTitleSuffix": "so far",
+      "statsSub": "2 awards · Total active time 18h 27m",
+      "tipTitle": "Wait — how about this?",
+      "reasons": {
+        "price": {
+          "label": "Pricing is too much",
+          "hint": "Is ₩4,900/month too much? Save up to 33% with the yearly plan."
+        },
+        "use": {
+          "label": "I rarely use it",
+          "hint": "Get a free 1-month locker so you can come back anytime."
+        },
+        "quality": {
+          "label": "Not enough drafts/content",
+          "hint": "We add new templates every week. What kind would you like more of?"
+        },
+        "privacy": {
+          "label": "Worried about privacy",
+          "hint": "Let us walk you through Safe Mode and minimal data collection again."
+        },
+        "kid": {
+          "label": "My kid lost interest",
+          "hint": "Try Step-by-step or Together mode. We have age-appropriate templates too."
+        },
+        "other": {
+          "label": "Other",
+          "hint": "Please tell us in your own words what was lacking."
+        }
+      },
+      "otherPlaceholder": "Free-form (max 500 chars)"
+    },
+    "step2": {
+      "options": {
+        "all": {
+          "title": "Withdraw together with children",
+          "desc": "All child profiles, works, and award histories are deleted with the account. The most common choice.",
+          "tag": "Recommended"
+        },
+        "keep": {
+          "title": "Withdraw the family account only, keep children",
+          "desc": "Only the family account is removed; child profiles and works are delegated to a co-parent.",
+          "tag": "Delegate"
+        },
+        "partial": {
+          "title": "Delete only some children",
+          "desc": "Delete only the children you select. You'll choose who in the next step."
+        }
+      },
+      "delegationNote": "Choosing \"Withdraw the family account only\" sends a delegation invite to the co-parent's email."
+    },
+    "step3": {
+      "options": {
+        "grace": {
+          "title": "Delete after 30 days",
+          "desc": "For 30 days you can sign back in to cancel. After that, automatic deletion.",
+          "badge": "Recommended",
+          "list1": "Recoverable any time",
+          "list2": "Auto hard-delete after 30 days",
+          "list3": "Subscription cancels immediately"
+        },
+        "instant": {
+          "title": "Delete immediately",
+          "desc": "All data is permanently deleted right away. Per GDPR Art. 17 / COPPA.",
+          "badge": "No recovery",
+          "list1": "Cannot be undone",
+          "list2": "Immediate hard-delete",
+          "list3": "Subscription · coins lost together"
+        }
+      },
+      "legalNote": "Per GDPR Art. 17 'right to be forgotten' and US COPPA, requested data is removed from all processing and backup systems within 14 days. Items legally required to be retained (e.g., payment records for 5 years) are stored separately and encrypted."
+    },
+    "step4": {
+      "tag": "BACKUP ARCHIVE",
+      "fileLabel": "artbongbong-backup-2026-05-06.zip",
+      "sizeNote": "Estimated ~{total} MB · Delivered by email within 24 hours",
+      "include": "Items to include",
+      "items": {
+        "drawings": { "label": "Drawings (PNG, original)", "sub": "24 works · ~245 MB" },
+        "awards": { "label": "Award history + certificate PDFs", "sub": "2 items · ~12 MB" },
+        "timelapse": { "label": "Timelapse videos (MP4)", "sub": "18 clips · ~1,280 MB" },
+        "profile": { "label": "Profile metadata (JSON)", "sub": "Excludes child profile data · ~4 MB" }
+      },
+      "downloadCta": "📥 Request ZIP download",
+      "downloadToast": "ZIP download requested. It will be sent to your registered email within 24 hours. (BE not implemented — mock)",
+      "rightNote": "This is your right under GDPR Art. 20 data portability. Free of charge."
+    },
+    "step5": {
+      "tiles": {
+        "drawings": { "title": "Drawings", "value": "24", "sub": "All child profile works" },
+        "awards": { "title": "Awards", "value": "2", "sub": "Including certificates" },
+        "coins": { "title": "Coin balance", "value": "24", "sub": "No refund · Lost immediately" },
+        "subscription": { "title": "Subscription", "value": "₩4,900/mo", "sub": "Immediate cancel · No remaining-day refund" },
+        "timelapse": { "title": "Timelapse", "value": "18", "sub": "Cannot recover" },
+        "notification": { "title": "Notifications / messages", "value": "All", "sub": "Including send logs" }
+      },
+      "kept": {
+        "heading": "Items retained by law",
+        "row1Title": "Payment / settlement records",
+        "row1Sub": "E-commerce law · 5 years",
+        "row2Title": "Identity verification logs",
+        "row2Sub": "Information network law · 6 months",
+        "row3Title": "Fraud reports",
+        "row3Sub": "If needed · 3 years",
+        "footnote": "* These items are stored in a separate encrypted vault and cannot be restored without additional verification."
+      }
+    },
+    "step6": {
+      "passwordLabel": "Current password",
+      "otpLabel": "Phone verification code",
+      "otpPlaceholder": "6 digits sent to your registered number",
+      "otpSend": "Get code",
+      "otpToast": "Verification code sent. (BE not implemented — mock)",
+      "otpTimerPre": "⏱ 02:48 left · If the code didn't arrive,",
+      "otpTimerLink": "resend",
+      "securityNote": "Verification info is discarded right after authentication. After 5 failures, the account is locked for 24 hours.",
+      "lostPhonePre": "Lost your phone?",
+      "lostPhoneLink": "Contact support"
+    },
+    "step7": {
+      "summaryHeading": "Your request",
+      "rowMethod": "Deletion method",
+      "rowChildren": "Children",
+      "rowZip": "ZIP backup",
+      "rowZipValue": "Requested · Email within 24 hours",
+      "rowComplete": "Estimated completion",
+      "completionGrace": "After 30 days",
+      "completionInstant": "Immediately",
+      "methodGrace": "Auto-delete after 30 days",
+      "methodInstant": "Delete immediately (no recovery)",
+      "childrenAll": "Withdraw together with children",
+      "childrenKeep": "Family account only, keep children",
+      "childrenPartial": "Delete only some children",
+      "agree1": "I confirm and accept everything above.",
+      "agree2": "I understand that my child's works and award history will be permanently deleted.",
+      "agree3": "I understand remaining coins and subscription days will not be refunded.",
+      "phrase": "delete artbongbong gallery",
+      "phraseLabelPre": "To confirm, type",
+      "phraseLabelMid": "\"{phrase}\"",
+      "phraseLabelPost": "exactly",
+      "submit": "🗑 Permanently delete"
+    },
+    "cancelPage": {
+      "remainingDays": "⏰ 18 days left",
+      "title": "Welcome back!",
+      "description": "You're in the 30-day grace period. Cancelling now restores all works · child profiles · subscriptions. After 18 days they will auto-delete and cannot be recovered.",
+      "stat1": "Drawings",
+      "stat1Value": "24",
+      "stat2": "Awards",
+      "stat2Value": "2",
+      "stat3": "Coins",
+      "stat3Value": "24",
+      "proceed": "Continue withdrawal",
+      "cancel": "✨ Cancel withdrawal & keep using",
+      "footer": "All features restored immediately on cancellation · No new charge",
+      "successToast": "Withdrawal cancelled. All features restored immediately. (BE not implemented — mock)"
     }
   },
   "breadcrumb": {
@@ -55,5 +824,15 @@
     "settingAccountCountry": "Country / Region",
     "settingWithdraw": "Delete account",
     "settingWithdrawCancel": "Cancel deletion"
+  },
+  "session": {
+    "expired": "Your session has expired."
+  },
+  "users": {
+    "createTitle": "Create user",
+    "namePlaceholder": "Name",
+    "create": "Create",
+    "lookupTitle": "Look up user",
+    "lookup": "Look up"
   }
 }
