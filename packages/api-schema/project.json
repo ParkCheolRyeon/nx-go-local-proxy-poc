@@ -11,6 +11,20 @@
         "command": "openapi-typescript openapi.yaml -o src/types.ts",
         "cwd": "packages/api-schema"
       }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": [
+        "{projectRoot}/src/**/*",
+        "{projectRoot}/tsconfig.json",
+        "{workspaceRoot}/tsconfig.base.json"
+      ],
+      "outputs": ["{projectRoot}/dist"],
+      "options": {
+        "command": "tsc -b",
+        "cwd": "packages/api-schema"
+      }
     }
   }
 }
