@@ -60,7 +60,7 @@ export class CicdStack extends Stack {
       ),
     );
 
-    // Lambda: update-function-code / publish-version / get-function
+    // Lambda: update-function-code / publish-version / get-function / list-versions
     this.deployRole.addToPolicy(
       new iam.PolicyStatement({
         actions: [
@@ -70,6 +70,8 @@ export class CicdStack extends Stack {
           'lambda:GetFunctionConfiguration',
           'lambda:UpdateAlias',
           'lambda:GetAlias',
+          'lambda:ListVersionsByFunction',
+          'lambda:ListAliases',
         ],
         resources: [`arn:aws:lambda:${this.region}:${this.account}:function:*`],
       }),
