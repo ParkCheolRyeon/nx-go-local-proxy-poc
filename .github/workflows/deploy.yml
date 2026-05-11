@@ -1,11 +1,16 @@
 name: deploy
-# main push 시 자동으로 빌드/푸시까지만 진행.
-# 사용자 트래픽은 그대로 옛 버전을 본다 (alias / ECS service 는 손대지 않음).
-# 실제 트래픽 시프트는 promote.yml 워크플로의 "Run workflow" 버튼으로 사람이 트리거.
+# git tag v*.*.* push 시 의도적 배포 트리거.
+# - BE: docker build → ECR push (세 태그: git tag / sha / latest)
+#       → CodePipeline (dp-back-pipeline) 의 Source 가 ECR latest 갱신을 감지 → Build/Approval/Deploy
+# - FE: open-next build → S3 sync (distribution bucket) + Lambda publish-version
+#       → 옛 promote.yml 흐름 그대로 (Phase 2 에서 FE 도 Pipeline 으로 이전 예정)
+#
+# main push 자체는 ci.yml (검증) 만 동작. 배포 안 됨.
 
 on:
   push:
-    branches: [main]
+    tags:
+      - 'v*.*.*'
   workflow_dispatch:
 
 concurrency:
@@ -20,43 +25,11 @@ env:
   AWS_REGION: ap-northeast-2
   AWS_ACCOUNT_ID: '588344796279'
   ECR_REPO: dp-back
-  ECS_CLUSTER: igallery
   AWS_ROLE_ARN: arn:aws:iam::588344796279:role/gh-actions-deploy
 
 jobs:
-  affected:
-    runs-on: ubuntu-latest
-    outputs:
-      be: ${{ steps.calc.outputs.be }}
-      fe: ${{ steps.calc.outputs.fe }}
-      migrations: ${{ steps.calc.outputs.migrations }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: pnpm
-      - run: pnpm i --frozen-lockfile
-      - uses: nrwl/nx-set-shas@v4
-      - id: calc
-        run: |
-          set -euxo pipefail
-          PROJECTS=$(pnpm -s nx show projects --affected --json)
-          echo "affected projects: $PROJECTS"
-          BE=$(echo "$PROJECTS" | jq -c 'contains(["dp-back"])')
-          FE=$(echo "$PROJECTS" | jq -c 'contains(["@igallery/dp-front"])')
-          MIG=$(git diff --name-only "$NX_BASE" "$NX_HEAD" -- 'apps/dp-back/db/migrations/' | grep -q . && echo true || echo false)
-          echo "be=$BE"           >> "$GITHUB_OUTPUT"
-          echo "fe=$FE"           >> "$GITHUB_OUTPUT"
-          echo "migrations=$MIG"  >> "$GITHUB_OUTPUT"
-
   be-build:
-    name: BE build & register task def (no traffic shift)
-    needs: affected
-    if: needs.affected.outputs.be == 'true'
+    name: BE build & ECR push (CodePipeline 이 그 다음 처리)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -68,51 +41,40 @@ jobs:
         id: ecr
       - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
-      - name: Build & push arm64 image
-        id: img
+      - name: Resolve tag / sha
+        id: meta
         run: |
           set -euxo pipefail
-          IMG="${{ steps.ecr.outputs.registry }}/$ECR_REPO:${{ github.sha }}"
-          IMG_LATEST="${{ steps.ecr.outputs.registry }}/$ECR_REPO:latest"
+          TAG="${GITHUB_REF_NAME}"
+          SHORT_SHA="${GITHUB_SHA::7}"
+          echo "tag=$TAG"             >> "$GITHUB_OUTPUT"
+          echo "short_sha=$SHORT_SHA" >> "$GITHUB_OUTPUT"
+      - name: Build & push arm64 image (세 태그)
+        run: |
+          set -euxo pipefail
+          REGISTRY="${{ steps.ecr.outputs.registry }}"
           docker buildx build \
             --platform linux/arm64 \
             -f apps/dp-back/Dockerfile apps/dp-back \
-            -t "$IMG" -t "$IMG_LATEST" \
+            -t "$REGISTRY/$ECR_REPO:${{ steps.meta.outputs.tag }}" \
+            -t "$REGISTRY/$ECR_REPO:${{ steps.meta.outputs.short_sha }}" \
+            -t "$REGISTRY/$ECR_REPO:latest" \
             --push
-          echo "image=$IMG" >> "$GITHUB_OUTPUT"
-      - name: Resolve current task def
-        id: ecs
+      - name: Summary
         run: |
-          set -euxo pipefail
-          SVC_ARN=$(aws ecs list-services --cluster "$ECS_CLUSTER" --query 'serviceArns[0]' --output text)
-          TD_ARN=$(aws ecs describe-services --cluster "$ECS_CLUSTER" --services "$SVC_ARN" \
-                    --query 'services[0].taskDefinition' --output text)
-          aws ecs describe-task-definition --task-definition "$TD_ARN" \
-            --query 'taskDefinition' > taskdef.json
-          jq 'del(.taskDefinitionArn,.revision,.status,.requiresAttributes,.compatibilities,.registeredAt,.registeredBy,.deregisteredAt,.enableFaultInjection)' taskdef.json > taskdef.cleaned.json
-      - name: Render new task definition (new image)
-        id: render
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: taskdef.cleaned.json
-          container-name: dp-back
-          image: ${{ steps.img.outputs.image }}
-      - name: Register new task def revision
-        run: |
-          set -euxo pipefail
-          NEW=$(aws ecs register-task-definition \
-            --cli-input-json file://${{ steps.render.outputs.task-definition }} \
-            --query 'taskDefinition.taskDefinitionArn' --output text)
-          echo "Registered: $NEW"
-          echo "## BE task def registered" >> $GITHUB_STEP_SUMMARY
-          echo "$NEW" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "→ Actions 의 promote 워크플로에서 BE 선택 시 이 revision 으로 트래픽 시프트가 시작됩니다." >> $GITHUB_STEP_SUMMARY
+          {
+            echo "## BE image pushed"
+            echo ""
+            echo "- tag: \`${{ steps.meta.outputs.tag }}\`"
+            echo "- sha: \`${{ steps.meta.outputs.short_sha }}\`"
+            echo "- ECR: \`${{ env.ECR_REPO }}\`"
+            echo ""
+            echo "→ CodePipeline \`dp-back-pipeline\` 이 'latest' 변경을 감지하고 Build/Approval 까지 자동 진행합니다."
+            echo "→ Approval 단계는 AWS Console 의 CodePipeline 페이지에서 사람이 클릭."
+          } >> $GITHUB_STEP_SUMMARY
 
   fe-build:
-    name: FE build & Lambda publish-version (no alias shift)
-    needs: affected
-    if: needs.affected.outputs.fe == 'true'
+    name: FE build & Lambda publish-version (Phase 2 까지 옛 흐름)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -147,7 +109,7 @@ jobs:
           echo "bucket=$BUCKET"       >> "$GITHUB_OUTPUT"
           echo "server_fn=$SERVER_FN" >> "$GITHUB_OUTPUT"
           echo "image_fn=$IMAGE_FN"   >> "$GITHUB_OUTPUT"
-      - name: S3 sync (no-delete, immutable assets + ISR cache)
+      - name: S3 sync (distribution bucket — 정적 자산은 swap 개념 없음)
         run: |
           set -euxo pipefail
           aws s3 sync apps/dp-front/.open-next/assets \
@@ -170,9 +132,8 @@ jobs:
             --function-name "${{ steps.fe.outputs.server_fn }}"
           NEW=$(aws lambda publish-version \
             --function-name "${{ steps.fe.outputs.server_fn }}" \
-            --description "sha=${{ github.sha }}" \
+            --description "tag=${GITHUB_REF_NAME} sha=${GITHUB_SHA::7}" \
             --query Version --output text)
-          echo "Published server v$NEW"
           echo "version=$NEW" >> "$GITHUB_OUTPUT"
       - name: Package & publish image Lambda (alias 안 건드림)
         id: image
@@ -188,17 +149,14 @@ jobs:
             --function-name "${{ steps.fe.outputs.image_fn }}"
           NEW=$(aws lambda publish-version \
             --function-name "${{ steps.fe.outputs.image_fn }}" \
-            --description "sha=${{ github.sha }}" \
+            --description "tag=${GITHUB_REF_NAME} sha=${GITHUB_SHA::7}" \
             --query Version --output text)
-          echo "Published image v$NEW"
           echo "version=$NEW" >> "$GITHUB_OUTPUT"
       - name: Summary
         run: |
           {
-            echo "## FE published (alias 'prod' 는 아직 옛 버전 가리킴)"
+            echo "## FE published (Phase 2 까지 promote.yml 의 fe 트리거 사용)"
             echo ""
             echo "- server Lambda: v${{ steps.server.outputs.version }}"
             echo "- image Lambda:  v${{ steps.image.outputs.version }}"
-            echo ""
-            echo "→ Actions 의 promote 워크플로에서 FE 선택 시 이 버전들로 alias 트래픽 시프트가 시작됩니다."
           } >> $GITHUB_STEP_SUMMARY

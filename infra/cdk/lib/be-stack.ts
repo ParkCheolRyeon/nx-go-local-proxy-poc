@@ -1,4 +1,4 @@
-import { Stack, StackProps, Duration, RemovalPolicy } from 'aws-cdk-lib';
+import { Stack, StackProps, Duration, RemovalPolicy, CfnOutput } from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
@@ -8,6 +8,10 @@ import * as rds from 'aws-cdk-lib/aws-rds';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import * as codedeploy from 'aws-cdk-lib/aws-codedeploy';
 import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
+import * as codepipeline from 'aws-cdk-lib/aws-codepipeline';
+import * as cpactions from 'aws-cdk-lib/aws-codepipeline-actions';
+import * as codebuild from 'aws-cdk-lib/aws-codebuild';
+import * as iam from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
 
 interface BeStackProps extends StackProps {
@@ -236,7 +240,7 @@ export class BeStack extends Stack {
       applicationName: 'dp-back',
     });
 
-    new codedeploy.EcsDeploymentGroup(this, 'CdGroup', {
+    const cdGroup = new codedeploy.EcsDeploymentGroup(this, 'CdGroup', {
       application: cdApp,
       deploymentGroupName: 'prod',
       service,
@@ -245,16 +249,122 @@ export class BeStack extends Stack {
         greenTargetGroup: greenTg,
         listener: prodListener,
         testListener,
+        // Green task 가 healthy 된 후 "트래픽 재라우팅" 까지 사람이 콘솔에서 직접 클릭.
+        // 그 시간 안에 안 누르면 STOP_DEPLOYMENT (자동 롤백).
+        // CodeDeploy 콘솔 → Applications → dp-back → prod → 진행 deployment → "Reroute traffic now"
+        deploymentApprovalWaitTime: Duration.hours(4),
         terminationWaitTime: Duration.minutes(5),
       },
-      deploymentConfig:
-        codedeploy.EcsDeploymentConfig.LINEAR_10PERCENT_EVERY_1MINUTES,
+      // Reroute 클릭 시 즉시 100% Green (AllAtOnce). LINEAR 원하면 LINEAR_10PERCENT_EVERY_1MINUTES.
+      deploymentConfig: codedeploy.EcsDeploymentConfig.ALL_AT_ONCE,
       alarms: [tg5xxAlarm, tgLatencyAlarm],
       autoRollback: {
         failedDeployment: true,
         stoppedDeployment: true,
         deploymentInAlarm: true,
       },
+    });
+
+    // ──────────────────────────────────────────────────────────────────
+    //  CodePipeline (Phase 1) — ECR push 감지 → Build → CodeDeploy → 사람이 콘솔 클릭으로 swap
+    // ──────────────────────────────────────────────────────────────────
+    //
+    // 흐름:
+    //   1. GitHub Actions 가 git tag push 시 docker build → ECR push (tag, sha, latest)
+    //   2. ECR 의 'latest' tag 갱신 이벤트가 이 Pipeline 의 Source 를 트리거
+    //   3. CodeBuild 가 task definition 의 image 만 새 sha 로 swap 한 taskdef.json + appspec.yaml 출력
+    //   4. CodeDeploy 가 위에 만든 cdGroup 으로 deployment 시작 — Green task 띄우고 healthy 됨
+    //   5. ⏸ "트래픽 재라우팅" 대기 (deploymentApprovalWaitTime=4시간)
+    //   6. 사용자가 CodeDeploy 콘솔에서 "Reroute traffic now" 클릭 → 즉시 swap (AllAtOnce)
+    //
+    // Pipeline 자체에 Manual Approval stage 없음 — CodeDeploy 의 Reroute 버튼이 게이트.
+
+    const sourceArtifact = new codepipeline.Artifact('source');
+    const buildArtifact = new codepipeline.Artifact('build');
+
+    // ECR Source — 'latest' tag 가 갱신될 때 트리거 (EventBridge rule 자동 생성)
+    const sourceAction = new cpactions.EcrSourceAction({
+      actionName: 'ECR_Source',
+      repository: this.ecrRepo,
+      imageTag: 'latest',
+      output: sourceArtifact,
+    });
+
+    // CodeBuild — task def 의 image 만 새 sha 로 render
+    const buildProject = new codebuild.PipelineProject(this, 'BeBuild', {
+      projectName: 'dp-back-build',
+      environment: {
+        buildImage: codebuild.LinuxArmBuildImage.AMAZON_LINUX_2_STANDARD_3_0,
+        computeType: codebuild.ComputeType.SMALL,
+      },
+      environmentVariables: {
+        TD_FAMILY: { value: taskDef.family },
+        CONTAINER_NAME: { value: 'dp-back' },
+        CONTAINER_PORT: { value: '8080' },
+      },
+      buildSpec: codebuild.BuildSpec.fromObject({
+        version: '0.2',
+        phases: {
+          build: {
+            commands: [
+              'echo "=== Source artifact (ECR) ==="',
+              'cat imageDetail.json',
+              'IMAGE_URI=$(jq -r ".ImageURI" imageDetail.json)',
+              'echo "image: $IMAGE_URI"',
+              'echo "=== current task def ($TD_FAMILY) ==="',
+              'aws ecs describe-task-definition --task-definition "$TD_FAMILY" --query taskDefinition > td_full.json',
+              'jq --arg IMG "$IMAGE_URI" --arg NAME "$CONTAINER_NAME" \'(.containerDefinitions[] | select(.name == $NAME)).image = $IMG\' td_full.json > td_with_image.json',
+              'jq \'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy, .deregisteredAt, .enableFaultInjection)\' td_with_image.json > taskdef.json',
+              'echo "=== new taskdef.json ==="',
+              'cat taskdef.json',
+              'echo "=== generate appspec.yaml ==="',
+              'cat > appspec.yaml <<EOF\nversion: 0.0\nResources:\n  - TargetService:\n      Type: AWS::ECS::Service\n      Properties:\n        TaskDefinition: <TASK_DEFINITION>\n        LoadBalancerInfo:\n          ContainerName: $CONTAINER_NAME\n          ContainerPort: $CONTAINER_PORT\n        PlatformVersion: LATEST\nEOF',
+              'cat appspec.yaml',
+            ],
+          },
+        },
+        artifacts: {
+          files: ['taskdef.json', 'appspec.yaml'],
+        },
+      }),
+    });
+
+    // CodeBuild role 에 ECS describe-task-definition 권한 추가
+    buildProject.role!.addToPrincipalPolicy(
+      new iam.PolicyStatement({
+        actions: ['ecs:DescribeTaskDefinition'],
+        resources: ['*'],
+      }),
+    );
+
+    const buildAction = new cpactions.CodeBuildAction({
+      actionName: 'TaskDefRender',
+      project: buildProject,
+      input: sourceArtifact,
+      outputs: [buildArtifact],
+    });
+
+    const deployAction = new cpactions.CodeDeployEcsDeployAction({
+      actionName: 'BlueGreenDeploy',
+      deploymentGroup: cdGroup,
+      appSpecTemplateInput: buildArtifact,
+      taskDefinitionTemplateInput: buildArtifact,
+    });
+
+    const pipeline = new codepipeline.Pipeline(this, 'BePipeline', {
+      pipelineName: 'dp-back-pipeline',
+      pipelineType: codepipeline.PipelineType.V2,
+      executionMode: codepipeline.ExecutionMode.SUPERSEDED,
+      stages: [
+        { stageName: 'Source', actions: [sourceAction] },
+        { stageName: 'Build', actions: [buildAction] },
+        { stageName: 'Deploy', actions: [deployAction] },
+      ],
+    });
+
+    new CfnOutput(this, 'BePipelineName', { value: pipeline.pipelineName });
+    new CfnOutput(this, 'BePipelineConsoleUrl', {
+      value: `https://${this.region}.console.aws.amazon.com/codesuite/codepipeline/pipelines/${pipeline.pipelineName}/view?region=${this.region}`,
     });
   }
 }

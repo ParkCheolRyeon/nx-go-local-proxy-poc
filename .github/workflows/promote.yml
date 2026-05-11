@@ -1,25 +1,16 @@
 name: promote
-# deploy.yml 이 빌드/푸시까지만 마친 상태에서, 사람이 정해진 시간에 손으로 트래픽 시프트를 트리거.
+# Phase 1 이후: FE 만 처리 (BE 는 CodePipeline 의 Approval 로 이전됨).
+# Phase 2 끝나면 이 파일 자체 제거 예정.
+#
 # - FE: Lambda alias 'prod' 의 가중치를 옛 version → 새 version 으로 시프트
-# - BE: ECS service 의 가장 최신 task def revision 으로 CodeDeploy ECS blue/green 시프트
 #
 # mode:
 #  linear  = CodeDeploy LINEAR 10%/1min 시프트 + 진행률 polling (~10분, 시각 변화 확인용)
-#  instant = aws lambda update-alias 즉시 100% (FE 만, BE 는 무조건 linear)
-#
-# 알람 발동 시 CodeDeploy 자동 롤백은 그대로 적용.
+#  instant = aws lambda update-alias 즉시 100%
 
 on:
   workflow_dispatch:
     inputs:
-      target:
-        type: choice
-        description: 트래픽 시프트 대상
-        options:
-          - both
-          - fe
-          - be
-        default: both
       mode:
         type: choice
         description: 시프트 모드
@@ -35,9 +26,6 @@ permissions:
 env:
   AWS_REGION: ap-northeast-2
   AWS_ROLE_ARN: arn:aws:iam::588344796279:role/gh-actions-deploy
-  ECS_CLUSTER: igallery
-  CODEDEPLOY_BE_APP: dp-back
-  CODEDEPLOY_BE_GROUP: prod
   CODEDEPLOY_FE_SERVER_APP: igallery-server
   CODEDEPLOY_FE_SERVER_GROUP: prod
   CODEDEPLOY_FE_IMAGE_APP: igallery-image
@@ -45,7 +33,6 @@ env:
 
 jobs:
   promote-fe:
-    if: inputs.target == 'fe' || inputs.target == 'both'
     runs-on: ubuntu-latest
     steps:
       - uses: aws-actions/configure-aws-credentials@v4
@@ -245,113 +232,3 @@ jobs:
           } >> $GITHUB_STEP_SUMMARY
           exit 1
 
-  promote-be:
-    if: inputs.target == 'be' || inputs.target == 'both'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ env.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Resolve ECS service + latest task def revision
-        id: ecs
-        run: |
-          set -euxo pipefail
-          SVC_ARN=$(aws ecs list-services --cluster "$ECS_CLUSTER" --query 'serviceArns[0]' --output text)
-          SVC_NAME=$(basename "$SVC_ARN")
-          CURRENT_TD=$(aws ecs describe-services --cluster "$ECS_CLUSTER" --services "$SVC_ARN" \
-            --query 'services[0].taskDefinition' --output text)
-          FAMILY=$(echo "$CURRENT_TD" | awk -F'[/:]' '{print $(NF-1)}')
-          LATEST_TD=$(aws ecs list-task-definitions \
-            --family-prefix "$FAMILY" --status ACTIVE --sort DESC --no-paginate \
-            --query 'taskDefinitionArns[0]' --output text)
-          echo "service=$SVC_NAME"        >> "$GITHUB_OUTPUT"
-          echo "current_td=$CURRENT_TD"   >> "$GITHUB_OUTPUT"
-          echo "latest_td=$LATEST_TD"     >> "$GITHUB_OUTPUT"
-          {
-            echo "## BE promote"
-            echo ""
-            echo "| service | current | target |"
-            echo "|---|---|---|"
-            echo "| $SVC_NAME | \`$CURRENT_TD\` | \`$LATEST_TD\` |"
-          } >> $GITHUB_STEP_SUMMARY
-
-      - name: Skip if no new revision
-        if: steps.ecs.outputs.current_td == steps.ecs.outputs.latest_td
-        run: |
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ 이미 최신 revision (skip)" >> $GITHUB_STEP_SUMMARY
-
-      - name: Start CodeDeploy ECS blue/green
-        id: be_cd
-        if: steps.ecs.outputs.current_td != steps.ecs.outputs.latest_td
-        run: |
-          set -euxo pipefail
-          APP_SPEC=$(jq -nc --arg td "${{ steps.ecs.outputs.latest_td }}" \
-            '{version:0.0,Resources:[{TargetService:{Type:"AWS::ECS::Service",Properties:{TaskDefinition:$td,LoadBalancerInfo:{ContainerName:"dp-back",ContainerPort:8080},PlatformVersion:"LATEST"}}}]}')
-          REV=$(jq -nc --argjson c "$APP_SPEC" '{revisionType:"AppSpecContent",appSpecContent:{content:($c|tostring)}}')
-          DID=$(aws deploy create-deployment \
-            --application-name "$CODEDEPLOY_BE_APP" \
-            --deployment-group-name "$CODEDEPLOY_BE_GROUP" \
-            --revision "$REV" \
-            --query deploymentId --output text)
-          echo "deployment_id=$DID" >> "$GITHUB_OUTPUT"
-
-      - name: Wait + visualize BE shift
-        if: steps.be_cd.outputs.deployment_id != ''
-        run: |
-          set -uo pipefail
-          DID="${{ steps.be_cd.outputs.deployment_id }}"
-          ALB_ARN=$(aws elbv2 describe-load-balancers --query 'LoadBalancers[0].LoadBalancerArn' --output text)
-          LISTENER_ARN=$(aws elbv2 describe-listeners --load-balancer-arn "$ALB_ARN" --query 'Listeners[?Port==`80`].ListenerArn|[0]' --output text)
-
-          {
-            echo ""
-            echo "### LINEAR shift progress (deployment $DID)"
-            echo ""
-            echo "| time | green weight | status |"
-            echo "|---|---|---|"
-          } >> $GITHUB_STEP_SUMMARY
-
-          bar() {
-            local pct=$1
-            local filled=$((pct / 5))
-            local empty=$((20 - filled))
-            local s=""
-            for _ in $(seq 1 $filled); do s+='█'; done
-            for _ in $(seq 1 $empty); do s+='░'; done
-            echo "$s $pct%"
-          }
-
-          DEADLINE=$(( $(date +%s) + 1500 ))   # BE 는 terminationWait 까지 포함 25분
-          prev_w=-1
-          prev_status=""
-          while [ "$(date +%s)" -lt "$DEADLINE" ]; do
-            STATUS=$(aws deploy get-deployment --deployment-id "$DID" --query 'deploymentInfo.status' --output text)
-            GREEN_W=$(aws elbv2 describe-listeners --listener-arns "$LISTENER_ARN" \
-              --query 'Listeners[0].DefaultActions[0].ForwardConfig.TargetGroups[?contains(TargetGroupArn,`Green`)].Weight | [0]' --output text)
-            [ "$GREEN_W" = "None" ] || [ -z "$GREEN_W" ] && GREEN_W=0
-            if [ "$GREEN_W" != "$prev_w" ] || [ "$STATUS" != "$prev_status" ]; then
-              LINE="| $(date +%H:%M:%S) | \`$(bar "$GREEN_W")\` | $STATUS |"
-              echo "$LINE"
-              echo "$LINE" >> $GITHUB_STEP_SUMMARY
-              prev_w=$GREEN_W
-              prev_status=$STATUS
-            fi
-            case "$STATUS" in
-              Succeeded)
-                echo "✅ BE shift 완료"
-                { echo ""; echo "✅ BE shift 완료"; } >> $GITHUB_STEP_SUMMARY
-                exit 0 ;;
-              Failed|Stopped)
-                echo "❌ BE shift $STATUS"
-                { echo ""; echo "❌ BE shift $STATUS"; } >> $GITHUB_STEP_SUMMARY
-                exit 1 ;;
-            esac
-            sleep 30
-          done
-
-          echo "❌ 25분 timeout"
-          { echo ""; echo "❌ 25분 timeout"; } >> $GITHUB_STEP_SUMMARY
-          exit 1

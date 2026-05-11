@@ -48,16 +48,30 @@ export class CicdStack extends Stack {
         'GitHub Actions deploy role - ECR push, ECS deploy, Lambda publish, S3 sync, CodeDeploy create-deployment',
     });
 
-    // ── 권한 (dev: managed policy 로 시작, 운영 가면 좁힐 것)
+    // ── 권한
+    //   Phase 1 후 변경:
+    //   - 제거: AmazonECS_FullAccess  (BE 가 CodePipeline 으로 이전, GitHub Actions 가 ECS 직접 안 만짐)
+    //   - 제거: iam:PassRole          (task def register 안 함)
+    //   - 유지: ECR (BE 이미지 push), CodeDeploy (FE promote 가 호출 — Phase 2 끝나면 제거)
+    //   - 유지: Lambda (FE deploy.yml 이 publish-version / promote 가 UpdateAlias)
+    //   - 유지: S3 (FE 의 assets/cache sync)
+    //   - 유지: CloudFront (Phase 2 의 invalidate 가능성, 안 쓰면 추후 제거)
     [
-      'AmazonEC2ContainerRegistryPowerUser', // ECR push/pull
-      'AmazonECS_FullAccess', // ECS update / RunTask
-      'AWSCodeDeployFullAccess', // CodeDeploy create-deployment
-      'CloudFrontFullAccess', // CreateInvalidation (필요 시)
+      'AmazonEC2ContainerRegistryPowerUser', // ECR push/pull (BE)
+      'AWSCodeDeployFullAccess',             // FE promote.yml (Phase 2 후 제거 예정)
+      'CloudFrontFullAccess',                // CreateInvalidation (필요 시)
     ].forEach((name) =>
       this.deployRole.addManagedPolicy(
         iam.ManagedPolicy.fromAwsManagedPolicyName(name),
       ),
+    );
+
+    // CloudFormation describe (deploy.yml 의 fe-build 가 IgalleryFe outputs 읽음)
+    this.deployRole.addToPolicy(
+      new iam.PolicyStatement({
+        actions: ['cloudformation:DescribeStacks'],
+        resources: [`arn:aws:cloudformation:${this.region}:${this.account}:stack/Igallery*/*`],
+      }),
     );
 
     // Lambda: update-function-code / publish-version / get-function / list-versions
@@ -91,17 +105,6 @@ export class CicdStack extends Stack {
           'arn:aws:s3:::igalleryfe-*',
           'arn:aws:s3:::igalleryfe-*/*',
         ],
-      }),
-    );
-
-    // PassRole — ECS task definition register 시 taskRole / executionRole 을 service 가 사용.
-    this.deployRole.addToPolicy(
-      new iam.PolicyStatement({
-        actions: ['iam:PassRole'],
-        resources: [`arn:aws:iam::${this.account}:role/*`],
-        conditions: {
-          StringEquals: { 'iam:PassedToService': 'ecs-tasks.amazonaws.com' },
-        },
       }),
     );
 

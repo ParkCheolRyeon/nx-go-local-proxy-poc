@@ -1,0 +1,20 @@
+{
+  "deployType": "ecs",
+  "ecr": {
+    "prod": "dp-back"
+  },
+  "dockerfile": "apps/dp-back/Dockerfile",
+  "platform": "linux/arm64",
+  "ecs": {
+    "cluster": "igallery",
+    "containerName": "dp-back",
+    "containerPort": 8080
+  },
+  "codedeploy": {
+    "application": "dp-back",
+    "deploymentGroup": "prod"
+  },
+  "pipeline": {
+    "name": "dp-back-pipeline"
+  }
+}
