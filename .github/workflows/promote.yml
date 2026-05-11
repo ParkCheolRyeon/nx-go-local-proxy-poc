@@ -124,7 +124,7 @@ jobs:
             --query 'services[0].taskDefinition' --output text)
           FAMILY=$(echo "$CURRENT_TD" | awk -F'[/:]' '{print $(NF-1)}')
           LATEST_TD=$(aws ecs list-task-definitions \
-            --family-prefix "$FAMILY" --status ACTIVE --sort DESC --max-items 1 \
+            --family-prefix "$FAMILY" --status ACTIVE --sort DESC --no-paginate \
             --query 'taskDefinitionArns[0]' --output text)
           echo "service: $SVC_NAME"
           echo "current_td: $CURRENT_TD"
