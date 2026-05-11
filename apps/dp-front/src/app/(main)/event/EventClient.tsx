@@ -29,7 +29,7 @@ export type EventItem = {
   status: EventStatus;
 };
 
-const EVENTS: EventItem[] = [
+export const EVENTS: EventItem[] = [
   { id: 'rainy-day', image: img01, startAt: '2026-04-01', endAt: '2026-05-15', participant: 128, status: 'open' },
   { id: 'stained-glass', image: img02, startAt: '2026-04-10', endAt: '2026-05-20', participant: 74, status: 'open' },
   { id: 'korean-table', image: img03, startAt: '2026-05-10', endAt: '2026-06-10', participant: 0, status: 'notOpen' },
