@@ -124,6 +124,14 @@ jobs:
       - run: pnpm i --frozen-lockfile
       - name: open-next build
         run: pnpm --filter @igallery/dp-front exec open-next build
+      - name: Force-include Next indirect deps (pnpm trace 누락 회피)
+        run: |
+          set -euxo pipefail
+          DEST=apps/dp-front/.open-next/server-functions/default/node_modules
+          mkdir -p "$DEST/@swc"
+          cp -RL node_modules/styled-jsx "$DEST/"
+          cp -RL node_modules/@swc/helpers "$DEST/@swc/"
+          cp -RL node_modules/@next "$DEST/"
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ env.AWS_ROLE_ARN }}

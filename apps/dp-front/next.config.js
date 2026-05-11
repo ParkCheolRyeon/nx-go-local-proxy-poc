@@ -1,6 +1,8 @@
 //@ts-check
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
+const path = require('path');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const { composePlugins, withNx } = require('@nx/next');
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const createNextIntlPlugin = require('next-intl/plugin');
@@ -22,12 +24,14 @@ const nextConfig = {
       },
     },
   },
-  // pnpm symlink 구조에서 OpenNext 의 file trace 가 @swc/helpers 의 실제 파일을
-  // 못 따라가 Lambda runtime 에서 "Cannot find module '@swc/helpers/cjs/...'" 발생.
-  // 그 실제 경로를 모든 route 에 강제 포함.
+  // pnpm symlink 구조에서 Next 의 file trace 가 일부 indirect deps 의 실제 파일을
+  // 못 따라가 Lambda runtime 에서 "Cannot find module '...'" 발생.
+  // monorepo root 를 명시해서 trace 범위를 .pnpm/ 까지 거슬러 올라가게 함.
+  outputFileTracingRoot: path.join(__dirname, '../..'),
   outputFileTracingIncludes: {
     '*': [
       '../../node_modules/.pnpm/@swc+helpers@*/node_modules/@swc/helpers/**/*',
+      '../../node_modules/.pnpm/styled-jsx@*/node_modules/styled-jsx/**/*',
     ],
   },
 };

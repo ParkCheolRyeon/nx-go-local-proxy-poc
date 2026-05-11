@@ -82,7 +82,7 @@ function MobileTopBar() {
         className="text-[22px]"
         style={{ color: '#0b2a63', fontWeight: 800, letterSpacing: -0.3 }}
       >
-        I Gallery
+        I Gallery V2
       </div>
       <div className="w-11" />
     </header>
