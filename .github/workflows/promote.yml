@@ -215,17 +215,25 @@ jobs:
               img_cell=$(bar "$img_pct")
               [ "$img_pct" -ge 100 ] && done_image=true
             fi
-            echo "| $(date +%H:%M:%S) | \`$srv_cell\` | \`$img_cell\` |" >> $GITHUB_STEP_SUMMARY
+            LINE="| $(date +%H:%M:%S) | \`$srv_cell\` | \`$img_cell\` |"
+            echo "$LINE"                            # step log 에 실시간
+            echo "$LINE" >> $GITHUB_STEP_SUMMARY    # Summary 탭 (step 완료 후 commit)
             if [ "$done_server" = "true" ] && [ "$done_image" = "true" ]; then
-              echo "" >> $GITHUB_STEP_SUMMARY
-              echo "✅ shift 완료" >> $GITHUB_STEP_SUMMARY
+              echo "✅ shift 완료"
+              {
+                echo ""
+                echo "✅ shift 완료"
+              } >> $GITHUB_STEP_SUMMARY
               exit 0
             fi
             sleep 30
           done
 
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "❌ 15분 timeout — CodeDeploy 상태를 콘솔에서 확인" >> $GITHUB_STEP_SUMMARY
+          echo "❌ 15분 timeout — CodeDeploy 상태를 콘솔에서 확인"
+          {
+            echo ""
+            echo "❌ 15분 timeout — CodeDeploy 상태를 콘솔에서 확인"
+          } >> $GITHUB_STEP_SUMMARY
           exit 1
 
   promote-be:
@@ -313,20 +321,22 @@ jobs:
             GREEN_W=$(aws elbv2 describe-listeners --listener-arns "$LISTENER_ARN" \
               --query 'Listeners[0].DefaultActions[0].ForwardConfig.TargetGroups[?contains(TargetGroupArn,`Green`)].Weight | [0]' --output text)
             [ "$GREEN_W" = "None" ] || [ -z "$GREEN_W" ] && GREEN_W=0
-            echo "| $(date +%H:%M:%S) | \`$(bar "$GREEN_W")\` | $STATUS |" >> $GITHUB_STEP_SUMMARY
+            LINE="| $(date +%H:%M:%S) | \`$(bar "$GREEN_W")\` | $STATUS |"
+            echo "$LINE"
+            echo "$LINE" >> $GITHUB_STEP_SUMMARY
             case "$STATUS" in
               Succeeded)
-                echo "" >> $GITHUB_STEP_SUMMARY
-                echo "✅ BE shift 완료" >> $GITHUB_STEP_SUMMARY
+                echo "✅ BE shift 완료"
+                { echo ""; echo "✅ BE shift 완료"; } >> $GITHUB_STEP_SUMMARY
                 exit 0 ;;
               Failed|Stopped)
-                echo "" >> $GITHUB_STEP_SUMMARY
-                echo "❌ BE shift $STATUS" >> $GITHUB_STEP_SUMMARY
+                echo "❌ BE shift $STATUS"
+                { echo ""; echo "❌ BE shift $STATUS"; } >> $GITHUB_STEP_SUMMARY
                 exit 1 ;;
             esac
             sleep 30
           done
 
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "❌ 25분 timeout" >> $GITHUB_STEP_SUMMARY
+          echo "❌ 25분 timeout"
+          { echo ""; echo "❌ 25분 timeout"; } >> $GITHUB_STEP_SUMMARY
           exit 1
