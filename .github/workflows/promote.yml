@@ -1,8 +1,13 @@
 name: promote
 # deploy.yml 이 빌드/푸시까지만 마친 상태에서, 사람이 정해진 시간에 손으로 트래픽 시프트를 트리거.
-# - FE: Lambda alias 'prod' 의 가중치를 옛 version → 새 version 으로 LINEAR 10%/1min 시프트
+# - FE: Lambda alias 'prod' 의 가중치를 옛 version → 새 version 으로 시프트
 # - BE: ECS service 의 가장 최신 task def revision 으로 CodeDeploy ECS blue/green 시프트
-# 알람 발동 시 자동 롤백은 그대로 적용.
+#
+# mode:
+#  linear  = CodeDeploy LINEAR 10%/1min 시프트 + 진행률 polling (~10분, 시각 변화 확인용)
+#  instant = aws lambda update-alias 즉시 100% (FE 만, BE 는 무조건 linear)
+#
+# 알람 발동 시 CodeDeploy 자동 롤백은 그대로 적용.
 
 on:
   workflow_dispatch:
@@ -15,6 +20,13 @@ on:
           - fe
           - be
         default: both
+      mode:
+        type: choice
+        description: 시프트 모드
+        options:
+          - linear
+          - instant
+        default: linear
 
 permissions:
   id-token: write
@@ -40,6 +52,7 @@ jobs:
         with:
           role-to-assume: ${{ env.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
+
       - name: Resolve FE function names
         id: fe
         run: |
@@ -49,25 +62,68 @@ jobs:
           IMAGE_FN=$(echo "$OUT" | jq -r '.[] | select(.OutputKey=="ImageFunctionName").OutputValue')
           echo "server_fn=$SERVER_FN" >> "$GITHUB_OUTPUT"
           echo "image_fn=$IMAGE_FN"   >> "$GITHUB_OUTPUT"
-      - name: Promote server Lambda alias prod (latest published version)
+
+      - name: Resolve target versions
+        id: ver
         run: |
           set -euxo pipefail
-          FN="${{ steps.fe.outputs.server_fn }}"
-          TARGET=$(aws lambda list-versions-by-function --function-name "$FN" \
+          SERVER_TARGET=$(aws lambda list-versions-by-function --function-name "${{ steps.fe.outputs.server_fn }}" \
             --query 'Versions[?Version!=`$LATEST`].Version' --output text \
             | tr '\t' '\n' | sort -n | tail -1)
-          CURRENT=$(aws lambda get-alias --function-name "$FN" --name prod \
+          SERVER_CURRENT=$(aws lambda get-alias --function-name "${{ steps.fe.outputs.server_fn }}" --name prod \
             --query FunctionVersion --output text)
-          echo "server: current=v$CURRENT  target=v$TARGET"
-          if [ "$TARGET" = "$CURRENT" ]; then
-            echo "이미 같은 버전. 시프트 skip."
-            echo "- server Lambda: 이미 v$CURRENT (skip)" >> $GITHUB_STEP_SUMMARY
-            exit 0
-          fi
+          IMAGE_TARGET=$(aws lambda list-versions-by-function --function-name "${{ steps.fe.outputs.image_fn }}" \
+            --query 'Versions[?Version!=`$LATEST`].Version' --output text \
+            | tr '\t' '\n' | sort -n | tail -1)
+          IMAGE_CURRENT=$(aws lambda get-alias --function-name "${{ steps.fe.outputs.image_fn }}" --name prod \
+            --query FunctionVersion --output text)
+          echo "server_current=$SERVER_CURRENT" >> "$GITHUB_OUTPUT"
+          echo "server_target=$SERVER_TARGET"   >> "$GITHUB_OUTPUT"
+          echo "image_current=$IMAGE_CURRENT"   >> "$GITHUB_OUTPUT"
+          echo "image_target=$IMAGE_TARGET"     >> "$GITHUB_OUTPUT"
+          {
+            echo "## FE promote"
+            echo ""
+            echo "| Lambda | current | target | mode |"
+            echo "|---|---|---|---|"
+            echo "| server | v$SERVER_CURRENT | v$SERVER_TARGET | ${{ inputs.mode }} |"
+            echo "| image  | v$IMAGE_CURRENT | v$IMAGE_TARGET | ${{ inputs.mode }} |"
+          } >> $GITHUB_STEP_SUMMARY
+
+      # ───── INSTANT 모드: alias 한 번에 옮김 (시각 변화 X) ─────
+      - name: Instant — server alias 즉시 변경
+        if: inputs.mode == 'instant' && steps.ver.outputs.server_current != steps.ver.outputs.server_target
+        run: |
+          set -euxo pipefail
+          aws lambda update-alias \
+            --function-name "${{ steps.fe.outputs.server_fn }}" \
+            --name prod \
+            --function-version "${{ steps.ver.outputs.server_target }}" \
+            --routing-config '{}' >/dev/null
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ server: v${{ steps.ver.outputs.server_current }} → v${{ steps.ver.outputs.server_target }} (instant)" >> $GITHUB_STEP_SUMMARY
+
+      - name: Instant — image alias 즉시 변경
+        if: inputs.mode == 'instant' && steps.ver.outputs.image_current != steps.ver.outputs.image_target
+        run: |
+          set -euxo pipefail
+          aws lambda update-alias \
+            --function-name "${{ steps.fe.outputs.image_fn }}" \
+            --name prod \
+            --function-version "${{ steps.ver.outputs.image_target }}" \
+            --routing-config '{}' >/dev/null
+          echo "✅ image: v${{ steps.ver.outputs.image_current }} → v${{ steps.ver.outputs.image_target }} (instant)" >> $GITHUB_STEP_SUMMARY
+
+      # ───── LINEAR 모드: CodeDeploy LINEAR 시프트 ─────
+      - name: Linear — start server CodeDeploy
+        id: server_cd
+        if: inputs.mode == 'linear' && steps.ver.outputs.server_current != steps.ver.outputs.server_target
+        run: |
+          set -euxo pipefail
           APP_SPEC=$(jq -nc \
-            --arg name "$FN" \
-            --arg current "$CURRENT" \
-            --arg target "$TARGET" \
+            --arg name "${{ steps.fe.outputs.server_fn }}" \
+            --arg current "${{ steps.ver.outputs.server_current }}" \
+            --arg target "${{ steps.ver.outputs.server_target }}" \
             '{version:0.0,Resources:[{ServerLambda:{Type:"AWS::Lambda::Function",Properties:{Name:$name,Alias:"prod",CurrentVersion:$current,TargetVersion:$target}}}]}')
           REV=$(jq -nc --argjson c "$APP_SPEC" '{revisionType:"AppSpecContent",appSpecContent:{content:($c|tostring)}}')
           DID=$(aws deploy create-deployment \
@@ -75,27 +131,17 @@ jobs:
             --deployment-group-name "$CODEDEPLOY_FE_SERVER_GROUP" \
             --revision "$REV" \
             --query deploymentId --output text)
-          echo "Deployment: $DID"
-          echo "- server Lambda: v$CURRENT → v$TARGET (deployment $DID)" >> $GITHUB_STEP_SUMMARY
-      - name: Promote image Lambda alias prod (latest published version)
+          echo "deployment_id=$DID" >> "$GITHUB_OUTPUT"
+
+      - name: Linear — start image CodeDeploy
+        id: image_cd
+        if: inputs.mode == 'linear' && steps.ver.outputs.image_current != steps.ver.outputs.image_target
         run: |
           set -euxo pipefail
-          FN="${{ steps.fe.outputs.image_fn }}"
-          TARGET=$(aws lambda list-versions-by-function --function-name "$FN" \
-            --query 'Versions[?Version!=`$LATEST`].Version' --output text \
-            | tr '\t' '\n' | sort -n | tail -1)
-          CURRENT=$(aws lambda get-alias --function-name "$FN" --name prod \
-            --query FunctionVersion --output text)
-          echo "image: current=v$CURRENT  target=v$TARGET"
-          if [ "$TARGET" = "$CURRENT" ]; then
-            echo "이미 같은 버전. 시프트 skip."
-            echo "- image Lambda: 이미 v$CURRENT (skip)" >> $GITHUB_STEP_SUMMARY
-            exit 0
-          fi
           APP_SPEC=$(jq -nc \
-            --arg name "$FN" \
-            --arg current "$CURRENT" \
-            --arg target "$TARGET" \
+            --arg name "${{ steps.fe.outputs.image_fn }}" \
+            --arg current "${{ steps.ver.outputs.image_current }}" \
+            --arg target "${{ steps.ver.outputs.image_target }}" \
             '{version:0.0,Resources:[{ImageLambda:{Type:"AWS::Lambda::Function",Properties:{Name:$name,Alias:"prod",CurrentVersion:$current,TargetVersion:$target}}}]}')
           REV=$(jq -nc --argjson c "$APP_SPEC" '{revisionType:"AppSpecContent",appSpecContent:{content:($c|tostring)}}')
           DID=$(aws deploy create-deployment \
@@ -103,8 +149,84 @@ jobs:
             --deployment-group-name "$CODEDEPLOY_FE_IMAGE_GROUP" \
             --revision "$REV" \
             --query deploymentId --output text)
-          echo "Deployment: $DID"
-          echo "- image Lambda: v$CURRENT → v$TARGET (deployment $DID)" >> $GITHUB_STEP_SUMMARY
+          echo "deployment_id=$DID" >> "$GITHUB_OUTPUT"
+
+      - name: Linear — wait + visualize traffic shift
+        if: inputs.mode == 'linear'
+        run: |
+          set -uo pipefail
+          FN_SERVER="${{ steps.fe.outputs.server_fn }}"
+          FN_IMAGE="${{ steps.fe.outputs.image_fn }}"
+          SERVER_TARGET="${{ steps.ver.outputs.server_target }}"
+          IMAGE_TARGET="${{ steps.ver.outputs.image_target }}"
+          NEED_SERVER='${{ steps.ver.outputs.server_current != steps.ver.outputs.server_target }}'
+          NEED_IMAGE='${{ steps.ver.outputs.image_current != steps.ver.outputs.image_target }}'
+
+          {
+            echo ""
+            echo "### LINEAR shift progress"
+            echo ""
+            echo "| time | server (v$SERVER_TARGET) | image (v$IMAGE_TARGET) |"
+            echo "|---|---|---|"
+          } >> $GITHUB_STEP_SUMMARY
+
+          bar() {
+            local pct=$1
+            local filled=$((pct / 5))
+            local empty=$((20 - filled))
+            local s=""
+            for _ in $(seq 1 $filled); do s+='█'; done
+            for _ in $(seq 1 $empty); do s+='░'; done
+            echo "$s $pct%"
+          }
+
+          pct_of() {
+            local fn=$1 target=$2
+            local current routing weight
+            current=$(aws lambda get-alias --function-name "$fn" --name prod --query FunctionVersion --output text)
+            if [ "$current" = "$target" ]; then
+              routing=$(aws lambda get-alias --function-name "$fn" --name prod --query RoutingConfig --output json)
+              if [ "$routing" = "null" ]; then echo 100; return; fi
+            fi
+            weight=$(aws lambda get-alias --function-name "$fn" --name prod --query "RoutingConfig.AdditionalVersionWeights.\"$target\"" --output text)
+            if [ "$weight" = "None" ] || [ -z "$weight" ]; then
+              echo 0
+            else
+              awk "BEGIN { printf \"%d\", $weight * 100 }"
+            fi
+          }
+
+          DEADLINE=$(( $(date +%s) + 900 ))
+          done_server=true
+          done_image=true
+          [ "$NEED_SERVER" = "true" ] && done_server=false
+          [ "$NEED_IMAGE" = "true" ] && done_image=false
+
+          while [ "$(date +%s)" -lt "$DEADLINE" ]; do
+            srv_cell="(skip)"
+            img_cell="(skip)"
+            if [ "$done_server" = "false" ]; then
+              srv_pct=$(pct_of "$FN_SERVER" "$SERVER_TARGET")
+              srv_cell=$(bar "$srv_pct")
+              [ "$srv_pct" -ge 100 ] && done_server=true
+            fi
+            if [ "$done_image" = "false" ]; then
+              img_pct=$(pct_of "$FN_IMAGE" "$IMAGE_TARGET")
+              img_cell=$(bar "$img_pct")
+              [ "$img_pct" -ge 100 ] && done_image=true
+            fi
+            echo "| $(date +%H:%M:%S) | \`$srv_cell\` | \`$img_cell\` |" >> $GITHUB_STEP_SUMMARY
+            if [ "$done_server" = "true" ] && [ "$done_image" = "true" ]; then
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "✅ shift 완료" >> $GITHUB_STEP_SUMMARY
+              exit 0
+            fi
+            sleep 30
+          done
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "❌ 15분 timeout — CodeDeploy 상태를 콘솔에서 확인" >> $GITHUB_STEP_SUMMARY
+          exit 1
 
   promote-be:
     if: inputs.target == 'be' || inputs.target == 'both'
@@ -114,6 +236,7 @@ jobs:
         with:
           role-to-assume: ${{ env.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
+
       - name: Resolve ECS service + latest task def revision
         id: ecs
         run: |
@@ -126,18 +249,25 @@ jobs:
           LATEST_TD=$(aws ecs list-task-definitions \
             --family-prefix "$FAMILY" --status ACTIVE --sort DESC --no-paginate \
             --query 'taskDefinitionArns[0]' --output text)
-          echo "service: $SVC_NAME"
-          echo "current_td: $CURRENT_TD"
-          echo "latest_td:  $LATEST_TD"
           echo "service=$SVC_NAME"        >> "$GITHUB_OUTPUT"
           echo "current_td=$CURRENT_TD"   >> "$GITHUB_OUTPUT"
           echo "latest_td=$LATEST_TD"     >> "$GITHUB_OUTPUT"
+          {
+            echo "## BE promote"
+            echo ""
+            echo "| service | current | target |"
+            echo "|---|---|---|"
+            echo "| $SVC_NAME | \`$CURRENT_TD\` | \`$LATEST_TD\` |"
+          } >> $GITHUB_STEP_SUMMARY
+
       - name: Skip if no new revision
         if: steps.ecs.outputs.current_td == steps.ecs.outputs.latest_td
         run: |
-          echo "이미 가장 최신 task def. 시프트 skip."
-          echo "- BE: 이미 ${{ steps.ecs.outputs.current_td }} (skip)" >> $GITHUB_STEP_SUMMARY
-      - name: Start CodeDeploy ECS blue/green deployment
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ 이미 최신 revision (skip)" >> $GITHUB_STEP_SUMMARY
+
+      - name: Start CodeDeploy ECS blue/green
+        id: be_cd
         if: steps.ecs.outputs.current_td != steps.ecs.outputs.latest_td
         run: |
           set -euxo pipefail
@@ -149,5 +279,54 @@ jobs:
             --deployment-group-name "$CODEDEPLOY_BE_GROUP" \
             --revision "$REV" \
             --query deploymentId --output text)
-          echo "Deployment: $DID"
-          echo "- BE: ${{ steps.ecs.outputs.current_td }} → ${{ steps.ecs.outputs.latest_td }} (deployment $DID)" >> $GITHUB_STEP_SUMMARY
+          echo "deployment_id=$DID" >> "$GITHUB_OUTPUT"
+
+      - name: Wait + visualize BE shift
+        if: steps.be_cd.outputs.deployment_id != ''
+        run: |
+          set -uo pipefail
+          DID="${{ steps.be_cd.outputs.deployment_id }}"
+          ALB_ARN=$(aws elbv2 describe-load-balancers --query 'LoadBalancers[0].LoadBalancerArn' --output text)
+          LISTENER_ARN=$(aws elbv2 describe-listeners --load-balancer-arn "$ALB_ARN" --query 'Listeners[?Port==`80`].ListenerArn|[0]' --output text)
+
+          {
+            echo ""
+            echo "### LINEAR shift progress (deployment $DID)"
+            echo ""
+            echo "| time | green weight | status |"
+            echo "|---|---|---|"
+          } >> $GITHUB_STEP_SUMMARY
+
+          bar() {
+            local pct=$1
+            local filled=$((pct / 5))
+            local empty=$((20 - filled))
+            local s=""
+            for _ in $(seq 1 $filled); do s+='█'; done
+            for _ in $(seq 1 $empty); do s+='░'; done
+            echo "$s $pct%"
+          }
+
+          DEADLINE=$(( $(date +%s) + 1500 ))   # BE 는 terminationWait 까지 포함 25분
+          while [ "$(date +%s)" -lt "$DEADLINE" ]; do
+            STATUS=$(aws deploy get-deployment --deployment-id "$DID" --query 'deploymentInfo.status' --output text)
+            GREEN_W=$(aws elbv2 describe-listeners --listener-arns "$LISTENER_ARN" \
+              --query 'Listeners[0].DefaultActions[0].ForwardConfig.TargetGroups[?contains(TargetGroupArn,`Green`)].Weight | [0]' --output text)
+            [ "$GREEN_W" = "None" ] || [ -z "$GREEN_W" ] && GREEN_W=0
+            echo "| $(date +%H:%M:%S) | \`$(bar "$GREEN_W")\` | $STATUS |" >> $GITHUB_STEP_SUMMARY
+            case "$STATUS" in
+              Succeeded)
+                echo "" >> $GITHUB_STEP_SUMMARY
+                echo "✅ BE shift 완료" >> $GITHUB_STEP_SUMMARY
+                exit 0 ;;
+              Failed|Stopped)
+                echo "" >> $GITHUB_STEP_SUMMARY
+                echo "❌ BE shift $STATUS" >> $GITHUB_STEP_SUMMARY
+                exit 1 ;;
+            esac
+            sleep 30
+          done
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "❌ 25분 timeout" >> $GITHUB_STEP_SUMMARY
+          exit 1
