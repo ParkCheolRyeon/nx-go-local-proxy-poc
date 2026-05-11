@@ -2,7 +2,7 @@ import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
-import { EVENTS } from '@/app/(main)/event/EventClient';
+import { EVENTS } from '@/app/(main)/event/events';
 
 export const dynamic = 'force-dynamic';
 
