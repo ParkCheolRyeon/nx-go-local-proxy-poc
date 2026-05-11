@@ -57,7 +57,11 @@ func main() {
 
 	r := gin.Default()
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"https://dp.dev.local", "http://localhost:3000"},
+		AllowOrigins: []string{
+			"https://dp.dev.local",
+			"http://localhost:3000",
+			"https://dvwfpnuzutd8s.cloudfront.net",
+		},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		AllowCredentials: true,
