@@ -201,10 +201,14 @@ jobs:
           done_image=true
           [ "$NEED_SERVER" = "true" ] && done_server=false
           [ "$NEED_IMAGE" = "true" ] && done_image=false
+          prev_srv=-1
+          prev_img=-1
 
           while [ "$(date +%s)" -lt "$DEADLINE" ]; do
             srv_cell="(skip)"
             img_cell="(skip)"
+            srv_pct=-1
+            img_pct=-1
             if [ "$done_server" = "false" ]; then
               srv_pct=$(pct_of "$FN_SERVER" "$SERVER_TARGET")
               srv_cell=$(bar "$srv_pct")
@@ -215,9 +219,14 @@ jobs:
               img_cell=$(bar "$img_pct")
               [ "$img_pct" -ge 100 ] && done_image=true
             fi
-            LINE="| $(date +%H:%M:%S) | \`$srv_cell\` | \`$img_cell\` |"
-            echo "$LINE"                            # step log 에 실시간
-            echo "$LINE" >> $GITHUB_STEP_SUMMARY    # Summary 탭 (step 완료 후 commit)
+            # 두 % 모두 직전과 같으면 행 추가 안 함 (중복 제거)
+            if [ "$srv_pct" != "$prev_srv" ] || [ "$img_pct" != "$prev_img" ]; then
+              LINE="| $(date +%H:%M:%S) | \`$srv_cell\` | \`$img_cell\` |"
+              echo "$LINE"
+              echo "$LINE" >> $GITHUB_STEP_SUMMARY
+              prev_srv=$srv_pct
+              prev_img=$img_pct
+            fi
             if [ "$done_server" = "true" ] && [ "$done_image" = "true" ]; then
               echo "✅ shift 완료"
               {
@@ -316,14 +325,20 @@ jobs:
           }
 
           DEADLINE=$(( $(date +%s) + 1500 ))   # BE 는 terminationWait 까지 포함 25분
+          prev_w=-1
+          prev_status=""
           while [ "$(date +%s)" -lt "$DEADLINE" ]; do
             STATUS=$(aws deploy get-deployment --deployment-id "$DID" --query 'deploymentInfo.status' --output text)
             GREEN_W=$(aws elbv2 describe-listeners --listener-arns "$LISTENER_ARN" \
               --query 'Listeners[0].DefaultActions[0].ForwardConfig.TargetGroups[?contains(TargetGroupArn,`Green`)].Weight | [0]' --output text)
             [ "$GREEN_W" = "None" ] || [ -z "$GREEN_W" ] && GREEN_W=0
-            LINE="| $(date +%H:%M:%S) | \`$(bar "$GREEN_W")\` | $STATUS |"
-            echo "$LINE"
-            echo "$LINE" >> $GITHUB_STEP_SUMMARY
+            if [ "$GREEN_W" != "$prev_w" ] || [ "$STATUS" != "$prev_status" ]; then
+              LINE="| $(date +%H:%M:%S) | \`$(bar "$GREEN_W")\` | $STATUS |"
+              echo "$LINE"
+              echo "$LINE" >> $GITHUB_STEP_SUMMARY
+              prev_w=$GREEN_W
+              prev_status=$STATUS
+            fi
             case "$STATUS" in
               Succeeded)
                 echo "✅ BE shift 완료"
