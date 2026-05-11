@@ -181,7 +181,7 @@
       "cta": "Add child"
     },
     "title": "My Gallery",
-    "titleWithName": "{name}'s Gallery",
+    "titleWithName": "<highlight>{name}</highlight>'s Gallery",
     "subtitle": "Resume from your archive, share public works, and collect awards.",
     "tabsAriaLabel": "Gallery tabs",
     "tabs": {

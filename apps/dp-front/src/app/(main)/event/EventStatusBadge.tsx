@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 import React from 'react';
 
-import { EventStatus, StatusMeta } from '@/app/(main)/event/page';
+import { EventStatus, StatusMeta } from '@/app/(main)/event/EventClient';
 import { cn } from '@/lib/utils';
 
 type EventStatusBadgeProps = {

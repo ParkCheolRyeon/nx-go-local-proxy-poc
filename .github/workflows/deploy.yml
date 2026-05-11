@@ -1,0 +1,196 @@
+name: deploy
+# main push 시 자동으로 빌드/푸시까지만 진행.
+# 사용자 트래픽은 그대로 옛 버전을 본다 (alias / ECS service 는 손대지 않음).
+# 실제 트래픽 시프트는 promote.yml 워크플로의 "Run workflow" 버튼으로 사람이 트리거.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ap-northeast-2
+  AWS_ACCOUNT_ID: '588344796279'
+  ECR_REPO: dp-back
+  ECS_CLUSTER: igallery
+  AWS_ROLE_ARN: arn:aws:iam::588344796279:role/gh-actions-deploy
+
+jobs:
+  affected:
+    runs-on: ubuntu-latest
+    outputs:
+      be: ${{ steps.calc.outputs.be }}
+      fe: ${{ steps.calc.outputs.fe }}
+      migrations: ${{ steps.calc.outputs.migrations }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm i --frozen-lockfile
+      - uses: nrwl/nx-set-shas@v4
+      - id: calc
+        run: |
+          set -euxo pipefail
+          PROJECTS=$(pnpm -s nx show projects --affected --json)
+          echo "affected projects: $PROJECTS"
+          BE=$(echo "$PROJECTS" | jq -c 'contains(["dp-back"])')
+          FE=$(echo "$PROJECTS" | jq -c 'contains(["@igallery/dp-front"])')
+          MIG=$(git diff --name-only "$NX_BASE" "$NX_HEAD" -- 'apps/dp-back/db/migrations/' | grep -q . && echo true || echo false)
+          echo "be=$BE"           >> "$GITHUB_OUTPUT"
+          echo "fe=$FE"           >> "$GITHUB_OUTPUT"
+          echo "migrations=$MIG"  >> "$GITHUB_OUTPUT"
+
+  be-build:
+    name: BE build & register task def (no traffic shift)
+    needs: affected
+    if: needs.affected.outputs.be == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - uses: aws-actions/amazon-ecr-login@v2
+        id: ecr
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - name: Build & push arm64 image
+        id: img
+        run: |
+          set -euxo pipefail
+          IMG="${{ steps.ecr.outputs.registry }}/$ECR_REPO:${{ github.sha }}"
+          IMG_LATEST="${{ steps.ecr.outputs.registry }}/$ECR_REPO:latest"
+          docker buildx build \
+            --platform linux/arm64 \
+            -f apps/dp-back/Dockerfile apps/dp-back \
+            -t "$IMG" -t "$IMG_LATEST" \
+            --push
+          echo "image=$IMG" >> "$GITHUB_OUTPUT"
+      - name: Resolve current task def
+        id: ecs
+        run: |
+          set -euxo pipefail
+          SVC_ARN=$(aws ecs list-services --cluster "$ECS_CLUSTER" --query 'serviceArns[0]' --output text)
+          TD_ARN=$(aws ecs describe-services --cluster "$ECS_CLUSTER" --services "$SVC_ARN" \
+                    --query 'services[0].taskDefinition' --output text)
+          aws ecs describe-task-definition --task-definition "$TD_ARN" \
+            --query 'taskDefinition' > taskdef.json
+          jq 'del(.taskDefinitionArn,.revision,.status,.requiresAttributes,.compatibilities,.registeredAt,.registeredBy,.deregisteredAt,.enableFaultInjection)' taskdef.json > taskdef.cleaned.json
+      - name: Render new task definition (new image)
+        id: render
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: taskdef.cleaned.json
+          container-name: dp-back
+          image: ${{ steps.img.outputs.image }}
+      - name: Register new task def revision
+        run: |
+          set -euxo pipefail
+          NEW=$(aws ecs register-task-definition \
+            --cli-input-json file://${{ steps.render.outputs.task-definition }} \
+            --query 'taskDefinition.taskDefinitionArn' --output text)
+          echo "Registered: $NEW"
+          echo "## BE task def registered" >> $GITHUB_STEP_SUMMARY
+          echo "$NEW" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "→ Actions 의 promote 워크플로에서 BE 선택 시 이 revision 으로 트래픽 시프트가 시작됩니다." >> $GITHUB_STEP_SUMMARY
+
+  fe-build:
+    name: FE build & Lambda publish-version (no alias shift)
+    needs: affected
+    if: needs.affected.outputs.fe == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm i --frozen-lockfile
+      - name: open-next build
+        run: pnpm --filter @igallery/dp-front exec open-next build
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Resolve FE stack outputs
+        id: fe
+        run: |
+          set -euxo pipefail
+          OUT=$(aws cloudformation describe-stacks --stack-name IgalleryFe --query 'Stacks[0].Outputs')
+          BUCKET=$(echo "$OUT" | jq -r '.[] | select(.OutputKey=="AssetsBucketName").OutputValue')
+          SERVER_FN=$(echo "$OUT" | jq -r '.[] | select(.OutputKey=="ServerFunctionName").OutputValue')
+          IMAGE_FN=$(echo "$OUT" | jq -r '.[] | select(.OutputKey=="ImageFunctionName").OutputValue')
+          echo "bucket=$BUCKET"       >> "$GITHUB_OUTPUT"
+          echo "server_fn=$SERVER_FN" >> "$GITHUB_OUTPUT"
+          echo "image_fn=$IMAGE_FN"   >> "$GITHUB_OUTPUT"
+      - name: S3 sync (no-delete, immutable assets + ISR cache)
+        run: |
+          set -euxo pipefail
+          aws s3 sync apps/dp-front/.open-next/assets \
+            "s3://${{ steps.fe.outputs.bucket }}/_assets" \
+            --cache-control "public,max-age=31536000,immutable"
+          aws s3 sync apps/dp-front/.open-next/cache \
+            "s3://${{ steps.fe.outputs.bucket }}/_cache" \
+            --cache-control "public,max-age=0,must-revalidate"
+      - name: Package & publish server Lambda (alias 안 건드림)
+        id: server
+        run: |
+          set -euxo pipefail
+          cd apps/dp-front/.open-next/server-functions/default
+          zip -r ../../../../../server.zip .
+          cd -
+          aws lambda update-function-code \
+            --function-name "${{ steps.fe.outputs.server_fn }}" \
+            --zip-file fileb://server.zip > /dev/null
+          aws lambda wait function-updated-v2 \
+            --function-name "${{ steps.fe.outputs.server_fn }}"
+          NEW=$(aws lambda publish-version \
+            --function-name "${{ steps.fe.outputs.server_fn }}" \
+            --description "sha=${{ github.sha }}" \
+            --query Version --output text)
+          echo "Published server v$NEW"
+          echo "version=$NEW" >> "$GITHUB_OUTPUT"
+      - name: Package & publish image Lambda (alias 안 건드림)
+        id: image
+        run: |
+          set -euxo pipefail
+          cd apps/dp-front/.open-next/image-optimization-function
+          zip -r ../../../../image.zip .
+          cd -
+          aws lambda update-function-code \
+            --function-name "${{ steps.fe.outputs.image_fn }}" \
+            --zip-file fileb://image.zip > /dev/null
+          aws lambda wait function-updated-v2 \
+            --function-name "${{ steps.fe.outputs.image_fn }}"
+          NEW=$(aws lambda publish-version \
+            --function-name "${{ steps.fe.outputs.image_fn }}" \
+            --description "sha=${{ github.sha }}" \
+            --query Version --output text)
+          echo "Published image v$NEW"
+          echo "version=$NEW" >> "$GITHUB_OUTPUT"
+      - name: Summary
+        run: |
+          {
+            echo "## FE published (alias 'prod' 는 아직 옛 버전 가리킴)"
+            echo ""
+            echo "- server Lambda: v${{ steps.server.outputs.version }}"
+            echo "- image Lambda:  v${{ steps.image.outputs.version }}"
+            echo ""
+            echo "→ Actions 의 promote 워크플로에서 FE 선택 시 이 버전들로 alias 트래픽 시프트가 시작됩니다."
+          } >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,153 @@
+name: promote
+# deploy.yml 이 빌드/푸시까지만 마친 상태에서, 사람이 정해진 시간에 손으로 트래픽 시프트를 트리거.
+# - FE: Lambda alias 'prod' 의 가중치를 옛 version → 새 version 으로 LINEAR 10%/1min 시프트
+# - BE: ECS service 의 가장 최신 task def revision 으로 CodeDeploy ECS blue/green 시프트
+# 알람 발동 시 자동 롤백은 그대로 적용.
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        type: choice
+        description: 트래픽 시프트 대상
+        options:
+          - both
+          - fe
+          - be
+        default: both
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ap-northeast-2
+  AWS_ROLE_ARN: arn:aws:iam::588344796279:role/gh-actions-deploy
+  ECS_CLUSTER: igallery
+  CODEDEPLOY_BE_APP: dp-back
+  CODEDEPLOY_BE_GROUP: prod
+  CODEDEPLOY_FE_SERVER_APP: igallery-server
+  CODEDEPLOY_FE_SERVER_GROUP: prod
+  CODEDEPLOY_FE_IMAGE_APP: igallery-image
+  CODEDEPLOY_FE_IMAGE_GROUP: prod
+
+jobs:
+  promote-fe:
+    if: inputs.target == 'fe' || inputs.target == 'both'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Resolve FE function names
+        id: fe
+        run: |
+          set -euxo pipefail
+          OUT=$(aws cloudformation describe-stacks --stack-name IgalleryFe --query 'Stacks[0].Outputs')
+          SERVER_FN=$(echo "$OUT" | jq -r '.[] | select(.OutputKey=="ServerFunctionName").OutputValue')
+          IMAGE_FN=$(echo "$OUT" | jq -r '.[] | select(.OutputKey=="ImageFunctionName").OutputValue')
+          echo "server_fn=$SERVER_FN" >> "$GITHUB_OUTPUT"
+          echo "image_fn=$IMAGE_FN"   >> "$GITHUB_OUTPUT"
+      - name: Promote server Lambda alias prod (latest published version)
+        run: |
+          set -euxo pipefail
+          FN="${{ steps.fe.outputs.server_fn }}"
+          TARGET=$(aws lambda list-versions-by-function --function-name "$FN" \
+            --query 'Versions[?Version!=`$LATEST`].Version' --output text \
+            | tr '\t' '\n' | sort -n | tail -1)
+          CURRENT=$(aws lambda get-alias --function-name "$FN" --name prod \
+            --query FunctionVersion --output text)
+          echo "server: current=v$CURRENT  target=v$TARGET"
+          if [ "$TARGET" = "$CURRENT" ]; then
+            echo "이미 같은 버전. 시프트 skip."
+            echo "- server Lambda: 이미 v$CURRENT (skip)" >> $GITHUB_STEP_SUMMARY
+            exit 0
+          fi
+          APP_SPEC=$(jq -nc \
+            --arg name "$FN" \
+            --arg current "$CURRENT" \
+            --arg target "$TARGET" \
+            '{version:0.0,Resources:[{ServerLambda:{Type:"AWS::Lambda::Function",Properties:{Name:$name,Alias:"prod",CurrentVersion:$current,TargetVersion:$target}}}]}')
+          REV=$(jq -nc --argjson c "$APP_SPEC" '{revisionType:"AppSpecContent",appSpecContent:{content:($c|tostring)}}')
+          DID=$(aws deploy create-deployment \
+            --application-name "$CODEDEPLOY_FE_SERVER_APP" \
+            --deployment-group-name "$CODEDEPLOY_FE_SERVER_GROUP" \
+            --revision "$REV" \
+            --query deploymentId --output text)
+          echo "Deployment: $DID"
+          echo "- server Lambda: v$CURRENT → v$TARGET (deployment $DID)" >> $GITHUB_STEP_SUMMARY
+      - name: Promote image Lambda alias prod (latest published version)
+        run: |
+          set -euxo pipefail
+          FN="${{ steps.fe.outputs.image_fn }}"
+          TARGET=$(aws lambda list-versions-by-function --function-name "$FN" \
+            --query 'Versions[?Version!=`$LATEST`].Version' --output text \
+            | tr '\t' '\n' | sort -n | tail -1)
+          CURRENT=$(aws lambda get-alias --function-name "$FN" --name prod \
+            --query FunctionVersion --output text)
+          echo "image: current=v$CURRENT  target=v$TARGET"
+          if [ "$TARGET" = "$CURRENT" ]; then
+            echo "이미 같은 버전. 시프트 skip."
+            echo "- image Lambda: 이미 v$CURRENT (skip)" >> $GITHUB_STEP_SUMMARY
+            exit 0
+          fi
+          APP_SPEC=$(jq -nc \
+            --arg name "$FN" \
+            --arg current "$CURRENT" \
+            --arg target "$TARGET" \
+            '{version:0.0,Resources:[{ImageLambda:{Type:"AWS::Lambda::Function",Properties:{Name:$name,Alias:"prod",CurrentVersion:$current,TargetVersion:$target}}}]}')
+          REV=$(jq -nc --argjson c "$APP_SPEC" '{revisionType:"AppSpecContent",appSpecContent:{content:($c|tostring)}}')
+          DID=$(aws deploy create-deployment \
+            --application-name "$CODEDEPLOY_FE_IMAGE_APP" \
+            --deployment-group-name "$CODEDEPLOY_FE_IMAGE_GROUP" \
+            --revision "$REV" \
+            --query deploymentId --output text)
+          echo "Deployment: $DID"
+          echo "- image Lambda: v$CURRENT → v$TARGET (deployment $DID)" >> $GITHUB_STEP_SUMMARY
+
+  promote-be:
+    if: inputs.target == 'be' || inputs.target == 'both'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Resolve ECS service + latest task def revision
+        id: ecs
+        run: |
+          set -euxo pipefail
+          SVC_ARN=$(aws ecs list-services --cluster "$ECS_CLUSTER" --query 'serviceArns[0]' --output text)
+          SVC_NAME=$(basename "$SVC_ARN")
+          CURRENT_TD=$(aws ecs describe-services --cluster "$ECS_CLUSTER" --services "$SVC_ARN" \
+            --query 'services[0].taskDefinition' --output text)
+          FAMILY=$(echo "$CURRENT_TD" | awk -F'[/:]' '{print $(NF-1)}')
+          LATEST_TD=$(aws ecs list-task-definitions \
+            --family-prefix "$FAMILY" --status ACTIVE --sort DESC --max-items 1 \
+            --query 'taskDefinitionArns[0]' --output text)
+          echo "service: $SVC_NAME"
+          echo "current_td: $CURRENT_TD"
+          echo "latest_td:  $LATEST_TD"
+          echo "service=$SVC_NAME"        >> "$GITHUB_OUTPUT"
+          echo "current_td=$CURRENT_TD"   >> "$GITHUB_OUTPUT"
+          echo "latest_td=$LATEST_TD"     >> "$GITHUB_OUTPUT"
+      - name: Skip if no new revision
+        if: steps.ecs.outputs.current_td == steps.ecs.outputs.latest_td
+        run: |
+          echo "이미 가장 최신 task def. 시프트 skip."
+          echo "- BE: 이미 ${{ steps.ecs.outputs.current_td }} (skip)" >> $GITHUB_STEP_SUMMARY
+      - name: Start CodeDeploy ECS blue/green deployment
+        if: steps.ecs.outputs.current_td != steps.ecs.outputs.latest_td
+        run: |
+          set -euxo pipefail
+          APP_SPEC=$(jq -nc --arg td "${{ steps.ecs.outputs.latest_td }}" \
+            '{version:0.0,Resources:[{TargetService:{Type:"AWS::ECS::Service",Properties:{TaskDefinition:$td,LoadBalancerInfo:{ContainerName:"dp-back",ContainerPort:8080},PlatformVersion:"LATEST"}}}]}')
+          REV=$(jq -nc --argjson c "$APP_SPEC" '{revisionType:"AppSpecContent",appSpecContent:{content:($c|tostring)}}')
+          DID=$(aws deploy create-deployment \
+            --application-name "$CODEDEPLOY_BE_APP" \
+            --deployment-group-name "$CODEDEPLOY_BE_GROUP" \
+            --revision "$REV" \
+            --query deploymentId --output text)
+          echo "Deployment: $DID"
+          echo "- BE: ${{ steps.ecs.outputs.current_td }} → ${{ steps.ecs.outputs.latest_td }} (deployment $DID)" >> $GITHUB_STEP_SUMMARY

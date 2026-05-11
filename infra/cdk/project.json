@@ -1,0 +1,31 @@
+{
+  "name": "infra-cdk",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "infra/cdk",
+  "targets": {
+    "synth": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "infra/cdk",
+        "command": "cdk synth"
+      },
+      "cache": true,
+      "inputs": ["default", "^default"]
+    },
+    "diff": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "infra/cdk",
+        "command": "cdk diff"
+      }
+    },
+    "deploy": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "infra/cdk",
+        "command": "cdk deploy --all --require-approval never"
+      }
+    }
+  }
+}

@@ -1,9 +1,7 @@
-'use client';
+import DrawingClient from './DrawingClient';
 
-export default function DrawingPage() {
-  return (
-    <main className="flex min-h-screen flex-col items-center justify-center">
-      <h1 className="text-2xl font-bold">Drawing</h1>
-    </main>
-  );
+export const revalidate = 60;
+
+export default function Page() {
+  return <DrawingClient />;
 }

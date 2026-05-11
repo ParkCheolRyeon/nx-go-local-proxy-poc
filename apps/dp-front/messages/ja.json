@@ -181,7 +181,7 @@
       "cta": "お子様を追加"
     },
     "title": "マイギャラリー",
-    "titleWithName": "{name}のギャラリー",
+    "titleWithName": "<highlight>{name}</highlight>のギャラリー",
     "subtitle": "保管庫から続きを描き、公開作品で自慢して、受賞作を集めましょう。",
     "tabsAriaLabel": "ギャラリータブ",
     "tabs": {

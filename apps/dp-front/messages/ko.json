@@ -181,7 +181,7 @@
       "cta": "자녀 추가하기"
     },
     "title": "마이 갤러리",
-    "titleWithName": "{name}의 갤러리",
+    "titleWithName": "<highlight>{name}</highlight>의 갤러리",
     "subtitle": "보관함에서 이어 그리고, 공개작품으로 자랑하고, 수상작으로 모아둬요.",
     "tabsAriaLabel": "갤러리 탭",
     "tabs": {

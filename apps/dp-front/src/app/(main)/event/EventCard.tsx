@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 import EventStatusBadge from '@/app/(main)/event/EventStatusBadge';
-import { EventItem, STATUS_META } from '@/app/(main)/event/page';
+import { EventItem, STATUS_META } from '@/app/(main)/event/EventClient';
 import { cn } from '@/lib/utils';
 
 type EventCardProps = {

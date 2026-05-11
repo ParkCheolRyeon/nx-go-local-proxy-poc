@@ -2,5 +2,6 @@ packages:
   - 'apps/dp-front'
   - 'packages/*'
   - 'tools/*'
+  - 'infra/*'
 
 autoInstallPeers: true

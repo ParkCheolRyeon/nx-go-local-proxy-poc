@@ -47,6 +47,9 @@ Thumbs.db
 .next
 out
 
+# OpenNext (Next.js → Lambda 빌드 산출물)
+.open-next
+
 # TypeScript incremental build info
 *.tsbuildinfo
 
