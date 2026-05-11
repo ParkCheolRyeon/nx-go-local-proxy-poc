@@ -1,20 +1,5 @@
 'use client';
 
-import PcSidebar from '@/app/components/Sidebar/PcSidebar';
-import UserAvatar from '@/app/components/UserAvatar';
-import UserHoldingCoins from '@/app/components/UserHoldingCoins';
-import { INACTIVE_ICON_COLOR, MENU_ITEMS, type MenuItem } from '@/config/menu';
-import { useActiveMenuId } from '@/hooks/useActiveMenuId';
-import { cn } from '@/lib/utils';
-import {
-  useSidebarActions,
-  useSidebarIsDrawerOpen,
-} from '@/stores/sidebarStore';
-import {
-  getSubscriptionRemainingDays,
-  useUser,
-  useUserActions,
-} from '@/stores/userStore';
 import { AnimatePresence, motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
@@ -22,6 +7,14 @@ import { useEffect } from 'react';
 
 import IconArrowRight from '@/app/assets/icons/icon-arrow-right.svg';
 import IconLogout from '@/app/assets/icons/icon-logout.svg';
+import PcSidebar from '@/app/components/Sidebar/PcSidebar';
+import UserAvatar from '@/app/components/UserAvatar';
+import UserHoldingCoins from '@/app/components/UserHoldingCoins';
+import { INACTIVE_ICON_COLOR, MENU_ITEMS, type MenuItem } from '@/config/menu';
+import { useActiveMenuId } from '@/hooks/useActiveMenuId';
+import { cn } from '@/lib/utils';
+import { useSidebarActions, useSidebarIsDrawerOpen } from '@/stores/sidebarStore';
+import { getSubscriptionRemainingDays, useUser, useUserActions } from '@/stores/userStore';
 
 export default function Sidebar() {
   return (
@@ -40,10 +33,9 @@ function MobileTopBar() {
 
   return (
     <header
-      className="fixed top-0 left-0 right-0 z-40 flex h-16 items-center justify-between px-[18px] md:hidden"
+      className="fixed left-0 right-0 top-0 z-40 flex h-16 items-center justify-between px-[18px] md:hidden"
       style={{
-        background:
-          'linear-gradient(180deg,rgba(255,255,255,.9) 0%,rgba(255,255,255,.6) 100%)',
+        background: 'linear-gradient(180deg,rgba(255,255,255,.9) 0%,rgba(255,255,255,.6) 100%)',
         backdropFilter: 'blur(8px)',
       }}
     >
@@ -78,11 +70,8 @@ function MobileTopBar() {
           transition={{ duration: 0.35, ease: [0.7, -0.2, 0.3, 1.2] }}
         />
       </motion.button>
-      <div
-        className="text-[22px]"
-        style={{ color: '#0b2a63', fontWeight: 800, letterSpacing: -0.3 }}
-      >
-        I Gallery V2
+      <div className="text-[22px]" style={{ color: '#0b2a63', fontWeight: 800, letterSpacing: -0.3 }}>
+        I Gallery V3
       </div>
       <div className="w-11" />
     </header>
@@ -133,29 +122,28 @@ function MobileDrawer() {
       </AnimatePresence>
 
       <motion.aside
-        className="fixed top-0 bottom-0 left-0 z-50 flex w-[300px] max-w-[85vw] flex-col overflow-hidden text-white"
+        className="fixed bottom-0 left-0 top-0 z-50 flex w-[300px] max-w-[85vw] flex-col overflow-hidden text-white"
         initial={false}
         animate={{ x: isOpen ? 0 : '-108%' }}
         transition={{ type: 'spring', stiffness: 320, damping: 38 }}
         style={{
-          background:
-            'linear-gradient(160deg,#0b3a8f 0%,#1C7AE0 45%,#3196ff 100%)',
+          background: 'linear-gradient(160deg,#0b3a8f 0%,#1C7AE0 45%,#3196ff 100%)',
           boxShadow: '8px 0 40px rgba(0,0,0,.25)',
           borderTopRightRadius: 28,
           borderBottomRightRadius: 28,
         }}
       >
         <div
-          className="pointer-events-none absolute -top-10 -right-8 h-40 w-40 rounded-full"
+          className="pointer-events-none absolute -right-8 -top-10 h-40 w-40 rounded-full"
           style={{ background: 'rgba(255,255,255,.12)', filter: 'blur(2px)' }}
         />
         <div
-          className="pointer-events-none absolute bottom-16 -left-10 h-[140px] w-[140px] rounded-full"
+          className="pointer-events-none absolute -left-10 bottom-16 h-[140px] w-[140px] rounded-full"
           style={{ background: 'rgba(255,255,255,.08)' }}
         />
 
         <motion.div
-          className="relative z-10 px-6 pt-7 pb-5"
+          className="relative z-10 px-6 pb-5 pt-7"
           initial={false}
           animate={{
             x: isOpen ? 0 : -20,
@@ -174,10 +162,7 @@ function MobileDrawer() {
               {user ? (
                 <>
                   <div className="text-xl font-bold">{user.name}</div>
-                  <div
-                    className="text-[11px]"
-                    style={{ color: 'rgba(255,255,255,.75)' }}
-                  >
+                  <div className="text-[11px]" style={{ color: 'rgba(255,255,255,.75)' }}>
                     {user.description}
                   </div>
                 </>
@@ -206,9 +191,7 @@ function MobileDrawer() {
               }}
             >
               <span>{tSidebar('planUsing', { plan: tPlan(user.plan) })}</span>
-              <span style={{ fontWeight: 700 }}>
-                D-{getSubscriptionRemainingDays(user.subscribeEndAt)}
-              </span>
+              <span style={{ fontWeight: 700 }}>D-{getSubscriptionRemainingDays(user.subscribeEndAt)}</span>
             </div>
           )}
         </motion.div>
@@ -237,7 +220,7 @@ function MobileDrawer() {
 
         {user && (
           <motion.div
-            className="relative z-10 mt-3 px-5 pt-3 pb-5"
+            className="relative z-10 mt-3 px-5 pb-5 pt-3"
             initial={false}
             animate={{ opacity: isOpen ? 1 : 0, y: isOpen ? 0 : 12 }}
             transition={{ duration: 0.4, delay: isOpen ? 0.55 : 0 }}
@@ -248,12 +231,7 @@ function MobileDrawer() {
               onClick={handleLogout}
               className="flex w-full items-center gap-2.5 rounded-[14px] px-3.5 py-3 text-[13px] font-semibold text-white/75 transition-colors duration-200 hover:bg-white/10 hover:text-white"
             >
-              <IconLogout
-                width={18}
-                height={18}
-                aria-hidden
-                className="flex-none"
-              />
+              <IconLogout width={18} height={18} aria-hidden className="flex-none" />
               <span>{tSidebar('logout')}</span>
             </button>
           </motion.div>
@@ -299,8 +277,7 @@ function MobileMenuLink({
         }}
         className={cn(
           'group relative my-1 flex w-full items-center gap-3.5 overflow-hidden rounded-2xl px-3.5 py-3.5 text-left text-white transition-colors duration-200',
-          isActive &&
-            'bg-white/[.18] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.3)]',
+          isActive && 'bg-white/[.18] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.3)]',
         )}
       >
         {!isActive && (
@@ -311,7 +288,7 @@ function MobileMenuLink({
         )}
         <div
           className={cn(
-            'absolute top-2 bottom-2 left-0 w-1 origin-center rounded transition-transform duration-[350ms] ease-[cubic-bezier(.7,-.2,.3,1.2)]',
+            'absolute bottom-2 left-0 top-2 w-1 origin-center rounded transition-transform duration-[350ms] ease-[cubic-bezier(.7,-.2,.3,1.2)]',
             isActive ? 'scale-y-100' : 'scale-y-0',
           )}
           style={{ background: item.accent }}
@@ -333,10 +310,7 @@ function MobileMenuLink({
         </div>
         <div className="relative flex-1">
           <div className="text-[17px] font-bold">{label}</div>
-          <div
-            className="mt-0.5 text-[11px]"
-            style={{ color: 'rgba(255,255,255,.7)' }}
-          >
+          <div className="mt-0.5 text-[11px]" style={{ color: 'rgba(255,255,255,.7)' }}>
             {subMobile}
           </div>
         </div>
@@ -346,7 +320,7 @@ function MobileMenuLink({
             isActive && 'translate-x-[2px]',
           )}
         >
-          <IconArrowRight className="w-4 h-4" />
+          <IconArrowRight className="h-4 w-4" />
         </div>
       </Link>
     </motion.div>
