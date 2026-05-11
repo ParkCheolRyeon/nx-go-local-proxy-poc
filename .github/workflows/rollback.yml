@@ -1,0 +1,143 @@
+name: rollback
+# 옛 version 으로 되돌리는 워크플로 (수동 트리거).
+# - FE: Lambda alias 'prod' 를 입력한 옛 version 으로 시프트 (LINEAR or instant)
+# - BE: ECS service 를 옛 task def revision 으로 CodeDeploy blue/green 시프트
+#
+# 사용 예:
+#   target=fe, version=10, mode=linear   → server Lambda v13 → v10 LINEAR 10분
+#   target=fe, version=10, mode=instant  → alias 한 번에 v10 (시각 변화 없음, 가장 빠름)
+#   target=be, version=3,  mode=linear   → ECS service rev 4 → rev 3 LINEAR 10분
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        type: choice
+        description: 롤백 대상
+        options:
+          - fe
+          - be
+        default: fe
+      version:
+        type: string
+        description: 'FE = Lambda version 번호 (예: 10) / BE = ECS task def revision 번호 (예: 3)'
+        required: true
+      mode:
+        type: choice
+        description: 시프트 모드
+        options:
+          - linear
+          - instant
+        default: linear
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ap-northeast-2
+  AWS_ROLE_ARN: arn:aws:iam::588344796279:role/gh-actions-deploy
+  ECS_CLUSTER: igallery
+  CODEDEPLOY_BE_APP: dp-back
+  CODEDEPLOY_BE_GROUP: prod
+  CODEDEPLOY_FE_SERVER_APP: igallery-server
+  CODEDEPLOY_FE_SERVER_GROUP: prod
+
+jobs:
+  rollback-fe:
+    if: inputs.target == 'fe'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Resolve server Lambda 함수명
+        id: fe
+        run: |
+          set -euxo pipefail
+          SERVER_FN=$(aws cloudformation describe-stacks --stack-name IgalleryFe \
+            --query 'Stacks[0].Outputs[?OutputKey==`ServerFunctionName`].OutputValue' --output text)
+          echo "server_fn=$SERVER_FN" >> "$GITHUB_OUTPUT"
+      - name: 입력된 version 이 존재하는지 검증
+        run: |
+          set -euxo pipefail
+          EXISTS=$(aws lambda list-versions-by-function --function-name "${{ steps.fe.outputs.server_fn }}" \
+            --query "Versions[?Version=='${{ inputs.version }}'].Version | [0]" --output text)
+          if [ "$EXISTS" = "None" ] || [ -z "$EXISTS" ]; then
+            echo "::error::Lambda version ${{ inputs.version }} 가 존재하지 않습니다."
+            exit 1
+          fi
+      - name: Rollback (linear via CodeDeploy)
+        if: inputs.mode == 'linear'
+        run: |
+          set -euxo pipefail
+          FN="${{ steps.fe.outputs.server_fn }}"
+          CURRENT=$(aws lambda get-alias --function-name "$FN" --name prod --query FunctionVersion --output text)
+          if [ "$CURRENT" = "${{ inputs.version }}" ]; then
+            echo "이미 alias 가 v${{ inputs.version }} 가리킴 — skip."
+            echo "- server Lambda: 이미 v$CURRENT (skip)" >> $GITHUB_STEP_SUMMARY
+            exit 0
+          fi
+          APP_SPEC=$(jq -nc \
+            --arg name "$FN" \
+            --arg current "$CURRENT" \
+            --arg target "${{ inputs.version }}" \
+            '{version:0.0,Resources:[{ServerLambda:{Type:"AWS::Lambda::Function",Properties:{Name:$name,Alias:"prod",CurrentVersion:$current,TargetVersion:$target}}}]}')
+          REV=$(jq -nc --argjson c "$APP_SPEC" '{revisionType:"AppSpecContent",appSpecContent:{content:($c|tostring)}}')
+          DID=$(aws deploy create-deployment \
+            --application-name "$CODEDEPLOY_FE_SERVER_APP" \
+            --deployment-group-name "$CODEDEPLOY_FE_SERVER_GROUP" \
+            --revision "$REV" \
+            --query deploymentId --output text)
+          echo "- FE rollback: v$CURRENT → v${{ inputs.version }} LINEAR (deployment $DID)" >> $GITHUB_STEP_SUMMARY
+      - name: Rollback (instant via update-alias)
+        if: inputs.mode == 'instant'
+        run: |
+          set -euxo pipefail
+          FN="${{ steps.fe.outputs.server_fn }}"
+          aws lambda update-alias \
+            --function-name "$FN" \
+            --name prod \
+            --function-version "${{ inputs.version }}" \
+            --routing-config '{}' >/dev/null
+          echo "- FE rollback: alias prod = v${{ inputs.version }} (instant, no LINEAR)" >> $GITHUB_STEP_SUMMARY
+
+  rollback-be:
+    if: inputs.target == 'be'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Resolve ECS service + target task def ARN
+        id: ecs
+        run: |
+          set -euxo pipefail
+          SVC_ARN=$(aws ecs list-services --cluster "$ECS_CLUSTER" --query 'serviceArns[0]' --output text)
+          CURRENT_TD=$(aws ecs describe-services --cluster "$ECS_CLUSTER" --services "$SVC_ARN" \
+            --query 'services[0].taskDefinition' --output text)
+          FAMILY=$(echo "$CURRENT_TD" | awk -F'[/:]' '{print $(NF-1)}')
+          TARGET_TD="arn:aws:ecs:${AWS_REGION}:$(aws sts get-caller-identity --query Account --output text):task-definition/${FAMILY}:${{ inputs.version }}"
+          # 존재 검증
+          aws ecs describe-task-definition --task-definition "$TARGET_TD" >/dev/null
+          echo "current_td=$CURRENT_TD" >> "$GITHUB_OUTPUT"
+          echo "target_td=$TARGET_TD"   >> "$GITHUB_OUTPUT"
+      - name: Rollback ECS (mode=instant 도 LINEAR 로 진행 — ECS blue/green 의 CodeDeploy 는 한 번에 swap 옵션 별도 셋업 필요)
+        run: |
+          set -euxo pipefail
+          if [ "${{ steps.ecs.outputs.current_td }}" = "${{ steps.ecs.outputs.target_td }}" ]; then
+            echo "이미 같은 revision — skip."
+            echo "- BE rollback: 이미 ${{ steps.ecs.outputs.current_td }} (skip)" >> $GITHUB_STEP_SUMMARY
+            exit 0
+          fi
+          APP_SPEC=$(jq -nc --arg td "${{ steps.ecs.outputs.target_td }}" \
+            '{version:0.0,Resources:[{TargetService:{Type:"AWS::ECS::Service",Properties:{TaskDefinition:$td,LoadBalancerInfo:{ContainerName:"dp-back",ContainerPort:8080},PlatformVersion:"LATEST"}}}]}')
+          REV=$(jq -nc --argjson c "$APP_SPEC" '{revisionType:"AppSpecContent",appSpecContent:{content:($c|tostring)}}')
+          DID=$(aws deploy create-deployment \
+            --application-name "$CODEDEPLOY_BE_APP" \
+            --deployment-group-name "$CODEDEPLOY_BE_GROUP" \
+            --revision "$REV" \
+            --query deploymentId --output text)
+          echo "- BE rollback: ${{ steps.ecs.outputs.current_td }} → ${{ steps.ecs.outputs.target_td }} LINEAR (deployment $DID)" >> $GITHUB_STEP_SUMMARY
