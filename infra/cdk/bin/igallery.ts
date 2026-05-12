@@ -35,7 +35,8 @@ new FeStack(app, 'IgalleryFe', {
 new CicdStack(app, 'IgalleryCicd', {
   env: seoul,
   githubRepo: 'ParkCheolRyeon/nx-go-local-proxy-poc',
-  allowedRefs: ['refs/heads/main'],
+  // refs/heads/main = ci.yml 의 main push (검증). refs/tags/v* = deploy.yml 의 tag push (배포).
+  allowedRefs: ['refs/heads/main', 'refs/tags/v*'],
 });
 
 app.synth();
