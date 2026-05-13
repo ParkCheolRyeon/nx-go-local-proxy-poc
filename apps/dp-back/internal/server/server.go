@@ -388,14 +388,14 @@ func RegisterRoutes(api huma.API, s *Server) {
 type HealthOutput struct {
 	Body struct {
 		Status  string `json:"status" enum:"ok" example:"ok"`
-		Version string `json:"version" example:"v0.0.4"`
+		Version string `json:"version" example:"v0.0.5"`
 	}
 }
 
 func (s *Server) GetHealth(ctx context.Context, _ *struct{}) (*HealthOutput, error) {
 	out := &HealthOutput{}
 	out.Body.Status = "ok"
-	out.Body.Version = "v0.0.4"
+	out.Body.Version = "v0.0.5"
 	return out, nil
 }
 

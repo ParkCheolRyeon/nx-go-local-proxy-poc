@@ -23,20 +23,24 @@ const db = new DbStack(app, 'IgalleryDb', {
   vpc: network.vpc,
 });
 
-// Slack 으로 BE/FE Pipeline Approval 을 통일 — backend-monorepo 패턴.
-// Bot Token + Signing Secret 은 Secrets Manager 에 별도 저장.
-const slackApproval = new SlackApprovalStack(app, 'IgallerySlackApproval', {
-  env: seoul,
-  slackChannelId: 'C0B2GJHL95M',
-  slackBotTokenSecretName: 'igallery/slack-bot-token',
-  slackSigningSecretName: 'igallery/slack-signing-secret',
-});
-
 const be = new BeStack(app, 'IgalleryBe', {
   env: seoul,
   vpc: network.vpc,
   db: db.instance,
-  approvalTopic: slackApproval.approvalTopic,
+});
+
+// Phase 4 — Slack 으로 CodeDeploy 의 READY 단계 클릭 + 24h 안 롤백 외부화.
+// BE 의 prod listener / TG / CodeDeploy 정보를 cross-stack ref 로 받음.
+new SlackApprovalStack(app, 'IgallerySlackApproval', {
+  env: seoul,
+  slackChannelId: 'C0B2GJHL95M',
+  slackBotTokenSecretName: 'igallery/slack-bot-token',
+  slackSigningSecretName: 'igallery/slack-signing-secret',
+  beProdListener: be.prodListener,
+  beBlueTg: be.blueTg,
+  beGreenTg: be.greenTg,
+  beCodeDeployApp: 'dp-back',
+  beCodeDeployGroup: 'prod',
 });
 
 new FeStack(app, 'IgalleryFe', {

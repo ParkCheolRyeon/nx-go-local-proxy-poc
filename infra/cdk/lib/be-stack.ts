@@ -25,6 +25,10 @@ interface BeStackProps extends StackProps {
 export class BeStack extends Stack {
   public readonly alb: elbv2.ApplicationLoadBalancer;
   public readonly ecrRepo: ecr.Repository;
+  // Phase 4 — Slack 의 rollback 버튼 (ALB listener default action swap) 용 reference.
+  public prodListener!: elbv2.ApplicationListener;
+  public blueTg!: elbv2.ApplicationTargetGroup;
+  public greenTg!: elbv2.ApplicationTargetGroup;
 
   constructor(scope: Construct, id: string, props: BeStackProps) {
     super(scope, id, props);
@@ -158,6 +162,7 @@ export class BeStack extends Stack {
       },
       deregistrationDelay: Duration.seconds(30),
     });
+    this.blueTg = blueTg;
 
     const greenTg = new elbv2.ApplicationTargetGroup(this, 'GreenTg', {
       vpc: props.vpc,
@@ -172,6 +177,7 @@ export class BeStack extends Stack {
       },
       deregistrationDelay: Duration.seconds(30),
     });
+    this.greenTg = greenTg;
 
     // prod listener 80 → blue (실서비스 트래픽).
     // construct id 는 기존 stack 의 listener 와 동일하게 'Http' — logical id 가 같아야
@@ -182,7 +188,7 @@ export class BeStack extends Stack {
       defaultTargetGroups: [blueTg],
       open: false,
     });
-    void prodListener;
+    this.prodListener = prodListener;
 
     // test listener 8080 → green (배포 검증용)
     const testListener = this.alb.addListener('Test', {
@@ -252,9 +258,12 @@ export class BeStack extends Stack {
         greenTargetGroup: greenTg,
         listener: prodListener,
         testListener,
-        // 사용자 클릭 게이트가 Pipeline 의 Slack Approval stage 로 이동.
-        // CodeDeploy 자체는 deployment 시작 후 자동 reroute (deploymentApprovalWaitTime 없음).
-        terminationWaitTime: Duration.minutes(5),
+        // Phase 4 — 사용자 클릭 게이트 = CodeDeploy READY 단계로 복원.
+        //   green task healthy → READY 상태 (4h 대기) → EventBridge READY event
+        //   → Slack 알림 → 사용자 [✅ Reroute] 클릭 → continue-deployment → swap
+        deploymentApprovalWaitTime: Duration.hours(4),
+        // blue task 24시간 동안 살아있게 — 즉시 ALB swap 으로 롤백 가능.
+        terminationWaitTime: Duration.minutes(1440),
       },
       // Reroute 클릭 시 즉시 100% Green (AllAtOnce). LINEAR 원하면 LINEAR_10PERCENT_EVERY_1MINUTES.
       deploymentConfig: codedeploy.EcsDeploymentConfig.ALL_AT_ONCE,
@@ -352,32 +361,19 @@ export class BeStack extends Stack {
       taskDefinitionTemplateInput: buildArtifact,
     });
 
-    // Build 후 Slack 알림 + 사용자 클릭 대기 단계.
-    // notificationTopic 으로 SNS 발행 → SlackApprovalStack 의 notifier Lambda 가 Slack 채널에 메시지.
-    // 사용자가 Slack 의 [✅ 배포 승인] 클릭 → API Gateway → handler Lambda → PutApprovalResult → Deploy stage 진입.
-    const stages: codepipeline.StageProps[] = [
-      { stageName: 'Source', actions: [sourceAction] },
-      { stageName: 'Build', actions: [buildAction] },
-    ];
-    if (props.approvalTopic) {
-      stages.push({
-        stageName: 'Approval',
-        actions: [
-          new cpactions.ManualApprovalAction({
-            actionName: 'Slack_Approval',
-            notificationTopic: props.approvalTopic,
-            additionalInformation: 'BE (dp-back) — Slack 알림의 버튼으로 승인/거부.',
-          }),
-        ],
-      });
-    }
-    stages.push({ stageName: 'Deploy', actions: [deployAction] });
-
+    // Phase 4 — Pipeline 의 Approval stage 제거.
+    // 사용자 클릭 게이트는 CodeDeploy 의 READY 단계 (deploymentApprovalWaitTime).
+    // EventBridge rule → SNS → Slack 알림 → 사용자 클릭 → continue-deployment.
+    void props.approvalTopic; // intentionally unused (EventBridge 로 전달)
     const pipeline = new codepipeline.Pipeline(this, 'BePipeline', {
       pipelineName: 'dp-back-pipeline',
       pipelineType: codepipeline.PipelineType.V2,
       executionMode: codepipeline.ExecutionMode.SUPERSEDED,
-      stages,
+      stages: [
+        { stageName: 'Source', actions: [sourceAction] },
+        { stageName: 'Build', actions: [buildAction] },
+        { stageName: 'Deploy', actions: [deployAction] },
+      ],
     });
 
     new CfnOutput(this, 'BePipelineName', { value: pipeline.pipelineName });

@@ -1,6 +1,9 @@
 import * as path from 'node:path';
 import { Stack, StackProps, Duration, CfnOutput } from 'aws-cdk-lib';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
+import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import * as events from 'aws-cdk-lib/aws-events';
+import * as targets from 'aws-cdk-lib/aws-events-targets';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as lambda_nodejs from 'aws-cdk-lib/aws-lambda-nodejs';
@@ -10,24 +13,29 @@ import * as sns_subscriptions from 'aws-cdk-lib/aws-sns-subscriptions';
 import { Construct } from 'constructs';
 
 interface SlackApprovalStackProps extends StackProps {
-  /** Slack 채널 ID (C로 시작) — backend-monorepo 패턴 */
   slackChannelId: string;
-  /** Bot Token 이 들어있는 Secrets Manager secret 이름 */
   slackBotTokenSecretName: string;
-  /** Signing Secret 이 들어있는 Secrets Manager secret 이름 */
   slackSigningSecretName: string;
+  /** BE 의 prod listener (rollback 시 default action swap 대상) */
+  beProdListener: elbv2.IApplicationListener;
+  beBlueTg: elbv2.IApplicationTargetGroup;
+  beGreenTg: elbv2.IApplicationTargetGroup;
+  /** BE CodeDeploy 정보 (READY/SUCCESS event filter + Slack 메시지에 표시) */
+  beCodeDeployApp: string;
+  beCodeDeployGroup: string;
 }
 
 /**
- * IgallerySlackApproval — Pipeline 의 Manual Approval 을 Slack 알림 + 버튼 으로 외부화.
+ * Phase 4 — Slack 으로 CodeDeploy lifecycle 의 사용자 클릭 게이트 외부화.
  *
  * 흐름:
- *   Pipeline Approval stage → SNS Topic → notifier Lambda → Slack 채널에 알림 + 버튼
- *   사용자가 Slack 의 [✅ 배포 승인 / ❌ 거부] 클릭
- *     → Slack interactivity POST → API Gateway → handler Lambda
- *     → CodePipeline PutApprovalResult → Pipeline 의 Deploy stage 진입
+ *   CodeDeploy deployment 가 READY 상태 도달 (green healthy + traffic shift 대기)
+ *     → EventBridge rule → SNS → notifier Lambda → Slack 알림 + [✅ Reroute / ❌ Stop]
+ *     → 사용자 [✅] → handler → aws deploy continue-deployment → listener swap
  *
- * 운영 창구가 Slack 으로 통일 — BE/FE 어느 쪽이든 Slack 에서만 클릭.
+ *   deployment 가 SUCCESS 도달
+ *     → EventBridge rule → SNS → notifier → Slack 알림 + [🔙 롤백] (terminationWaitTime 24h 안)
+ *     → 사용자 [🔙] → handler → aws elbv2 modify-listener (default action TG swap)
  */
 export class SlackApprovalStack extends Stack {
   public readonly approvalTopic: sns.Topic;
@@ -35,13 +43,11 @@ export class SlackApprovalStack extends Stack {
   constructor(scope: Construct, id: string, props: SlackApprovalStackProps) {
     super(scope, id, props);
 
-    // ── SNS Topic — Pipeline Approval stage 가 여기로 알림
     this.approvalTopic = new sns.Topic(this, 'ApprovalTopic', {
       topicName: 'igallery-deploy-approval',
       displayName: 'iGallery Deploy Approval',
     });
 
-    // ── Secrets Manager 의 token / signing secret 참조
     const botTokenSecret = secretsmanager.Secret.fromSecretNameV2(
       this,
       'BotTokenSecret',
@@ -56,10 +62,9 @@ export class SlackApprovalStack extends Stack {
     // ── API Gateway — Slack interactivity endpoint
     const api = new apigateway.RestApi(this, 'SlackApi', {
       restApiName: 'igallery-slack-approval',
-      description: 'Slack Interactivity Endpoint for deploy approvals',
     });
 
-    // ── handler Lambda (Slack → CodePipeline PutApprovalResult)
+    // ── handler Lambda
     const handlerFn = new lambda_nodejs.NodejsFunction(this, 'ApprovalHandler', {
       functionName: 'igallery-approval-handler',
       runtime: lambda.Runtime.NODEJS_20_X,
@@ -69,12 +74,27 @@ export class SlackApprovalStack extends Stack {
       memorySize: 256,
       environment: {
         SLACK_SIGNING_SECRET_NAME: props.slackSigningSecretName,
+        PROD_LISTENER_ARN: props.beProdListener.listenerArn,
+        BLUE_TG_ARN: props.beBlueTg.targetGroupArn,
+        GREEN_TG_ARN: props.beGreenTg.targetGroupArn,
+        CODEDEPLOY_APP: props.beCodeDeployApp,
+        CODEDEPLOY_GROUP: props.beCodeDeployGroup,
       },
       bundling: { minify: true, sourceMap: false, externalModules: [] },
     });
     handlerFn.addToRolePolicy(
       new iam.PolicyStatement({
-        actions: ['codepipeline:PutApprovalResult'],
+        actions: [
+          // 옛 — Pipeline Approval (FE 가 쓸 수 있어 유지)
+          'codepipeline:PutApprovalResult',
+          // 새 — CodeDeploy READY 단계 게이트
+          'codedeploy:ContinueDeployment',
+          'codedeploy:StopDeployment',
+          'codedeploy:GetDeployment',
+          // 새 — Rollback (ALB listener default action swap)
+          'elasticloadbalancing:ModifyListener',
+          'elasticloadbalancing:DescribeListeners',
+        ],
         resources: ['*'],
       }),
     );
@@ -85,43 +105,49 @@ export class SlackApprovalStack extends Stack {
       .addResource('interaction')
       .addMethod('POST', new apigateway.LambdaIntegration(handlerFn));
 
-    // ── notifier Lambda (SNS → Slack chat.postMessage)
-    const notifierFn = new lambda_nodejs.NodejsFunction(
-      this,
-      'ApprovalNotifier',
-      {
-        functionName: 'igallery-approval-notifier',
-        runtime: lambda.Runtime.NODEJS_20_X,
-        handler: 'handler',
-        entry: path.join(
-          __dirname,
-          '..',
-          'lambda',
-          'approval-notifier',
-          'index.ts',
-        ),
-        timeout: Duration.seconds(30),
-        memorySize: 256,
-        environment: {
-          SLACK_BOT_TOKEN_SECRET: props.slackBotTokenSecretName,
-          SLACK_CHANNEL_ID: props.slackChannelId,
-        },
-        bundling: { minify: true, sourceMap: false, externalModules: [] },
+    // ── notifier Lambda
+    const notifierFn = new lambda_nodejs.NodejsFunction(this, 'ApprovalNotifier', {
+      functionName: 'igallery-approval-notifier',
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'handler',
+      entry: path.join(__dirname, '..', 'lambda', 'approval-notifier', 'index.ts'),
+      timeout: Duration.seconds(30),
+      memorySize: 256,
+      environment: {
+        SLACK_BOT_TOKEN_SECRET: props.slackBotTokenSecretName,
+        SLACK_CHANNEL_ID: props.slackChannelId,
       },
-    );
+      bundling: { minify: true, sourceMap: false, externalModules: [] },
+    });
     botTokenSecret.grantRead(notifierFn);
     this.approvalTopic.addSubscription(
       new sns_subscriptions.LambdaSubscription(notifierFn),
     );
 
-    new CfnOutput(this, 'ApiGatewayUrl', {
-      value: api.url,
-      description:
-        'Slack App 의 Interactivity Request URL 에 입력 — 끝에 slack/interaction 추가',
+    // ── EventBridge Rule — CodeDeploy deployment state change
+    // detail.state: READY (green healthy + reroute 대기) / SUCCESS (deployment 완료)
+    // detail.application: BE 의 CodeDeploy 만 필터
+    new events.Rule(this, 'CodeDeployStateChange', {
+      ruleName: 'igallery-codedeploy-state-change',
+      eventPattern: {
+        source: ['aws.codedeploy'],
+        detailType: ['CodeDeploy Deployment State-change Notification'],
+        detail: {
+          state: ['READY', 'SUCCESS'],
+          application: [props.beCodeDeployApp],
+        },
+      },
+      targets: [
+        new targets.SnsTopic(this.approvalTopic, {
+          // EventBridge → SNS 의 message 가 그대로 SNS subscription Lambda 에 도달.
+          // notifier 가 message format 으로 CodeDeploy event 인지 인식 후 처리.
+        }),
+      ],
     });
+
+    new CfnOutput(this, 'ApiGatewayUrl', { value: api.url });
     new CfnOutput(this, 'SlackInteractionUrl', {
       value: `${api.url}slack/interaction`,
-      description: 'Slack App Interactivity Request URL (그대로 복붙)',
     });
     new CfnOutput(this, 'ApprovalTopicArn', { value: this.approvalTopic.topicArn });
   }
