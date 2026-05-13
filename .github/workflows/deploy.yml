@@ -42,7 +42,9 @@ jobs:
   be-build:
     name: BE build & ECR push
     if: startsWith(github.ref, 'refs/tags/be/v') || (github.event_name == 'workflow_dispatch' && inputs.target == 'be')
-    runs-on: ubuntu-latest
+    # ARM native runner — image 가 linux/arm64 라 QEMU emulation 없이 직접 빌드.
+    # x86 runner + QEMU 였을 땐 16분 → ARM native 는 ~3분.
+    runs-on: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v4
       - uses: aws-actions/configure-aws-credentials@v4
@@ -51,7 +53,6 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
       - uses: aws-actions/amazon-ecr-login@v2
         id: ecr
-      - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
       - name: Resolve tag / sha
         id: meta
