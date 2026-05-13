@@ -119,6 +119,8 @@ export class FeCicdStack extends Stack {
       environmentVariables: {
         FN_NAME: { value: opts.functionName },
         APPSPEC_KEY: { value: opts.appSpecResourceKey },
+        SOURCE_BUCKET: { value: 'igallery-fe-source' },
+        SOURCE_KEY: { value: opts.sourceKey },
       },
       buildSpec: codebuild.BuildSpec.fromObject({
         version: '0.2',
@@ -127,13 +129,17 @@ export class FeCicdStack extends Stack {
             commands: [
               'echo "=== source artifact contents ==="',
               'ls -la',
+              // S3 의 source zip 의 metadata 에서 git tag / sha 추출 (deploy.yml 의 fe-build 가 박음)
+              'SEMVER_TAG=$(aws s3api head-object --bucket "$SOURCE_BUCKET" --key "$SOURCE_KEY" --query \'Metadata.tag\' --output text 2>/dev/null || echo unknown)',
+              'SHORT_SHA=$(aws s3api head-object --bucket "$SOURCE_BUCKET" --key "$SOURCE_KEY" --query \'Metadata.sha\' --output text 2>/dev/null || echo unknown)',
+              'echo "semver tag: $SEMVER_TAG / sha: $SHORT_SHA"',
               // Source artifact 의 zip 안 내용이 풀린 상태로 도착 → 다시 zip 으로 묶기
               'zip -qr lambda.zip ./* -x lambda.zip',
               'echo "=== update-function-code ==="',
               'aws lambda update-function-code --function-name "$FN_NAME" --zip-file fileb://lambda.zip > /dev/null',
               'aws lambda wait function-updated-v2 --function-name "$FN_NAME"',
-              'echo "=== publish-version ==="',
-              'NEW=$(aws lambda publish-version --function-name "$FN_NAME" --description "via pipeline $CODEBUILD_BUILD_ID" --query Version --output text)',
+              'echo "=== publish-version (description 에 git tag 박음 — hook lambda 가 읽어 Slack 에 표시) ==="',
+              'NEW=$(aws lambda publish-version --function-name "$FN_NAME" --description "tag=$SEMVER_TAG sha=$SHORT_SHA" --query Version --output text)',
               'echo "new version: $NEW"',
               'CURRENT=$(aws lambda get-alias --function-name "$FN_NAME" --name prod --query FunctionVersion --output text)',
               'echo "current alias version: $CURRENT"',
@@ -167,6 +173,13 @@ export class FeCicdStack extends Stack {
           `arn:aws:lambda:${this.region}:${this.account}:function:${opts.functionName}`,
           `arn:aws:lambda:${this.region}:${this.account}:function:${opts.functionName}:*`,
         ],
+      }),
+    );
+    // S3 source 의 metadata fetch (semver tag 추출)
+    buildProject.role!.addToPrincipalPolicy(
+      new iam.PolicyStatement({
+        actions: ['s3:GetObject'],
+        resources: [`arn:aws:s3:::igallery-fe-source/${opts.sourceKey}`],
       }),
     );
 

@@ -42,17 +42,21 @@ export const handler = async (event: HookEvent): Promise<{ statusCode: number }>
   const hookExecId = event.LifecycleEventHookExecutionId;
   const consoleUrl = `https://ap-northeast-2.console.aws.amazon.com/codesuite/codedeploy/deployments/${deploymentId}?region=ap-northeast-2`;
 
+  // ECR 의 latest image 의 tags 에서 be/v* semver 추출
+  const semverTag = await getBeSemverTag('dp-back');
+
   // 1) Slack post (실패해도 hook 은 Succeeded 처리 — block 안 함)
   try {
     const value = JSON.stringify({ deploymentId, action: 'rollback' });
     await postToSlack({
       channel: SLACK_CHANNEL_ID,
-      text: `✅ 배포 완료 — 24h 안 롤백 가능 (\`${deploymentId}\`)`,
+      text: `✅ BE ${semverTag} 배포 완료 — 24h 안 롤백 가능 (\`${deploymentId}\`)`,
       blocks: [
-        { type: 'header', text: { type: 'plain_text', text: '✅ Swap 완료 — 24h 롤백 윈도우 시작' } },
+        { type: 'header', text: { type: 'plain_text', text: '✅ BE Swap 완료 — 24h 롤백 윈도우' } },
         {
           type: 'section',
           fields: [
+            { type: 'mrkdwn', text: `*Version:*\n*${semverTag}*` },
             { type: 'mrkdwn', text: `*Deployment:*\n\`${deploymentId}\`` },
             { type: 'mrkdwn', text: `*Swap 시각:*\n${nowKST()}` },
             { type: 'mrkdwn', text: '*롤백 메커니즘:*\nALB listener default action 즉시 swap' },
@@ -97,6 +101,26 @@ export const handler = async (event: HookEvent): Promise<{ statusCode: number }>
 
   return { statusCode: 200 };
 };
+
+async function getBeSemverTag(repoName: string): Promise<string> {
+  try {
+    const { ECRClient, DescribeImagesCommand } = await import(
+      '@aws-sdk/client-ecr'
+    );
+    const ecr = new ECRClient({});
+    const result = await ecr.send(
+      new DescribeImagesCommand({
+        repositoryName: repoName,
+        imageIds: [{ imageTag: 'latest' }],
+      }),
+    );
+    const tags = result.imageDetails?.[0]?.imageTags ?? [];
+    const semver = tags.find((t: string) => t.startsWith('be/'));
+    return semver ?? 'unknown';
+  } catch {
+    return 'unknown';
+  }
+}
 
 function postToSlack(message: object): Promise<void> {
   return new Promise((resolve, reject) => {

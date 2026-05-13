@@ -296,6 +296,8 @@ interface FeRerouteButtonValue {
   functionName: string;
   targetVersion: string;
   currentVersion: string;
+  semverTag?: string;
+  prevSemverTag?: string;
   action: 'fe_reroute';
 }
 
@@ -303,6 +305,8 @@ interface FeRollbackButtonValue {
   functionName: string;
   previousVersion: string;
   currentVersion: string;
+  prevSemverTag?: string;
+  semverTag?: string;
   deploymentId: string;
   action: 'fe_rollback';
 }
@@ -332,6 +336,10 @@ async function handleFeReroute(
 
   const emoji = isApprove ? '✅' : '❌';
   const verb = isApprove ? 'Reroute 시작' : 'Reject';
+  const semverLine =
+    data.semverTag && data.prevSemverTag
+      ? `${data.prevSemverTag} → *${data.semverTag}*`
+      : `v${data.currentVersion} → v${data.targetVersion}`;
   await replaceMessage(payload.response_url, {
     text: `${emoji} FE ${verb} by ${payload.user.name}`,
     blocks: [
@@ -341,7 +349,7 @@ async function handleFeReroute(
           type: 'mrkdwn',
           text:
             `${emoji} *FE ${verb}* — \`${data.functionName}\`\n` +
-            `v${data.currentVersion} → v${data.targetVersion}\n` +
+            `${semverLine}\n` +
             `by *${payload.user.name}* (${data.deploymentId})`,
         },
       },
@@ -368,8 +376,12 @@ async function handleFeRollback(
     }),
   );
 
+  const rbLine =
+    data.semverTag && data.prevSemverTag
+      ? `${data.semverTag} → *${data.prevSemverTag}*`
+      : `v${data.currentVersion} → *v${data.previousVersion}*`;
   await replaceMessage(payload.response_url, {
-    text: `🔙 FE Rollback by ${payload.user.name} — v${data.currentVersion} → v${data.previousVersion}`,
+    text: `🔙 FE Rollback by ${payload.user.name} — ${rbLine}`,
     blocks: [
       {
         type: 'section',
@@ -377,7 +389,7 @@ async function handleFeRollback(
           type: 'mrkdwn',
           text:
             `🔙 *FE Lambda Rollback* — \`${data.functionName}\`\n` +
-            `v${data.currentVersion} → *v${data.previousVersion}*\n` +
+            `${rbLine}\n` +
             `by *${payload.user.name}*. 사용자 트래픽이 즉시 옛 코드로.`,
         },
       },

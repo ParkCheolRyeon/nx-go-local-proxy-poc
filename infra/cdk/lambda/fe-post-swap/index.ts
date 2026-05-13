@@ -41,30 +41,40 @@ function nowKST(): string {
 export const handler = async (event: HookEvent): Promise<{ statusCode: number }> => {
   const { DeploymentId, LifecycleEventHookExecutionId } = event;
 
-  const { CodeDeployClient, GetDeploymentCommand, PutLifecycleEventHookExecutionStatusCommand } =
-    await import('@aws-sdk/client-codedeploy');
+  const {
+    CodeDeployClient,
+    GetDeploymentCommand,
+    ListDeploymentTargetsCommand,
+    GetDeploymentTargetCommand,
+    PutLifecycleEventHookExecutionStatusCommand,
+  } = await import('@aws-sdk/client-codedeploy');
   const cd = new CodeDeployClient({});
 
+  // application 이름 (Slack 알림용)
   const dep = await cd.send(new GetDeploymentCommand({ deploymentId: DeploymentId }));
   const application = dep.deploymentInfo?.applicationName ?? 'unknown';
-  const appspecRaw = dep.deploymentInfo?.revision?.appSpecContent?.content ?? '{}';
+
+  // get-deployment 의 appSpecContent.content 는 비어있음 (sha256 만 저장).
+  // → get-deployment-target 의 lambdaFunctionInfo 로 functionName/version 추출.
+  const targets = await cd.send(
+    new ListDeploymentTargetsCommand({ deploymentId: DeploymentId }),
+  );
+  const targetId = targets.targetIds?.[0];
   let functionName = 'unknown';
   let targetVersion = '?';
   let previousVersion = '?';
-  try {
-    const appspec = JSON.parse(appspecRaw);
-    for (const r of appspec.Resources ?? []) {
-      const k = Object.keys(r)[0];
-      const p = r[k]?.Properties;
-      if (p) {
-        functionName = p.Name;
-        targetVersion = p.TargetVersion;
-        previousVersion = p.CurrentVersion; // appspec 의 CurrentVersion = 시프트 전 v = 롤백 대상
-      }
-    }
-  } catch {
-    /* ignore */
+  if (targetId) {
+    const target = await cd.send(
+      new GetDeploymentTargetCommand({ deploymentId: DeploymentId, targetId }),
+    );
+    const info = target.deploymentTarget?.lambdaTarget?.lambdaFunctionInfo;
+    functionName = info?.functionName ?? functionName;
+    targetVersion = info?.targetVersion ?? targetVersion;
+    previousVersion = info?.currentVersion ?? previousVersion;
   }
+
+  const semverTag = await getSemverTag(functionName, targetVersion);
+  const prevSemverTag = await getSemverTag(functionName, previousVersion);
 
   // 1) Slack post (실패해도 hook 은 Succeeded 처리)
   try {
@@ -72,13 +82,15 @@ export const handler = async (event: HookEvent): Promise<{ statusCode: number }>
       functionName,
       previousVersion,
       currentVersion: targetVersion,
+      prevSemverTag,
+      semverTag,
       deploymentId: DeploymentId,
       action: 'fe_rollback',
     });
     const consoleUrl = `https://ap-northeast-2.console.aws.amazon.com/codesuite/codedeploy/deployments/${DeploymentId}?region=ap-northeast-2`;
     await postToSlack({
       channel: SLACK_CHANNEL_ID,
-      text: `✅ ${application} swap 완료 (v${previousVersion} → v${targetVersion}) — 롤백 가능`,
+      text: `✅ ${application} swap 완료 (${prevSemverTag} → ${semverTag}) — 롤백 가능`,
       blocks: [
         { type: 'header', text: { type: 'plain_text', text: '✅ FE Lambda swap 완료' } },
         {
@@ -86,7 +98,12 @@ export const handler = async (event: HookEvent): Promise<{ statusCode: number }>
           fields: [
             { type: 'mrkdwn', text: `*Application:*\n${application}` },
             { type: 'mrkdwn', text: `*Function:*\n${functionName}` },
-            { type: 'mrkdwn', text: `*Version:*\nv${previousVersion} → *v${targetVersion}*` },
+            {
+              type: 'mrkdwn',
+              text:
+                `*Version:*\n${prevSemverTag} → *${semverTag}*\n` +
+                `(Lambda v${previousVersion} → v${targetVersion})`,
+            },
             { type: 'mrkdwn', text: `*Swap 시각:*\n${nowKST()}` },
             {
               type: 'mrkdwn',
@@ -100,7 +117,7 @@ export const handler = async (event: HookEvent): Promise<{ statusCode: number }>
           elements: [
             {
               type: 'button',
-              text: { type: 'plain_text', text: `🔙 v${previousVersion} 로 롤백` },
+              text: { type: 'plain_text', text: `🔙 ${prevSemverTag} 로 롤백` },
               style: 'danger',
               action_id: 'rollback_fe_lambda',
               value,
@@ -130,6 +147,29 @@ export const handler = async (event: HookEvent): Promise<{ statusCode: number }>
 
   return { statusCode: 200 };
 };
+
+async function getSemverTag(functionName: string, version: string): Promise<string> {
+  if (!functionName || functionName === 'unknown' || !version || version === '?') {
+    return `v${version}`;
+  }
+  try {
+    const { LambdaClient, GetFunctionConfigurationCommand } = await import(
+      '@aws-sdk/client-lambda'
+    );
+    const lambda = new LambdaClient({});
+    const config = await lambda.send(
+      new GetFunctionConfigurationCommand({
+        FunctionName: functionName,
+        Qualifier: version,
+      }),
+    );
+    const desc = config.Description ?? '';
+    const m = desc.match(/tag=(\S+)/);
+    return m?.[1] ?? `v${version}`;
+  } catch {
+    return `v${version}`;
+  }
+}
 
 function postToSlack(message: object): Promise<void> {
   return new Promise((resolve, reject) => {

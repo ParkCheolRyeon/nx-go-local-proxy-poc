@@ -44,34 +44,37 @@ function nowKST(): string {
 export const handler = async (event: HookEvent): Promise<{ statusCode: number }> => {
   const { DeploymentId, LifecycleEventHookExecutionId } = event;
 
-  // 현재 deployment 의 정보 (application, functionName, target version)
-  const { CodeDeployClient, GetDeploymentCommand } = await import(
-    '@aws-sdk/client-codedeploy'
-  );
+  // application + functionName/version 추출 (get-deployment-target 사용 — get-deployment 의 content 비어있음)
+  const {
+    CodeDeployClient,
+    GetDeploymentCommand,
+    ListDeploymentTargetsCommand,
+    GetDeploymentTargetCommand,
+  } = await import('@aws-sdk/client-codedeploy');
   const cd = new CodeDeployClient({});
   const dep = await cd.send(new GetDeploymentCommand({ deploymentId: DeploymentId }));
   const application = dep.deploymentInfo?.applicationName ?? 'unknown';
 
-  // appspec 의 content 에서 functionName / TargetVersion 추출
-  const appspecRaw = dep.deploymentInfo?.revision?.appSpecContent?.content ?? '{}';
+  const targets = await cd.send(
+    new ListDeploymentTargetsCommand({ deploymentId: DeploymentId }),
+  );
+  const targetId = targets.targetIds?.[0];
   let functionName = 'unknown';
   let targetVersion = '?';
   let currentVersion = '?';
-  try {
-    const appspec = JSON.parse(appspecRaw);
-    const resources = appspec.Resources ?? [];
-    for (const r of resources) {
-      const k = Object.keys(r)[0];
-      const p = r[k]?.Properties;
-      if (p) {
-        functionName = p.Name;
-        targetVersion = p.TargetVersion;
-        currentVersion = p.CurrentVersion;
-      }
-    }
-  } catch {
-    /* ignore */
+  if (targetId) {
+    const target = await cd.send(
+      new GetDeploymentTargetCommand({ deploymentId: DeploymentId, targetId }),
+    );
+    const info = target.deploymentTarget?.lambdaTarget?.lambdaFunctionInfo;
+    functionName = info?.functionName ?? functionName;
+    targetVersion = info?.targetVersion ?? targetVersion;
+    currentVersion = info?.currentVersion ?? currentVersion;
   }
+
+  // semver tag 추출 — lambda Version 의 description ("tag=fe/v0.0.4 sha=xxx") 에서
+  const semverTag = await getSemverTag(functionName, targetVersion);
+  const prevSemverTag = await getSemverTag(functionName, currentVersion);
 
   const value = JSON.stringify({
     deploymentId: DeploymentId,
@@ -79,6 +82,8 @@ export const handler = async (event: HookEvent): Promise<{ statusCode: number }>
     functionName,
     targetVersion,
     currentVersion,
+    semverTag,
+    prevSemverTag,
     action: 'fe_reroute',
   });
 
@@ -95,7 +100,9 @@ export const handler = async (event: HookEvent): Promise<{ statusCode: number }>
           { type: 'mrkdwn', text: `*Function:*\n${functionName}` },
           {
             type: 'mrkdwn',
-            text: `*Version:*\nv${currentVersion} → v${targetVersion}`,
+            text:
+              `*Version:*\n${prevSemverTag} → *${semverTag}*\n` +
+              `(Lambda v${currentVersion} → v${targetVersion})`,
           },
           { type: 'mrkdwn', text: `*시각:*\n${nowKST()}` },
           { type: 'mrkdwn', text: `*Deployment:*\n\`${DeploymentId}\`` },
@@ -133,6 +140,29 @@ export const handler = async (event: HookEvent): Promise<{ statusCode: number }>
   // 사용자 Slack 클릭 후 approval-handler 가 PUT 호출.
   return { statusCode: 200 };
 };
+
+async function getSemverTag(functionName: string, version: string): Promise<string> {
+  if (!functionName || functionName === 'unknown' || !version || version === '?') {
+    return `v${version}`;
+  }
+  try {
+    const { LambdaClient, GetFunctionConfigurationCommand } = await import(
+      '@aws-sdk/client-lambda'
+    );
+    const lambda = new LambdaClient({});
+    const config = await lambda.send(
+      new GetFunctionConfigurationCommand({
+        FunctionName: functionName,
+        Qualifier: version,
+      }),
+    );
+    const desc = config.Description ?? '';
+    const m = desc.match(/tag=(\S+)/);
+    return m?.[1] ?? `v${version}`;
+  } catch {
+    return `v${version}`;
+  }
+}
 
 function postToSlack(message: object): Promise<void> {
   return new Promise((resolve, reject) => {

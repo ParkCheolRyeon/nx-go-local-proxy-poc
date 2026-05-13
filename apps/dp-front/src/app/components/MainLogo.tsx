@@ -34,7 +34,7 @@ export default function MainLogo({ isExpanded, onClick }: MainLogoProps) {
         className="min-w-0 flex-1 overflow-hidden text-[22px] whitespace-nowrap"
         style={{ fontWeight: 800, letterSpacing: -0.3 }}
       >
-        I Gallery V7
+        I Gallery V8
       </motion.div>
     </div>
   );

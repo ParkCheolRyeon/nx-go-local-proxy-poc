@@ -148,7 +148,10 @@ export class SlackApprovalStack extends Stack {
     botTokenSecret.grantRead(postSwapFn);
     postSwapFn.addToRolePolicy(
       new iam.PolicyStatement({
-        actions: ['codedeploy:PutLifecycleEventHookExecutionStatus'],
+        actions: [
+          'codedeploy:PutLifecycleEventHookExecutionStatus',
+          'ecr:DescribeImages',
+        ],
         resources: ['*'],
       }),
     );
@@ -179,7 +182,12 @@ export class SlackApprovalStack extends Stack {
     botTokenSecret.grantRead(feBeforeFn);
     feBeforeFn.addToRolePolicy(
       new iam.PolicyStatement({
-        actions: ['codedeploy:GetDeployment'],
+        actions: [
+          'codedeploy:GetDeployment',
+          'codedeploy:ListDeploymentTargets',
+          'codedeploy:GetDeploymentTarget',
+          'lambda:GetFunctionConfiguration',
+        ],
         resources: ['*'],
       }),
     );
@@ -203,7 +211,10 @@ export class SlackApprovalStack extends Stack {
       new iam.PolicyStatement({
         actions: [
           'codedeploy:GetDeployment',
+          'codedeploy:ListDeploymentTargets',
+          'codedeploy:GetDeploymentTarget',
           'codedeploy:PutLifecycleEventHookExecutionStatus',
+          'lambda:GetFunctionConfiguration',
         ],
         resources: ['*'],
       }),
