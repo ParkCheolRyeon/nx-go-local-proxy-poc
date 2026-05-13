@@ -87,13 +87,18 @@ export class SlackApprovalStack extends Stack {
         actions: [
           // 옛 — Pipeline Approval (FE 가 쓸 수 있어 유지)
           'codepipeline:PutApprovalResult',
-          // 새 — CodeDeploy READY 단계 게이트
+          // BE — CodeDeploy READY 단계 게이트
           'codedeploy:ContinueDeployment',
           'codedeploy:StopDeployment',
           'codedeploy:GetDeployment',
-          // 새 — Rollback (ALB listener default action swap)
+          // BE — Rollback (ALB listener default action swap)
           'elasticloadbalancing:ModifyListener',
           'elasticloadbalancing:DescribeListeners',
+          // FE — BeforeAllowTraffic hook 의 게이트 처리
+          'codedeploy:PutLifecycleEventHookExecutionStatus',
+          // FE — Rollback (Lambda alias FunctionVersion 변경)
+          'lambda:UpdateAlias',
+          'lambda:GetAlias',
         ],
         resources: ['*'],
       }),
@@ -149,6 +154,72 @@ export class SlackApprovalStack extends Stack {
     );
 
     new CfnOutput(this, 'PostSwapHookFunctionName', { value: postSwapFn.functionName });
+
+    // ── FE BeforeAllowTraffic hook — Lambda CodeDeploy 의 사용자 클릭 게이트
+    //   사용자 클릭 대기 동안 hook execution status 안 PUT — handler 가 사용자 클릭 시 PUT.
+    const feBeforeFn = new lambda_nodejs.NodejsFunction(this, 'FeBeforeAllowTraffic', {
+      functionName: 'igallery-fe-before-allow-traffic',
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'handler',
+      entry: path.join(
+        __dirname,
+        '..',
+        'lambda',
+        'fe-before-allow-traffic',
+        'index.ts',
+      ),
+      timeout: Duration.seconds(30),
+      memorySize: 256,
+      environment: {
+        SLACK_BOT_TOKEN_SECRET: props.slackBotTokenSecretName,
+        SLACK_CHANNEL_ID: props.slackChannelId,
+      },
+      bundling: { minify: true, sourceMap: false, externalModules: [] },
+    });
+    botTokenSecret.grantRead(feBeforeFn);
+    feBeforeFn.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: ['codedeploy:GetDeployment'],
+        resources: ['*'],
+      }),
+    );
+
+    // ── FE AfterAllowTraffic hook — swap 직후 [🔙 롤백] 알림 + hook Succeeded
+    const fePostFn = new lambda_nodejs.NodejsFunction(this, 'FePostSwap', {
+      functionName: 'igallery-fe-post-swap',
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'handler',
+      entry: path.join(__dirname, '..', 'lambda', 'fe-post-swap', 'index.ts'),
+      timeout: Duration.seconds(30),
+      memorySize: 256,
+      environment: {
+        SLACK_BOT_TOKEN_SECRET: props.slackBotTokenSecretName,
+        SLACK_CHANNEL_ID: props.slackChannelId,
+      },
+      bundling: { minify: true, sourceMap: false, externalModules: [] },
+    });
+    botTokenSecret.grantRead(fePostFn);
+    fePostFn.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: [
+          'codedeploy:GetDeployment',
+          'codedeploy:PutLifecycleEventHookExecutionStatus',
+        ],
+        resources: ['*'],
+      }),
+    );
+
+    // ── Lambda resource-based policy — IgalleryFe stack 의 LambdaDeploymentGroup 의 service role 이
+    //    이 hook 들 invoke 할 수 있게 허용 (IgalleryFe stack 무손상 — drift 회피).
+    feBeforeFn.addPermission('AllowCodeDeployInvoke', {
+      principal: new iam.ServicePrincipal('codedeploy.amazonaws.com'),
+    });
+    fePostFn.addPermission('AllowCodeDeployInvoke', {
+      principal: new iam.ServicePrincipal('codedeploy.amazonaws.com'),
+    });
+
+    new CfnOutput(this, 'FeBeforeHookFunctionName', { value: feBeforeFn.functionName });
+    new CfnOutput(this, 'FePostHookFunctionName', { value: fePostFn.functionName });
 
     // ── EventBridge Rule — CodeDeploy deployment state change
     // detail.state: READY (green healthy + reroute 대기) / SUCCESS (deployment 완료)

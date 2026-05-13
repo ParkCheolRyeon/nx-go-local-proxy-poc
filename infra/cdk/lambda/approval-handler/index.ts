@@ -109,6 +109,11 @@ export const handler = async (
         return await handleCodeDeployReroute(payload, action);
       case 'rollback_deployment':
         return await handleRollback(payload, action);
+      case 'approve_fe_reroute':
+      case 'reject_fe_reroute':
+        return await handleFeReroute(payload, action);
+      case 'rollback_fe_lambda':
+        return await handleFeRollback(payload, action);
       case 'open_console':
       case 'open_pipeline':
         return { statusCode: 200, body: '' }; // URL button — no-op
@@ -278,6 +283,102 @@ async function handleRollback(
             `🔙 *ALB Rollback* — listener default action: *${from}* → *${to}*\n` +
             `by *${payload.user.name}*. 사용자 트래픽이 즉시 옛 task 로.\n` +
             `(원래 deployment: \`${data.deploymentId}\`)`,
+        },
+      },
+    ],
+  });
+  return { statusCode: 200, body: '' };
+}
+
+interface FeRerouteButtonValue {
+  deploymentId: string;
+  hookExecId: string;
+  functionName: string;
+  targetVersion: string;
+  currentVersion: string;
+  action: 'fe_reroute';
+}
+
+interface FeRollbackButtonValue {
+  functionName: string;
+  previousVersion: string;
+  currentVersion: string;
+  deploymentId: string;
+  action: 'fe_rollback';
+}
+
+async function handleFeReroute(
+  payload: SlackInteractionPayload,
+  action: SlackInteractionPayload['actions'][0],
+) {
+  // FE BeforeAllowTraffic hook 의 사용자 클릭 게이트 처리.
+  //   approve_fe_reroute → PutLifecycleEventHookExecutionStatus(Succeeded)
+  //     → CodeDeploy 가 traffic shift 시작 (LambdaAllAtOnce 즉시 swap)
+  //   reject_fe_reroute → PutLifecycleEventHookExecutionStatus(Failed)
+  //     → CodeDeploy 의 autoRollback 발동
+  const data: FeRerouteButtonValue = JSON.parse(action.value);
+  const isApprove = action.action_id === 'approve_fe_reroute';
+
+  const { CodeDeployClient, PutLifecycleEventHookExecutionStatusCommand } =
+    await import('@aws-sdk/client-codedeploy');
+  const client = new CodeDeployClient({});
+  await client.send(
+    new PutLifecycleEventHookExecutionStatusCommand({
+      deploymentId: data.deploymentId,
+      lifecycleEventHookExecutionId: data.hookExecId,
+      status: isApprove ? 'Succeeded' : 'Failed',
+    }),
+  );
+
+  const emoji = isApprove ? '✅' : '❌';
+  const verb = isApprove ? 'Reroute 시작' : 'Reject';
+  await replaceMessage(payload.response_url, {
+    text: `${emoji} FE ${verb} by ${payload.user.name}`,
+    blocks: [
+      {
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text:
+            `${emoji} *FE ${verb}* — \`${data.functionName}\`\n` +
+            `v${data.currentVersion} → v${data.targetVersion}\n` +
+            `by *${payload.user.name}* (${data.deploymentId})`,
+        },
+      },
+    ],
+  });
+  return { statusCode: 200, body: '' };
+}
+
+async function handleFeRollback(
+  payload: SlackInteractionPayload,
+  action: SlackInteractionPayload['actions'][0],
+) {
+  // Lambda alias 의 FunctionVersion 을 옛 v 로 즉시 변경 — 1초 안 사용자 트래픽 옛 코드로.
+  const data: FeRollbackButtonValue = JSON.parse(action.value);
+
+  const { LambdaClient, UpdateAliasCommand } = await import('@aws-sdk/client-lambda');
+  const client = new LambdaClient({});
+  await client.send(
+    new UpdateAliasCommand({
+      FunctionName: data.functionName,
+      Name: 'prod',
+      FunctionVersion: data.previousVersion,
+      RoutingConfig: { AdditionalVersionWeights: {} }, // 가중치 비움 = 100% prev v
+    }),
+  );
+
+  await replaceMessage(payload.response_url, {
+    text: `🔙 FE Rollback by ${payload.user.name} — v${data.currentVersion} → v${data.previousVersion}`,
+    blocks: [
+      {
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text:
+            `🔙 *FE Lambda Rollback* — \`${data.functionName}\`\n` +
+            `v${data.currentVersion} → *v${data.previousVersion}*\n` +
+            `by *${payload.user.name}*. 사용자 트래픽이 즉시 옛 코드로.`,
         },
       },
     ],

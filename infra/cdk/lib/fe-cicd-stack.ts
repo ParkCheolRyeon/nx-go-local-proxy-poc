@@ -140,7 +140,8 @@ export class FeCicdStack extends Stack {
               'echo "$NEW" > new_version.txt',
               'echo "$CURRENT" > current_version.txt',
               // appspec.json 생성 — Deploy stage 가 이걸 사용
-              'jq -nc --arg name "$FN_NAME" --arg key "$APPSPEC_KEY" --arg current "$CURRENT" --arg target "$NEW" \'{version:0.0,Resources:[{($key):{Type:"AWS::Lambda::Function",Properties:{Name:$name,Alias:"prod",CurrentVersion:$current,TargetVersion:$target}}}]}\' > appspec.json',
+              // Hooks: BeforeAllowTraffic = 사용자 클릭 게이트 (Slack), AfterAllowTraffic = swap 직후 [🔙 롤백] 알림
+              'jq -nc --arg name "$FN_NAME" --arg key "$APPSPEC_KEY" --arg current "$CURRENT" --arg target "$NEW" \'{version:0.0,Resources:[{($key):{Type:"AWS::Lambda::Function",Properties:{Name:$name,Alias:"prod",CurrentVersion:$current,TargetVersion:$target}}}],Hooks:[{BeforeAllowTraffic:"igallery-fe-before-allow-traffic"},{AfterAllowTraffic:"igallery-fe-post-swap"}]}\' > appspec.json',
               'echo "=== appspec.json ==="',
               'cat appspec.json',
             ],
@@ -194,11 +195,15 @@ export class FeCicdStack extends Stack {
             commands: [
               'cat appspec.json',
               'REV=$(jq -nc --argjson c "$(cat appspec.json)" \'{revisionType:"AppSpecContent",appSpecContent:{content:($c|tostring)}}\')',
-              'echo "=== create-deployment ==="',
-              'DID=$(aws deploy create-deployment --application-name "$APP_NAME" --deployment-group-name "$GROUP_NAME" --revision "$REV" --query deploymentId --output text)',
+              'echo "=== create-deployment (LambdaAllAtOnce — Reroute 클릭 시 즉시 swap) ==="',
+              // deploymentConfigName override — fe-stack 의 LINEAR default 무시 (fe-stack 건드리지 않음).
+              'DID=$(aws deploy create-deployment --application-name "$APP_NAME" --deployment-group-name "$GROUP_NAME" --revision "$REV" --deployment-config-name CodeDeployDefault.LambdaAllAtOnce --query deploymentId --output text)',
               'echo "deployment id: $DID"',
-              'echo "=== wait deployment-successful (max ~10min for LINEAR 10%/1min) ==="',
-              'aws deploy wait deployment-successful --deployment-id "$DID"',
+              // BeforeAllowTraffic hook 이 사용자 클릭 대기 → wait timeout 길게.
+              // 단 wait 가 hook 까지 wait 하지는 않음 — deployment 의 전체 status 만 watch.
+              // 그래서 wait 는 hook 통과 후 자연 종료.
+              'echo "=== wait deployment-successful (hook 대기 포함 — 최대 1시간) ==="',
+              'aws deploy wait deployment-successful --deployment-id "$DID" || (echo "wait timeout/fail — deployment 상태 콘솔에서 확인" && exit 1)',
               'echo "✅ deployment done"',
             ],
           },
@@ -224,15 +229,9 @@ export class FeCicdStack extends Stack {
       input: buildArtifact,
     });
 
-    // ── Approval: Build (새 v publish) 끝나면 멈춰서 사람이 콘솔에서 Approve 클릭 대기.
-    //    Approve 안 누르면 alias 시프트 안 시작 (옛 v 로 유저 트래픽 그대로).
-    const approvalAction = new cpactions.ManualApprovalAction({
-      actionName: 'Manual_Approval',
-      additionalInformation:
-        `${idPrefix} Lambda 의 새 version 이 publish 되었습니다. ` +
-        `Approve 클릭 시 CodeDeploy 가 alias 'prod' 를 새 version 으로 LINEAR 10%/1min 시프트 시작합니다.`,
-    });
-
+    // Phase 4 — Pipeline 의 Manual Approval stage 제거.
+    //   사용자 클릭 게이트가 CodeDeploy 의 BeforeAllowTraffic hook lambda 로 이동.
+    //   hook 이 Slack 알림 + 사용자 클릭 → handler 가 PutLifecycleEventHookExecutionStatus 호출.
     const pipeline = new codepipeline.Pipeline(scope, `${idPrefix}Pipeline`, {
       pipelineName: opts.pipelineName,
       pipelineType: codepipeline.PipelineType.V2,
@@ -240,7 +239,6 @@ export class FeCicdStack extends Stack {
       stages: [
         { stageName: 'Source', actions: [sourceAction] },
         { stageName: 'Build', actions: [buildAction] },
-        { stageName: 'Approval', actions: [approvalAction] },
         { stageName: 'Deploy', actions: [deployAction] },
       ],
     });
