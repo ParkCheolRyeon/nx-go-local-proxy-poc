@@ -258,12 +258,13 @@ export class BeStack extends Stack {
         greenTargetGroup: greenTg,
         listener: prodListener,
         testListener,
-        // Phase 4 — 사용자 클릭 게이트 = CodeDeploy READY 단계로 복원.
+        // Phase 4 — 사용자 클릭 게이트 = CodeDeploy READY 단계.
         //   green task healthy → READY 상태 (4h 대기) → EventBridge READY event
-        //   → Slack 알림 → 사용자 [✅ Reroute] 클릭 → continue-deployment → swap
+        //   → Slack 알림 → 사용자 [✅ Reroute] 클릭 → swap
         deploymentApprovalWaitTime: Duration.hours(4),
-        // blue task 24시간 동안 살아있게 — 즉시 ALB swap 으로 롤백 가능.
-        terminationWaitTime: Duration.minutes(1440),
+        // 5분 = swap 후 짧은 롤백 윈도우 + 새 deploy 충돌 회피
+        //   (옛 24h 는 새 deploy 시 LimitExceeded 부작용)
+        terminationWaitTime: Duration.minutes(5),
       },
       // Reroute 클릭 시 즉시 100% Green (AllAtOnce). LINEAR 원하면 LINEAR_10PERCENT_EVERY_1MINUTES.
       deploymentConfig: codedeploy.EcsDeploymentConfig.ALL_AT_ONCE,

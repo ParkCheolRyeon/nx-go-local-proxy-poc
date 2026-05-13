@@ -76,8 +76,6 @@ export const handler = async (event: HookEvent): Promise<{ statusCode: number }>
   const application = dep.deploymentInfo?.applicationName ?? 'unknown';
 
   let functionName = APP_TO_FN[application] ?? 'unknown';
-  let targetVersion = '?';
-  let currentVersion = '?';
 
   const targets = await cd.send(
     new ListDeploymentTargetsCommand({ deploymentId: DeploymentId }),
@@ -89,42 +87,34 @@ export const handler = async (event: HookEvent): Promise<{ statusCode: number }>
     );
     const info = target.deploymentTarget?.lambdaTarget?.lambdaFunctionInfo;
     if (info?.functionName) functionName = info.functionName;
-    if (info?.targetVersion) targetVersion = info.targetVersion;
-    if (info?.currentVersion) currentVersion = info.currentVersion;
   }
 
-  // BeforeAllowTraffic 시점에 비어있으면 lambda API 로 직접 fetch
-  const { LambdaClient, GetAliasCommand, ListVersionsByFunctionCommand } =
-    await import('@aws-sdk/client-lambda');
+  // BE 의 ECR sort 와 동일 패턴 — publish 시간 순 [0]=신규 [1]=직전.
+  const { LambdaClient, ListVersionsByFunctionCommand } = await import(
+    '@aws-sdk/client-lambda'
+  );
   const l = new LambdaClient({});
-  if (functionName !== 'unknown' && (currentVersion === '?' || targetVersion === '?')) {
-    try {
-      if (currentVersion === '?') {
-        const a = await l.send(
-          new GetAliasCommand({ FunctionName: functionName, Name: 'prod' }),
-        );
-        currentVersion = a.FunctionVersion ?? '?';
-      }
-      if (targetVersion === '?') {
-        const vs = await l.send(
-          new ListVersionsByFunctionCommand({ FunctionName: functionName }),
-        );
-        const nums = (vs.Versions ?? [])
-          .map((v) => parseInt(v.Version ?? '0'))
-          .filter((n) => !isNaN(n) && n > 0);
-        if (nums.length > 0) targetVersion = String(Math.max(...nums));
-      }
-    } catch (e) {
-      console.error('lambda fallback failed:', e);
-    }
-  }
+  const versions = await l.send(
+    new ListVersionsByFunctionCommand({ FunctionName: functionName }),
+  );
+  const sorted = (versions.Versions ?? [])
+    .filter((v) => v.Version && v.Version !== '$LATEST' && v.LastModified)
+    .sort(
+      (a, b) =>
+        new Date(b.LastModified ?? 0).getTime() -
+        new Date(a.LastModified ?? 0).getTime(),
+    );
+  const newV = sorted[0];
+  const prevV = sorted[1];
+  const targetVersion = newV?.Version ?? '?';
+  const currentVersion = prevV?.Version ?? '?';
 
-  // version description 에서 semver tag 추출
-  const currentTag = await getDescriptionTag(l, functionName, currentVersion);
-  const targetTag = await getDescriptionTag(l, functionName, targetVersion);
+  const parseTag = (desc?: string) => desc?.match(/tag=(\S+)/)?.[1];
+  const targetTag = parseTag(newV?.Description);
+  const currentTag = parseTag(prevV?.Description);
 
-  const prevLabel = currentTag !== 'unknown' ? currentTag : `(이전 배포, lambda v${currentVersion})`;
-  const newLabel = targetTag !== 'unknown' ? targetTag : `(lambda v${targetVersion})`;
+  const newLabel = targetTag ?? `(lambda v${targetVersion})`;
+  const prevLabel = currentTag ?? `(이전 배포, lambda v${currentVersion})`;
 
   const value = JSON.stringify({
     deploymentId: DeploymentId,

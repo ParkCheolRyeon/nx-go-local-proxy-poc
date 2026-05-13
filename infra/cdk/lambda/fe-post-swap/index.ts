@@ -76,8 +76,6 @@ export const handler = async (event: HookEvent): Promise<{ statusCode: number }>
   const application = dep.deploymentInfo?.applicationName ?? 'unknown';
 
   let functionName = APP_TO_FN[application] ?? 'unknown';
-  let targetVersion = '?';
-  let previousVersion = '?';
 
   const targets = await cd.send(
     new ListDeploymentTargetsCommand({ deploymentId: DeploymentId }),
@@ -89,17 +87,35 @@ export const handler = async (event: HookEvent): Promise<{ statusCode: number }>
     );
     const info = target.deploymentTarget?.lambdaTarget?.lambdaFunctionInfo;
     if (info?.functionName) functionName = info.functionName;
-    if (info?.targetVersion) targetVersion = info.targetVersion;
-    if (info?.currentVersion) previousVersion = info.currentVersion;
   }
 
-  const { LambdaClient } = await import('@aws-sdk/client-lambda');
+  // BE 의 ECR sort 와 동일 패턴 — publish 시간 순 정렬 → [0]=신규 [1]=직전.
+  // alias 의 currentVersion 무관 (사용자가 옛 deploy 의 swap 안 했어도 정확).
+  const { LambdaClient, ListVersionsByFunctionCommand } = await import(
+    '@aws-sdk/client-lambda'
+  );
   const l = new LambdaClient({});
-  const prevTag = await getDescriptionTag(l, functionName, previousVersion);
-  const newTag = await getDescriptionTag(l, functionName, targetVersion);
+  const versions = await l.send(
+    new ListVersionsByFunctionCommand({ FunctionName: functionName }),
+  );
+  const sorted = (versions.Versions ?? [])
+    .filter((v) => v.Version && v.Version !== '$LATEST' && v.LastModified)
+    .sort(
+      (a, b) =>
+        new Date(b.LastModified ?? 0).getTime() -
+        new Date(a.LastModified ?? 0).getTime(),
+    );
+  const newV = sorted[0];
+  const prevV = sorted[1];
+  const targetVersion = newV?.Version ?? '?';
+  const previousVersion = prevV?.Version ?? '?';
 
-  const prevLabel = prevTag !== 'unknown' ? prevTag : `(이전 배포, lambda v${previousVersion})`;
-  const newLabel = newTag !== 'unknown' ? newTag : `(lambda v${targetVersion})`;
+  const parseTag = (desc?: string) => desc?.match(/tag=(\S+)/)?.[1];
+  const newTag = parseTag(newV?.Description);
+  const prevTag = parseTag(prevV?.Description);
+
+  const newLabel = newTag ?? `(lambda v${targetVersion})`;
+  const prevLabel = prevTag ?? `(이전 배포, lambda v${previousVersion})`;
 
   try {
     const value = JSON.stringify({
