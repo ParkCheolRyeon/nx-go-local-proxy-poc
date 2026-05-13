@@ -275,6 +275,17 @@ export class BeStack extends Stack {
       },
     });
 
+    // CodeDeploy 의 ECS service role 이 AfterAllowTraffic hook lambda 호출 권한.
+    // hook lambda 의 functionName 은 'igallery-post-swap-notifier' (SlackApprovalStack 에서 고정).
+    cdGroup.role.addToPrincipalPolicy(
+      new iam.PolicyStatement({
+        actions: ['lambda:InvokeFunction'],
+        resources: [
+          `arn:aws:lambda:${this.region}:${this.account}:function:igallery-post-swap-notifier`,
+        ],
+      }),
+    );
+
     // ──────────────────────────────────────────────────────────────────
     //  CodePipeline (Phase 1) — ECR push 감지 → Build → CodeDeploy → 사람이 콘솔 클릭으로 swap
     // ──────────────────────────────────────────────────────────────────
@@ -328,7 +339,7 @@ export class BeStack extends Stack {
               'echo "=== new taskdef.json ==="',
               'cat taskdef.json',
               'echo "=== generate appspec.yaml ==="',
-              'cat > appspec.yaml <<EOF\nversion: 0.0\nResources:\n  - TargetService:\n      Type: AWS::ECS::Service\n      Properties:\n        TaskDefinition: <TASK_DEFINITION>\n        LoadBalancerInfo:\n          ContainerName: $CONTAINER_NAME\n          ContainerPort: $CONTAINER_PORT\n        PlatformVersion: LATEST\nEOF',
+              'cat > appspec.yaml <<EOF\nversion: 0.0\nResources:\n  - TargetService:\n      Type: AWS::ECS::Service\n      Properties:\n        TaskDefinition: <TASK_DEFINITION>\n        LoadBalancerInfo:\n          ContainerName: $CONTAINER_NAME\n          ContainerPort: $CONTAINER_PORT\n        PlatformVersion: LATEST\nHooks:\n  - AfterAllowTraffic: "igallery-post-swap-notifier"\nEOF',
               'cat appspec.yaml',
             ],
           },

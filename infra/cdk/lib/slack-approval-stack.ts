@@ -124,6 +124,32 @@ export class SlackApprovalStack extends Stack {
       new sns_subscriptions.LambdaSubscription(notifierFn),
     );
 
+    // ── post-swap-notifier Lambda — CodeDeploy AfterAllowTraffic hook.
+    // step 6 swap 직후 invoke → Slack SUCCESS 메시지 + [🔙 롤백] 버튼 post + hook Succeeded.
+    // functionName 고정 — BeStack 의 buildSpec 이 by-name 으로 appspec.yaml 에 박음.
+    const postSwapFn = new lambda_nodejs.NodejsFunction(this, 'PostSwapNotifier', {
+      functionName: 'igallery-post-swap-notifier',
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'handler',
+      entry: path.join(__dirname, '..', 'lambda', 'post-swap-notifier', 'index.ts'),
+      timeout: Duration.seconds(30),
+      memorySize: 256,
+      environment: {
+        SLACK_BOT_TOKEN_SECRET: props.slackBotTokenSecretName,
+        SLACK_CHANNEL_ID: props.slackChannelId,
+      },
+      bundling: { minify: true, sourceMap: false, externalModules: [] },
+    });
+    botTokenSecret.grantRead(postSwapFn);
+    postSwapFn.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: ['codedeploy:PutLifecycleEventHookExecutionStatus'],
+        resources: ['*'],
+      }),
+    );
+
+    new CfnOutput(this, 'PostSwapHookFunctionName', { value: postSwapFn.functionName });
+
     // ── EventBridge Rule — CodeDeploy deployment state change
     // detail.state: READY (green healthy + reroute 대기) / SUCCESS (deployment 완료)
     // detail.application: BE 의 CodeDeploy 만 필터
