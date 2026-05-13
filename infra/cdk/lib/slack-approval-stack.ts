@@ -193,6 +193,8 @@ export class SlackApprovalStack extends Stack {
           'codedeploy:ListDeploymentTargets',
           'codedeploy:GetDeploymentTarget',
           'lambda:GetFunctionConfiguration',
+          'lambda:GetAlias',
+          'lambda:ListVersionsByFunction',
         ],
         resources: ['*'],
       }),
@@ -247,7 +249,9 @@ export class SlackApprovalStack extends Stack {
         source: ['aws.codedeploy'],
         detailType: ['CodeDeploy Deployment State-change Notification'],
         detail: {
-          state: ['READY', 'SUCCESS'],
+          // READY 만 — SUCCESS 알림은 AfterAllowTraffic hook (post-swap-notifier) 이 담당.
+          // SUCCESS event 가 와도 codeDeployRollback / 자동 supersede 의 SUCCESS 까지 보내져서 중복/혼란.
+          state: ['READY'],
           application: [props.beCodeDeployApp],
         },
       },

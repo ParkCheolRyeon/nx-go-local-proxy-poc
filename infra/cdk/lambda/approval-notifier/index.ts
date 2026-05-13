@@ -8,7 +8,6 @@ interface SNSEvent {
   }>;
 }
 
-// 옛 — CodePipeline Manual Approval action 이 SNS publish 하는 형식
 interface PipelineApprovalMessage {
   approval: {
     pipelineName: string;
@@ -21,7 +20,6 @@ interface PipelineApprovalMessage {
   consoleLink: string;
 }
 
-// 새 — EventBridge → SNS 의 CodeDeploy state-change event
 interface CodeDeployEventMessage {
   source: 'aws.codedeploy';
   'detail-type': 'CodeDeploy Deployment State-change Notification';
@@ -36,8 +34,10 @@ interface CodeDeployEventMessage {
 const SLACK_BOT_TOKEN_SECRET = process.env.SLACK_BOT_TOKEN_SECRET ?? '';
 const SLACK_CHANNEL_ID = process.env.SLACK_CHANNEL_ID ?? '';
 
-let cachedBotToken: string | null = null;
+// BE 색상 = 파랑, FE 색상 = 초록. attachment color 로 좌측 bar 색상 차별.
+const BE_COLOR = '#0066cc';
 
+let cachedBotToken: string | null = null;
 async function getBotToken(): Promise<string> {
   if (cachedBotToken) return cachedBotToken;
   const { SecretsManagerClient, GetSecretValueCommand } = await import(
@@ -55,137 +55,117 @@ function nowKST(): string {
   return new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' });
 }
 
+async function getBeSemverTags(
+  repoName: string,
+): Promise<{ current: string; prev: string }> {
+  try {
+    const { ECRClient, DescribeImagesCommand } = await import(
+      '@aws-sdk/client-ecr'
+    );
+    const ecr = new ECRClient({});
+    const result = await ecr.send(
+      new DescribeImagesCommand({
+        repositoryName: repoName,
+        filter: { tagStatus: 'TAGGED' },
+      }),
+    );
+    const sorted = (result.imageDetails ?? [])
+      .filter((d) => d.imagePushedAt)
+      .sort(
+        (a, b) =>
+          (b.imagePushedAt?.getTime() ?? 0) - (a.imagePushedAt?.getTime() ?? 0),
+      );
+    const findSemver = (tags?: string[]) =>
+      tags?.find((t) => /^v[0-9]/.test(t));
+    const cur = findSemver(sorted[0]?.imageTags);
+    const prv = findSemver(sorted[1]?.imageTags);
+    return {
+      current: cur ? `be/${cur}` : 'unknown',
+      prev: prv ? `be/${prv}` : 'unknown',
+    };
+  } catch {
+    return { current: 'unknown', prev: 'unknown' };
+  }
+}
+
 export const handler = async (event: SNSEvent): Promise<void> => {
   for (const record of event.Records) {
     const parsed = JSON.parse(record.Sns.Message);
-
-    // 형식 분기
     if (parsed.source === 'aws.codedeploy' && parsed['detail-type']) {
       await handleCodeDeployEvent(parsed as CodeDeployEventMessage);
     } else if (parsed.approval) {
       await handlePipelineApproval(parsed as PipelineApprovalMessage);
-    } else {
-      console.warn('Unknown SNS message format', record.Sns.Message.slice(0, 200));
     }
   }
 };
 
 async function handleCodeDeployEvent(msg: CodeDeployEventMessage): Promise<void> {
-  const { deploymentId, state, application, deploymentGroup } = msg.detail;
-  const consoleUrl = `https://ap-northeast-2.console.aws.amazon.com/codesuite/codedeploy/deployments/${deploymentId}?region=ap-northeast-2`;
+  const { deploymentId, state, application } = msg.detail;
+  if (state !== 'READY') return; // SUCCESS / 기타 무시 — post-swap-notifier 가 완료 알림 담당.
 
-  if (state === 'READY') {
-    const value = JSON.stringify({ deploymentId, action: 'reroute' });
-    // BE 는 ECR DescribeImages 로 semver fetch. 다른 app 은 'unknown' fallback.
-    const semverTag =
-      application === 'dp-back' ? await getBeSemverTag('dp-back') : 'unknown';
-    await postToSlack({
-      channel: SLACK_CHANNEL_ID,
-      text: `🟢 ${application} ${semverTag} — 트래픽 swap 결정 필요`,
-      blocks: [
-        { type: 'header', text: { type: 'plain_text', text: '🟢 트래픽 라우팅 대기' } },
-        {
-          type: 'section',
-          fields: [
-            { type: 'mrkdwn', text: `*Application:*\n${application}` },
-            { type: 'mrkdwn', text: `*Version:*\n*${semverTag}*` },
-            { type: 'mrkdwn', text: `*DeploymentGroup:*\n${deploymentGroup}` },
-            { type: 'mrkdwn', text: `*Deployment:*\n\`${deploymentId}\`` },
-            { type: 'mrkdwn', text: `*시각:*\n${nowKST()}` },
-            {
-              type: 'mrkdwn',
-              text:
-                '*검증:*\nALB 8080 (test listener) 로 green 응답 확인 가능\n`curl http://Igalle-Alb16-...:8080/health`',
-            },
-          ],
-        },
-        {
-          type: 'actions',
-          elements: [
-            {
-              type: 'button',
-              text: { type: 'plain_text', text: '✅ Reroute (즉시 swap)' },
-              style: 'primary',
-              action_id: 'approve_reroute',
-              value,
-            },
-            {
-              type: 'button',
-              text: { type: 'plain_text', text: '❌ Stop' },
-              style: 'danger',
-              action_id: 'reject_reroute',
-              value,
-            },
-            {
-              type: 'button',
-              text: { type: 'plain_text', text: '🔗 콘솔' },
-              url: consoleUrl,
-              action_id: 'open_console',
-            },
-          ],
-        },
-      ],
-    });
-  } else if (state === 'SUCCESS') {
-    // terminationWaitTime 24h 안에 ALB swap 으로 즉시 롤백 가능.
-    const value = JSON.stringify({ deploymentId, action: 'rollback' });
-    await postToSlack({
-      channel: SLACK_CHANNEL_ID,
-      text: `✅ ${application} 배포 완료 — 24시간 안 롤백 가능`,
-      blocks: [
-        { type: 'header', text: { type: 'plain_text', text: '✅ 배포 완료' } },
-        {
-          type: 'section',
-          fields: [
-            { type: 'mrkdwn', text: `*Application:*\n${application}` },
-            { type: 'mrkdwn', text: `*Deployment:*\n\`${deploymentId}\`` },
-            { type: 'mrkdwn', text: `*시각:*\n${nowKST()}` },
-            {
-              type: 'mrkdwn',
-              text:
-                '*롤백:*\n24시간 동안 옛 task 가 살아있음.\n클릭 시 ALB listener 즉시 swap.',
-            },
-          ],
-        },
-        {
-          type: 'actions',
-          elements: [
-            {
-              type: 'button',
-              text: { type: 'plain_text', text: '🔙 롤백 (즉시 swap)' },
-              style: 'danger',
-              action_id: 'rollback_deployment',
-              value,
-            },
-            {
-              type: 'button',
-              text: { type: 'plain_text', text: '🔗 콘솔' },
-              url: consoleUrl,
-              action_id: 'open_console',
-            },
-          ],
-        },
-      ],
-    });
-  } else if (state === 'FAILURE' || state === 'STOP') {
-    await postToSlack({
-      channel: SLACK_CHANNEL_ID,
-      text: `❌ ${application} 배포 ${state}`,
-      blocks: [
-        {
-          type: 'section',
-          text: {
-            type: 'mrkdwn',
-            text: `❌ *${application}*\nDeployment \`${deploymentId}\` 가 ${state} 됨. <${consoleUrl}|콘솔에서 확인>`,
+  const consoleUrl = `https://ap-northeast-2.console.aws.amazon.com/codesuite/codedeploy/deployments/${deploymentId}?region=ap-northeast-2`;
+  const { current, prev } = await getBeSemverTags('dp-back');
+
+  const value = JSON.stringify({ deploymentId, action: 'reroute' });
+  await postToSlack({
+    channel: SLACK_CHANNEL_ID,
+    text: `🐳 BE 배포 대기: ${prev} → ${current}`,
+    attachments: [
+      {
+        color: BE_COLOR,
+        blocks: [
+          {
+            type: 'header',
+            text: { type: 'plain_text', text: '🐳 BE (ECS) 트래픽 라우팅 대기' },
           },
-        },
-      ],
-    });
-  }
-  // START 는 무시 (너무 잦음)
+          {
+            type: 'section',
+            fields: [
+              { type: 'mrkdwn', text: `*이전 버전:*\n${prev}` },
+              { type: 'mrkdwn', text: `*신규 버전:*\n*${current}*` },
+              { type: 'mrkdwn', text: `*Application:*\n${application}` },
+              { type: 'mrkdwn', text: `*Deployment:*\n\`${deploymentId}\`` },
+              { type: 'mrkdwn', text: `*시각:*\n${nowKST()}` },
+              {
+                type: 'mrkdwn',
+                text:
+                  '*검증 (선택):*\n`curl http://...:8080/health`\n(test listener)',
+              },
+            ],
+          },
+          {
+            type: 'actions',
+            elements: [
+              {
+                type: 'button',
+                text: { type: 'plain_text', text: '✅ Reroute (즉시 swap)' },
+                style: 'primary',
+                action_id: 'approve_reroute',
+                value,
+              },
+              {
+                type: 'button',
+                text: { type: 'plain_text', text: '❌ Stop' },
+                style: 'danger',
+                action_id: 'reject_reroute',
+                value,
+              },
+              {
+                type: 'button',
+                text: { type: 'plain_text', text: '🔗 콘솔' },
+                url: consoleUrl,
+                action_id: 'open_console',
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  });
 }
 
 async function handlePipelineApproval(msg: PipelineApprovalMessage): Promise<void> {
+  // Legacy Pipeline Approval (현재 안 씀)
   const { approval } = msg;
   const buttonValue = JSON.stringify({
     pipelineName: approval.pipelineName,
@@ -195,58 +175,21 @@ async function handlePipelineApproval(msg: PipelineApprovalMessage): Promise<voi
   });
   await postToSlack({
     channel: SLACK_CHANNEL_ID,
-    text: `🚀 배포 승인 요청: ${approval.pipelineName}`,
+    text: `Pipeline Approval: ${approval.pipelineName}`,
     blocks: [
-      { type: 'header', text: { type: 'plain_text', text: '🚀 배포 승인 요청' } },
-      {
-        type: 'section',
-        fields: [
-          { type: 'mrkdwn', text: `*Pipeline:*\n${approval.pipelineName}` },
-          { type: 'mrkdwn', text: `*Stage:*\n${approval.stageName}` },
-          { type: 'mrkdwn', text: `*Info:*\n${approval.customData || 'N/A'}` },
-        ],
-      },
       {
         type: 'actions',
         elements: [
           {
             type: 'button',
-            text: { type: 'plain_text', text: '✅ 배포 승인' },
-            style: 'primary',
+            text: { type: 'plain_text', text: '✅ Approve' },
             action_id: 'approve_deployment',
-            value: buttonValue,
-          },
-          {
-            type: 'button',
-            text: { type: 'plain_text', text: '❌ 거부' },
-            style: 'danger',
-            action_id: 'reject_deployment',
             value: buttonValue,
           },
         ],
       },
     ],
   });
-}
-
-async function getBeSemverTag(repoName: string): Promise<string> {
-  try {
-    const { ECRClient, DescribeImagesCommand } = await import(
-      '@aws-sdk/client-ecr'
-    );
-    const ecr = new ECRClient({});
-    const result = await ecr.send(
-      new DescribeImagesCommand({
-        repositoryName: repoName,
-        imageIds: [{ imageTag: 'latest' }],
-      }),
-    );
-    const tags = result.imageDetails?.[0]?.imageTags ?? [];
-    const semver = tags.find((t: string) => /^v[0-9]/.test(t));
-    return semver ? `be/${semver}` : 'unknown';
-  } catch {
-    return 'unknown';
-  }
 }
 
 function postToSlack(message: object): Promise<void> {
@@ -271,7 +214,7 @@ function postToSlack(message: object): Promise<void> {
           const parsed = JSON.parse(body);
           if (!parsed.ok) {
             console.error('Slack API error:', body);
-            reject(new Error(`Slack API error: ${parsed.error}`));
+            reject(new Error(`Slack: ${parsed.error}`));
           } else resolve();
         });
       });

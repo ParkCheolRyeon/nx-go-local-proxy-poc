@@ -1,14 +1,8 @@
 import * as https from 'node:https';
 
 /**
- * CodeDeploy AfterAllowTraffic lifecycle hook.
- *
- * step 6 (AllowTraffic = ALB listener swap 직후) 에 CodeDeploy 가 invoke.
- * 이 lambda 가:
- *   1) Slack 에 SUCCESS 메시지 + [🔙 롤백] 버튼 post (24h 윈도우)
- *   2) PutLifecycleEventHookExecutionStatus(Succeeded) 즉시 호출
- *      → step 7 (BeforeBlockTraffic, terminationWaitTime 24h wait) 정상 진행
- *      → blue task 가 24h 동안 살아있음 (롤백 윈도우)
+ * BE CodeDeploy AfterAllowTraffic hook — ECS blue/green swap 직후.
+ * Slack 에 "🐳 BE Swap 완료" 메시지 + [🔙 롤백] 버튼 (24h 윈도우 안).
  */
 
 interface HookEvent {
@@ -18,6 +12,7 @@ interface HookEvent {
 
 const SLACK_BOT_TOKEN_SECRET = process.env.SLACK_BOT_TOKEN_SECRET ?? '';
 const SLACK_CHANNEL_ID = process.env.SLACK_CHANNEL_ID ?? '';
+const BE_COLOR = '#0066cc';
 
 let cachedBotToken: string | null = null;
 async function getBotToken(): Promise<string> {
@@ -37,47 +32,90 @@ function nowKST(): string {
   return new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' });
 }
 
+async function getBeSemverTags(
+  repoName: string,
+): Promise<{ current: string; prev: string }> {
+  try {
+    const { ECRClient, DescribeImagesCommand } = await import(
+      '@aws-sdk/client-ecr'
+    );
+    const ecr = new ECRClient({});
+    const result = await ecr.send(
+      new DescribeImagesCommand({
+        repositoryName: repoName,
+        filter: { tagStatus: 'TAGGED' },
+      }),
+    );
+    const sorted = (result.imageDetails ?? [])
+      .filter((d) => d.imagePushedAt)
+      .sort(
+        (a, b) =>
+          (b.imagePushedAt?.getTime() ?? 0) - (a.imagePushedAt?.getTime() ?? 0),
+      );
+    const findSemver = (tags?: string[]) =>
+      tags?.find((t) => /^v[0-9]/.test(t));
+    const cur = findSemver(sorted[0]?.imageTags);
+    const prv = findSemver(sorted[1]?.imageTags);
+    return {
+      current: cur ? `be/${cur}` : 'unknown',
+      prev: prv ? `be/${prv}` : 'unknown',
+    };
+  } catch {
+    return { current: 'unknown', prev: 'unknown' };
+  }
+}
+
 export const handler = async (event: HookEvent): Promise<{ statusCode: number }> => {
   const deploymentId = event.DeploymentId;
   const hookExecId = event.LifecycleEventHookExecutionId;
   const consoleUrl = `https://ap-northeast-2.console.aws.amazon.com/codesuite/codedeploy/deployments/${deploymentId}?region=ap-northeast-2`;
 
-  // ECR 의 latest image 의 tags 에서 be/v* semver 추출
-  const semverTag = await getBeSemverTag('dp-back');
+  const { current, prev } = await getBeSemverTags('dp-back');
 
-  // 1) Slack post (실패해도 hook 은 Succeeded 처리 — block 안 함)
   try {
     const value = JSON.stringify({ deploymentId, action: 'rollback' });
     await postToSlack({
       channel: SLACK_CHANNEL_ID,
-      text: `✅ BE ${semverTag} 배포 완료 — 24h 안 롤백 가능 (\`${deploymentId}\`)`,
-      blocks: [
-        { type: 'header', text: { type: 'plain_text', text: '✅ BE Swap 완료 — 24h 롤백 윈도우' } },
+      text: `🐳 BE Swap 완료: ${prev} → ${current}`,
+      attachments: [
         {
-          type: 'section',
-          fields: [
-            { type: 'mrkdwn', text: `*Version:*\n*${semverTag}*` },
-            { type: 'mrkdwn', text: `*Deployment:*\n\`${deploymentId}\`` },
-            { type: 'mrkdwn', text: `*Swap 시각:*\n${nowKST()}` },
-            { type: 'mrkdwn', text: '*롤백 메커니즘:*\nALB listener default action 즉시 swap' },
-            { type: 'mrkdwn', text: '*윈도우:*\n24시간 (terminationWaitTime)' },
-          ],
-        },
-        {
-          type: 'actions',
-          elements: [
+          color: BE_COLOR,
+          blocks: [
             {
-              type: 'button',
-              text: { type: 'plain_text', text: '🔙 롤백 (즉시 swap)' },
-              style: 'danger',
-              action_id: 'rollback_deployment',
-              value,
+              type: 'header',
+              text: { type: 'plain_text', text: '🐳 BE (ECS) Swap 완료' },
             },
             {
-              type: 'button',
-              text: { type: 'plain_text', text: '🔗 콘솔' },
-              url: consoleUrl,
-              action_id: 'open_console',
+              type: 'section',
+              fields: [
+                { type: 'mrkdwn', text: `*이전 버전:*\n${prev}` },
+                { type: 'mrkdwn', text: `*신규 버전:*\n*${current}*` },
+                { type: 'mrkdwn', text: `*Swap 시각:*\n${nowKST()}` },
+                { type: 'mrkdwn', text: `*Deployment:*\n\`${deploymentId}\`` },
+                {
+                  type: 'mrkdwn',
+                  text:
+                    '*롤백:*\n24시간 안 ALB listener 즉시 swap\n(blue task 살아있음)',
+                },
+              ],
+            },
+            {
+              type: 'actions',
+              elements: [
+                {
+                  type: 'button',
+                  text: { type: 'plain_text', text: `🔙 ${prev} 로 롤백` },
+                  style: 'danger',
+                  action_id: 'rollback_deployment',
+                  value,
+                },
+                {
+                  type: 'button',
+                  text: { type: 'plain_text', text: '🔗 콘솔' },
+                  url: consoleUrl,
+                  action_id: 'open_console',
+                },
+              ],
             },
           ],
         },
@@ -87,7 +125,6 @@ export const handler = async (event: HookEvent): Promise<{ statusCode: number }>
     console.error('Slack post failed:', err);
   }
 
-  // 2) CodeDeploy hook 결과 즉시 Succeeded (block 안 함 — step 7 진행)
   const { CodeDeployClient, PutLifecycleEventHookExecutionStatusCommand } =
     await import('@aws-sdk/client-codedeploy');
   const cd = new CodeDeployClient({});
@@ -101,28 +138,6 @@ export const handler = async (event: HookEvent): Promise<{ statusCode: number }>
 
   return { statusCode: 200 };
 };
-
-async function getBeSemverTag(repoName: string): Promise<string> {
-  try {
-    const { ECRClient, DescribeImagesCommand } = await import(
-      '@aws-sdk/client-ecr'
-    );
-    const ecr = new ECRClient({});
-    const result = await ecr.send(
-      new DescribeImagesCommand({
-        repositoryName: repoName,
-        imageIds: [{ imageTag: 'latest' }],
-      }),
-    );
-    const tags = result.imageDetails?.[0]?.imageTags ?? [];
-    // deploy.yml 이 'be/v0.0.X' tag 를 ECR 박을 때 prefix 'be/' 제거 (Docker tag 형식 제약)
-    // → ECR 의 tags 는 ['v0.0.7', '35701cb', 'latest'] 형태
-    const semver = tags.find((t: string) => /^v[0-9]/.test(t));
-    return semver ? `be/${semver}` : 'unknown';
-  } catch {
-    return 'unknown';
-  }
-}
 
 function postToSlack(message: object): Promise<void> {
   return new Promise((resolve, reject) => {
