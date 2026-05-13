@@ -7,6 +7,7 @@ import { DbStack } from '../lib/db-stack';
 import { FeCicdStack } from '../lib/fe-cicd-stack';
 import { FeStack } from '../lib/fe-stack';
 import { NetworkStack } from '../lib/network-stack';
+import { SlackApprovalStack } from '../lib/slack-approval-stack';
 
 const app = new App();
 
@@ -22,10 +23,20 @@ const db = new DbStack(app, 'IgalleryDb', {
   vpc: network.vpc,
 });
 
+// Slack 으로 BE/FE Pipeline Approval 을 통일 — backend-monorepo 패턴.
+// Bot Token + Signing Secret 은 Secrets Manager 에 별도 저장.
+const slackApproval = new SlackApprovalStack(app, 'IgallerySlackApproval', {
+  env: seoul,
+  slackChannelId: 'C0B2GJHL95M',
+  slackBotTokenSecretName: 'igallery/slack-bot-token',
+  slackSigningSecretName: 'igallery/slack-signing-secret',
+});
+
 const be = new BeStack(app, 'IgalleryBe', {
   env: seoul,
   vpc: network.vpc,
   db: db.instance,
+  approvalTopic: slackApproval.approvalTopic,
 });
 
 new FeStack(app, 'IgalleryFe', {

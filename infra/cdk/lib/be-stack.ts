@@ -12,11 +12,14 @@ import * as codepipeline from 'aws-cdk-lib/aws-codepipeline';
 import * as cpactions from 'aws-cdk-lib/aws-codepipeline-actions';
 import * as codebuild from 'aws-cdk-lib/aws-codebuild';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import * as sns from 'aws-cdk-lib/aws-sns';
 import { Construct } from 'constructs';
 
 interface BeStackProps extends StackProps {
   vpc: ec2.IVpc;
   db: rds.DatabaseInstance;
+  /** Pipeline 의 Manual Approval stage 가 알림 보낼 SNS topic (Slack 으로 전달됨) */
+  approvalTopic?: sns.ITopic;
 }
 
 export class BeStack extends Stack {
@@ -249,10 +252,8 @@ export class BeStack extends Stack {
         greenTargetGroup: greenTg,
         listener: prodListener,
         testListener,
-        // Green task 가 healthy 된 후 "트래픽 재라우팅" 까지 사람이 콘솔에서 직접 클릭.
-        // 그 시간 안에 안 누르면 STOP_DEPLOYMENT (자동 롤백).
-        // CodeDeploy 콘솔 → Applications → dp-back → prod → 진행 deployment → "Reroute traffic now"
-        deploymentApprovalWaitTime: Duration.hours(4),
+        // 사용자 클릭 게이트가 Pipeline 의 Slack Approval stage 로 이동.
+        // CodeDeploy 자체는 deployment 시작 후 자동 reroute (deploymentApprovalWaitTime 없음).
         terminationWaitTime: Duration.minutes(5),
       },
       // Reroute 클릭 시 즉시 100% Green (AllAtOnce). LINEAR 원하면 LINEAR_10PERCENT_EVERY_1MINUTES.
@@ -351,15 +352,32 @@ export class BeStack extends Stack {
       taskDefinitionTemplateInput: buildArtifact,
     });
 
+    // Build 후 Slack 알림 + 사용자 클릭 대기 단계.
+    // notificationTopic 으로 SNS 발행 → SlackApprovalStack 의 notifier Lambda 가 Slack 채널에 메시지.
+    // 사용자가 Slack 의 [✅ 배포 승인] 클릭 → API Gateway → handler Lambda → PutApprovalResult → Deploy stage 진입.
+    const stages: codepipeline.StageProps[] = [
+      { stageName: 'Source', actions: [sourceAction] },
+      { stageName: 'Build', actions: [buildAction] },
+    ];
+    if (props.approvalTopic) {
+      stages.push({
+        stageName: 'Approval',
+        actions: [
+          new cpactions.ManualApprovalAction({
+            actionName: 'Slack_Approval',
+            notificationTopic: props.approvalTopic,
+            additionalInformation: 'BE (dp-back) — Slack 알림의 버튼으로 승인/거부.',
+          }),
+        ],
+      });
+    }
+    stages.push({ stageName: 'Deploy', actions: [deployAction] });
+
     const pipeline = new codepipeline.Pipeline(this, 'BePipeline', {
       pipelineName: 'dp-back-pipeline',
       pipelineType: codepipeline.PipelineType.V2,
       executionMode: codepipeline.ExecutionMode.SUPERSEDED,
-      stages: [
-        { stageName: 'Source', actions: [sourceAction] },
-        { stageName: 'Build', actions: [buildAction] },
-        { stageName: 'Deploy', actions: [deployAction] },
-      ],
+      stages,
     });
 
     new CfnOutput(this, 'BePipelineName', { value: pipeline.pipelineName });
