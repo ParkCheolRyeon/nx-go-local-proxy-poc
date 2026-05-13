@@ -7,6 +7,7 @@ import { useEffect } from 'react';
 
 import IconArrowRight from '@/app/assets/icons/icon-arrow-right.svg';
 import IconLogout from '@/app/assets/icons/icon-logout.svg';
+import { APP_VERSION } from '@/app/components/app-version';
 import PcSidebar from '@/app/components/Sidebar/PcSidebar';
 import UserAvatar from '@/app/components/UserAvatar';
 import UserHoldingCoins from '@/app/components/UserHoldingCoins';
@@ -71,7 +72,7 @@ function MobileTopBar() {
         />
       </motion.button>
       <div className="text-[22px]" style={{ color: '#0b2a63', fontWeight: 800, letterSpacing: -0.3 }}>
-        I Gallery V11
+        {APP_VERSION}
       </div>
       <div className="w-11" />
     </header>

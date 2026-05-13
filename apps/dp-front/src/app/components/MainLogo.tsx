@@ -1,5 +1,6 @@
 import IconPalette from '@/app/assets/icons/icon-palette.png';
 import { motion, type Transition } from 'motion/react';
+import { APP_VERSION } from './app-version';
 
 const FADE_OUT: Transition = { duration: 0.18, ease: 'easeOut' };
 const FADE_IN: Transition = { duration: 0.26, ease: 'easeOut', delay: 0.08 };
@@ -34,7 +35,7 @@ export default function MainLogo({ isExpanded, onClick }: MainLogoProps) {
         className="min-w-0 flex-1 overflow-hidden text-[22px] whitespace-nowrap"
         style={{ fontWeight: 800, letterSpacing: -0.3 }}
       >
-        I Gallery V11
+        {APP_VERSION}
       </motion.div>
     </div>
   );
