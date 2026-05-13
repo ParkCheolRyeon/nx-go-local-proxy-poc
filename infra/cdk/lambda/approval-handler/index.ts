@@ -299,7 +299,7 @@ function replaceMessage(responseUrl: string, message: object): Promise<void> {
       },
     };
     const req = https.request(options, (res) => {
-      res.on('data', () => {});
+      res.resume(); // drain response stream
       res.on('end', () => resolve());
     });
     req.on('error', reject);
