@@ -166,6 +166,6 @@ jobs:
             echo "- source bucket: \`${{ env.FE_SOURCE_BUCKET }}\`"
             echo ""
             echo "→ \`igallery-fe-server-pipeline\` / \`igallery-fe-image-pipeline\` 이 자동 트리거."
-            echo "→ Build (publish-version) → Deploy (CodeDeploy LINEAR 10%/1min, ~10분)."
-            echo "→ 진행 상황은 Pipeline 콘솔의 Deploy stage build log 에서 실시간."
+            echo "→ Build (publish-version) 끝나면 ⏸ Manual Approval 대기."
+            echo "→ Pipeline 콘솔에서 'Approve' 클릭 후 CodeDeploy LINEAR 10%/1min 시프트 시작."
           } >> $GITHUB_STEP_SUMMARY

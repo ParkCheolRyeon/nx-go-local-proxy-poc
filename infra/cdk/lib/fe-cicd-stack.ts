@@ -17,10 +17,12 @@ import { Construct } from 'constructs';
  *   GitHub Actions deploy.yml → S3 source bucket 에 server.zip / image.zip upload
  *   → 이 Pipeline 의 Source 가 변경 감지
  *   → Build CodeBuild: update-function-code + publish-version + appspec.json 생성
+ *   → ⏸ Manual Approval (사람이 콘솔에서 "Approve" 클릭해야 다음 단계)
  *   → Deploy CodeBuild: aws deploy create-deployment (LINEAR 10%/1min) + wait
  *
- * Pipeline 의 Approval stage 는 없음 (LINEAR 자체가 시간 게이트 — 10분 동안 점진 시프트).
- * 사용자가 콘솔에서 보고 싶을 땐 CodeDeploy 콘솔 (또는 Pipeline 콘솔의 Deploy stage log).
+ * Manual Approval gate 는 BE 의 "Reroute traffic now" 와 동일한 의도 —
+ * 빌드된 새 v 를 검토 후 사람이 명시적으로 시프트 시작.
+ * Approval 안 누르면 Pipeline 은 7일 timeout 까지 대기 (CodePipeline 기본).
  */
 
 interface FeCicdStackProps extends StackProps {
@@ -42,10 +44,12 @@ export class FeCicdStack extends Stack {
 
     // ── Source bucket (server.zip / image.zip 보관)
     //   versioning 활성화 = CodePipeline S3 source 요구.
+    //   eventBridgeEnabled = PutObject 시 native EventBridge event 발행 (CloudTrail 불필요).
     //   lifecycle 30일 = 옛 zip 자동 삭제.
     const sourceBucket = new s3.Bucket(this, 'SourceBucket', {
       bucketName: 'igallery-fe-source',
       versioned: true,
+      eventBridgeEnabled: true,
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       encryption: s3.BucketEncryption.S3_MANAGED,
       removalPolicy: RemovalPolicy.RETAIN,
@@ -220,6 +224,15 @@ export class FeCicdStack extends Stack {
       input: buildArtifact,
     });
 
+    // ── Approval: Build (새 v publish) 끝나면 멈춰서 사람이 콘솔에서 Approve 클릭 대기.
+    //    Approve 안 누르면 alias 시프트 안 시작 (옛 v 로 유저 트래픽 그대로).
+    const approvalAction = new cpactions.ManualApprovalAction({
+      actionName: 'Manual_Approval',
+      additionalInformation:
+        `${idPrefix} Lambda 의 새 version 이 publish 되었습니다. ` +
+        `Approve 클릭 시 CodeDeploy 가 alias 'prod' 를 새 version 으로 LINEAR 10%/1min 시프트 시작합니다.`,
+    });
+
     const pipeline = new codepipeline.Pipeline(scope, `${idPrefix}Pipeline`, {
       pipelineName: opts.pipelineName,
       pipelineType: codepipeline.PipelineType.V2,
@@ -227,6 +240,7 @@ export class FeCicdStack extends Stack {
       stages: [
         { stageName: 'Source', actions: [sourceAction] },
         { stageName: 'Build', actions: [buildAction] },
+        { stageName: 'Approval', actions: [approvalAction] },
         { stageName: 'Deploy', actions: [deployAction] },
       ],
     });
