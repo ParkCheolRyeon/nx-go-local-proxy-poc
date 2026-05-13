@@ -125,6 +125,12 @@ export class SlackApprovalStack extends Stack {
       bundling: { minify: true, sourceMap: false, externalModules: [] },
     });
     botTokenSecret.grantRead(notifierFn);
+    notifierFn.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: ['ecr:DescribeImages'],
+        resources: ['*'],
+      }),
+    );
     this.approvalTopic.addSubscription(
       new sns_subscriptions.LambdaSubscription(notifierFn),
     );

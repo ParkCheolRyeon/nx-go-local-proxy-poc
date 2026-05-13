@@ -336,10 +336,11 @@ async function handleFeReroute(
 
   const emoji = isApprove ? '✅' : '❌';
   const verb = isApprove ? 'Reroute 시작' : 'Reject';
-  const semverLine =
-    data.semverTag && data.prevSemverTag
-      ? `${data.prevSemverTag} → *${data.semverTag}*`
-      : `v${data.currentVersion} → v${data.targetVersion}`;
+  const isPrevSemver =
+    data.prevSemverTag?.startsWith('fe/') || data.prevSemverTag?.startsWith('be/');
+  const semverLine = isPrevSemver
+    ? `${data.prevSemverTag} → *${data.semverTag}*`
+    : `→ *${data.semverTag ?? 'unknown'}*`;
   await replaceMessage(payload.response_url, {
     text: `${emoji} FE ${verb} by ${payload.user.name}`,
     blocks: [
@@ -376,10 +377,11 @@ async function handleFeRollback(
     }),
   );
 
-  const rbLine =
-    data.semverTag && data.prevSemverTag
-      ? `${data.semverTag} → *${data.prevSemverTag}*`
-      : `v${data.currentVersion} → *v${data.previousVersion}*`;
+  const isPrevSemver =
+    data.prevSemverTag?.startsWith('fe/') || data.prevSemverTag?.startsWith('be/');
+  const rbLine = isPrevSemver
+    ? `${data.semverTag} → *${data.prevSemverTag}*`
+    : `${data.semverTag ?? 'unknown'} → *(이전 배포)*`;
   await replaceMessage(payload.response_url, {
     text: `🔙 FE Rollback by ${payload.user.name} — ${rbLine}`,
     blocks: [

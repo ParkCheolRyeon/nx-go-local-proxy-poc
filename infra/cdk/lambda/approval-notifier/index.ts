@@ -76,15 +76,19 @@ async function handleCodeDeployEvent(msg: CodeDeployEventMessage): Promise<void>
 
   if (state === 'READY') {
     const value = JSON.stringify({ deploymentId, action: 'reroute' });
+    // BE 는 ECR DescribeImages 로 semver fetch. 다른 app 은 'unknown' fallback.
+    const semverTag =
+      application === 'dp-back' ? await getBeSemverTag('dp-back') : 'unknown';
     await postToSlack({
       channel: SLACK_CHANNEL_ID,
-      text: `🟢 Green task healthy — 트래픽 swap 결정 필요 (${application})`,
+      text: `🟢 ${application} ${semverTag} — 트래픽 swap 결정 필요`,
       blocks: [
         { type: 'header', text: { type: 'plain_text', text: '🟢 트래픽 라우팅 대기' } },
         {
           type: 'section',
           fields: [
             { type: 'mrkdwn', text: `*Application:*\n${application}` },
+            { type: 'mrkdwn', text: `*Version:*\n*${semverTag}*` },
             { type: 'mrkdwn', text: `*DeploymentGroup:*\n${deploymentGroup}` },
             { type: 'mrkdwn', text: `*Deployment:*\n\`${deploymentId}\`` },
             { type: 'mrkdwn', text: `*시각:*\n${nowKST()}` },
@@ -223,6 +227,26 @@ async function handlePipelineApproval(msg: PipelineApprovalMessage): Promise<voi
       },
     ],
   });
+}
+
+async function getBeSemverTag(repoName: string): Promise<string> {
+  try {
+    const { ECRClient, DescribeImagesCommand } = await import(
+      '@aws-sdk/client-ecr'
+    );
+    const ecr = new ECRClient({});
+    const result = await ecr.send(
+      new DescribeImagesCommand({
+        repositoryName: repoName,
+        imageIds: [{ imageTag: 'latest' }],
+      }),
+    );
+    const tags = result.imageDetails?.[0]?.imageTags ?? [];
+    const semver = tags.find((t: string) => /^v[0-9]/.test(t));
+    return semver ? `be/${semver}` : 'unknown';
+  } catch {
+    return 'unknown';
+  }
 }
 
 function postToSlack(message: object): Promise<void> {

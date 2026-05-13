@@ -101,8 +101,9 @@ export const handler = async (event: HookEvent): Promise<{ statusCode: number }>
             {
               type: 'mrkdwn',
               text:
-                `*Version:*\n${prevSemverTag} → *${semverTag}*\n` +
-                `(Lambda v${previousVersion} → v${targetVersion})`,
+                prevSemverTag.startsWith('fe/') || prevSemverTag.startsWith('be/')
+                  ? `*Version:*\n${prevSemverTag} → *${semverTag}*`
+                  : `*Version:*\n→ *${semverTag}*\n(이전 배포는 semver tag 없음)`,
             },
             { type: 'mrkdwn', text: `*Swap 시각:*\n${nowKST()}` },
             {

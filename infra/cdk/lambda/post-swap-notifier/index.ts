@@ -115,8 +115,10 @@ async function getBeSemverTag(repoName: string): Promise<string> {
       }),
     );
     const tags = result.imageDetails?.[0]?.imageTags ?? [];
-    const semver = tags.find((t: string) => t.startsWith('be/'));
-    return semver ?? 'unknown';
+    // deploy.yml 이 'be/v0.0.X' tag 를 ECR 박을 때 prefix 'be/' 제거 (Docker tag 형식 제약)
+    // → ECR 의 tags 는 ['v0.0.7', '35701cb', 'latest'] 형태
+    const semver = tags.find((t: string) => /^v[0-9]/.test(t));
+    return semver ? `be/${semver}` : 'unknown';
   } catch {
     return 'unknown';
   }

@@ -151,11 +151,11 @@ jobs:
       - name: Upload to S3 source bucket (Pipeline 이 latest.zip 변경 감지)
         run: |
           set -euxo pipefail
-          # latest.zip = Pipeline 의 Source 가 보는 key (versioning 으로 옛 zip 자동 보관)
+          # tag metadata = full ref name (예: fe/v0.0.4) — hook lambda 가 그대로 Slack 메시지에 표시.
           aws s3 cp server.zip "s3://${{ env.FE_SOURCE_BUCKET }}/fe/server/latest.zip" \
-            --metadata "tag=${{ steps.meta.outputs.semver }},sha=${{ steps.meta.outputs.short_sha }}"
+            --metadata "tag=${GITHUB_REF_NAME},sha=${{ steps.meta.outputs.short_sha }}"
           aws s3 cp image.zip "s3://${{ env.FE_SOURCE_BUCKET }}/fe/image/latest.zip" \
-            --metadata "tag=${{ steps.meta.outputs.semver }},sha=${{ steps.meta.outputs.short_sha }}"
+            --metadata "tag=${GITHUB_REF_NAME},sha=${{ steps.meta.outputs.short_sha }}"
       - name: Summary
         run: |
           {
