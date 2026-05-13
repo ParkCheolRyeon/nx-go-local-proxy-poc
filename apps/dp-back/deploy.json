@@ -1,5 +1,6 @@
 {
   "deployType": "ecs",
+  "tagPrefix": "be",
   "ecr": {
     "prod": "dp-back"
   },

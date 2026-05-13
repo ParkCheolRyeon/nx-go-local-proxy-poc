@@ -1,0 +1,22 @@
+{
+  "deployType": "lambda",
+  "tagPrefix": "fe",
+  "sourceBucket": "igallery-fe-source",
+  "sourceKeys": {
+    "server": "fe/server/latest.zip",
+    "image": "fe/image/latest.zip"
+  },
+  "distributionBucketPrefix": "igalleryfe-",
+  "lambdaFunctions": {
+    "server": "IgalleryFe-ServerFn4F3A536E-0YLK8VIY9sJH",
+    "image": "IgalleryFe-ImageFnCD541B83-tB0xvT6AtpR9"
+  },
+  "codedeploy": {
+    "server": { "application": "igallery-server", "deploymentGroup": "prod" },
+    "image": { "application": "igallery-image", "deploymentGroup": "prod" }
+  },
+  "pipelines": {
+    "server": "igallery-fe-server-pipeline",
+    "image": "igallery-fe-image-pipeline"
+  }
+}

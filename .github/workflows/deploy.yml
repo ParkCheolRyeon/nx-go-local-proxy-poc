@@ -1,17 +1,27 @@
 name: deploy
-# git tag v*.*.* push 시 의도적 배포 트리거.
-# - BE: docker build → ECR push (세 태그: git tag / sha / latest)
-#       → CodePipeline (dp-back-pipeline) 의 Source 가 ECR latest 갱신을 감지 → Build/Approval/Deploy
-# - FE: open-next build → S3 sync (distribution bucket) + Lambda publish-version
-#       → 옛 promote.yml 흐름 그대로 (Phase 2 에서 FE 도 Pipeline 으로 이전 예정)
+# git tag push 시 의도적 배포 트리거. 영역별 분리:
+#   be/v*.*.*  → BE 만 빌드 (Docker → ECR)         → dp-back-pipeline 자동 트리거
+#   fe/v*.*.*  → FE 만 빌드 (open-next → S3 source) → igallery-fe-server-pipeline / -image-pipeline 자동 트리거
+#
+# 둘 다 변경된 release 는 두 tag 를 같은 commit 에 push:
+#   git tag be/v0.0.3 && git tag fe/v0.0.5 && git push --tags
 #
 # main push 자체는 ci.yml (검증) 만 동작. 배포 안 됨.
 
 on:
   push:
     tags:
-      - 'v*.*.*'
+      - 'be/v*.*.*'
+      - 'fe/v*.*.*'
   workflow_dispatch:
+    inputs:
+      target:
+        type: choice
+        description: 수동 트리거 시 대상
+        options:
+          - be
+          - fe
+        default: fe
 
 concurrency:
   group: deploy-${{ github.ref }}
@@ -25,11 +35,13 @@ env:
   AWS_REGION: ap-northeast-2
   AWS_ACCOUNT_ID: '588344796279'
   ECR_REPO: dp-back
+  FE_SOURCE_BUCKET: igallery-fe-source
   AWS_ROLE_ARN: arn:aws:iam::588344796279:role/gh-actions-deploy
 
 jobs:
   be-build:
-    name: BE build & ECR push (CodePipeline 이 그 다음 처리)
+    name: BE build & ECR push
+    if: startsWith(github.ref, 'refs/tags/be/v') || (github.event_name == 'workflow_dispatch' && inputs.target == 'be')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -45,10 +57,11 @@ jobs:
         id: meta
         run: |
           set -euxo pipefail
-          TAG="${GITHUB_REF_NAME}"
+          # be/v0.0.3 → semver=v0.0.3
+          SEMVER="${GITHUB_REF_NAME#be/}"
           SHORT_SHA="${GITHUB_SHA::7}"
-          echo "tag=$TAG"             >> "$GITHUB_OUTPUT"
-          echo "short_sha=$SHORT_SHA" >> "$GITHUB_OUTPUT"
+          echo "semver=$SEMVER"          >> "$GITHUB_OUTPUT"
+          echo "short_sha=$SHORT_SHA"    >> "$GITHUB_OUTPUT"
       - name: Build & push arm64 image (세 태그)
         run: |
           set -euxo pipefail
@@ -56,7 +69,7 @@ jobs:
           docker buildx build \
             --platform linux/arm64 \
             -f apps/dp-back/Dockerfile apps/dp-back \
-            -t "$REGISTRY/$ECR_REPO:${{ steps.meta.outputs.tag }}" \
+            -t "$REGISTRY/$ECR_REPO:${{ steps.meta.outputs.semver }}" \
             -t "$REGISTRY/$ECR_REPO:${{ steps.meta.outputs.short_sha }}" \
             -t "$REGISTRY/$ECR_REPO:latest" \
             --push
@@ -65,16 +78,17 @@ jobs:
           {
             echo "## BE image pushed"
             echo ""
-            echo "- tag: \`${{ steps.meta.outputs.tag }}\`"
+            echo "- semver: \`${{ steps.meta.outputs.semver }}\`"
             echo "- sha: \`${{ steps.meta.outputs.short_sha }}\`"
             echo "- ECR: \`${{ env.ECR_REPO }}\`"
             echo ""
-            echo "→ CodePipeline \`dp-back-pipeline\` 이 'latest' 변경을 감지하고 Build/Approval 까지 자동 진행합니다."
-            echo "→ Approval 단계는 AWS Console 의 CodePipeline 페이지에서 사람이 클릭."
+            echo "→ \`dp-back-pipeline\` 이 'latest' 변경을 감지하고 Build/Deploy 자동 진행."
+            echo "→ CodeDeploy 콘솔 → dp-back/prod → 'Reroute traffic now' 클릭으로 swap."
           } >> $GITHUB_STEP_SUMMARY
 
   fe-build:
-    name: FE build & Lambda publish-version (Phase 2 까지 옛 흐름)
+    name: FE build & S3 source upload
+    if: startsWith(github.ref, 'refs/tags/fe/v') || (github.event_name == 'workflow_dispatch' && inputs.target == 'fe')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -98,65 +112,60 @@ jobs:
         with:
           role-to-assume: ${{ env.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
-      - name: Resolve FE stack outputs
+      - name: Resolve FE assets bucket
         id: fe
         run: |
           set -euxo pipefail
-          OUT=$(aws cloudformation describe-stacks --stack-name IgalleryFe --query 'Stacks[0].Outputs')
-          BUCKET=$(echo "$OUT" | jq -r '.[] | select(.OutputKey=="AssetsBucketName").OutputValue')
-          SERVER_FN=$(echo "$OUT" | jq -r '.[] | select(.OutputKey=="ServerFunctionName").OutputValue')
-          IMAGE_FN=$(echo "$OUT" | jq -r '.[] | select(.OutputKey=="ImageFunctionName").OutputValue')
-          echo "bucket=$BUCKET"       >> "$GITHUB_OUTPUT"
-          echo "server_fn=$SERVER_FN" >> "$GITHUB_OUTPUT"
-          echo "image_fn=$IMAGE_FN"   >> "$GITHUB_OUTPUT"
+          BUCKET=$(aws cloudformation describe-stacks --stack-name IgalleryFe \
+            --query 'Stacks[0].Outputs[?OutputKey==`AssetsBucketName`].OutputValue' --output text)
+          echo "assets_bucket=$BUCKET" >> "$GITHUB_OUTPUT"
+      - name: Resolve tag / sha
+        id: meta
+        run: |
+          set -euxo pipefail
+          # fe/v0.0.5 → semver=v0.0.5
+          SEMVER="${GITHUB_REF_NAME#fe/}"
+          SHORT_SHA="${GITHUB_SHA::7}"
+          echo "semver=$SEMVER"       >> "$GITHUB_OUTPUT"
+          echo "short_sha=$SHORT_SHA" >> "$GITHUB_OUTPUT"
       - name: S3 sync (distribution bucket — 정적 자산은 swap 개념 없음)
         run: |
           set -euxo pipefail
           aws s3 sync apps/dp-front/.open-next/assets \
-            "s3://${{ steps.fe.outputs.bucket }}/_assets" \
+            "s3://${{ steps.fe.outputs.assets_bucket }}/_assets" \
             --cache-control "public,max-age=31536000,immutable"
           aws s3 sync apps/dp-front/.open-next/cache \
-            "s3://${{ steps.fe.outputs.bucket }}/_cache" \
+            "s3://${{ steps.fe.outputs.assets_bucket }}/_cache" \
             --cache-control "public,max-age=0,must-revalidate"
-      - name: Package & publish server Lambda (alias 안 건드림)
-        id: server
+      - name: Package server zip
         run: |
           set -euxo pipefail
           cd apps/dp-front/.open-next/server-functions/default
-          zip -r ../../../../../server.zip .
-          cd -
-          aws lambda update-function-code \
-            --function-name "${{ steps.fe.outputs.server_fn }}" \
-            --zip-file fileb://server.zip > /dev/null
-          aws lambda wait function-updated-v2 \
-            --function-name "${{ steps.fe.outputs.server_fn }}"
-          NEW=$(aws lambda publish-version \
-            --function-name "${{ steps.fe.outputs.server_fn }}" \
-            --description "tag=${GITHUB_REF_NAME} sha=${GITHUB_SHA::7}" \
-            --query Version --output text)
-          echo "version=$NEW" >> "$GITHUB_OUTPUT"
-      - name: Package & publish image Lambda (alias 안 건드림)
-        id: image
+          zip -qr "$GITHUB_WORKSPACE/server.zip" .
+      - name: Package image zip
         run: |
           set -euxo pipefail
           cd apps/dp-front/.open-next/image-optimization-function
-          zip -r ../../../../image.zip .
-          cd -
-          aws lambda update-function-code \
-            --function-name "${{ steps.fe.outputs.image_fn }}" \
-            --zip-file fileb://image.zip > /dev/null
-          aws lambda wait function-updated-v2 \
-            --function-name "${{ steps.fe.outputs.image_fn }}"
-          NEW=$(aws lambda publish-version \
-            --function-name "${{ steps.fe.outputs.image_fn }}" \
-            --description "tag=${GITHUB_REF_NAME} sha=${GITHUB_SHA::7}" \
-            --query Version --output text)
-          echo "version=$NEW" >> "$GITHUB_OUTPUT"
+          zip -qr "$GITHUB_WORKSPACE/image.zip" .
+      - name: Upload to S3 source bucket (Pipeline 이 latest.zip 변경 감지)
+        run: |
+          set -euxo pipefail
+          # latest.zip = Pipeline 의 Source 가 보는 key (versioning 으로 옛 zip 자동 보관)
+          aws s3 cp server.zip "s3://${{ env.FE_SOURCE_BUCKET }}/fe/server/latest.zip" \
+            --metadata "tag=${{ steps.meta.outputs.semver }},sha=${{ steps.meta.outputs.short_sha }}"
+          aws s3 cp image.zip "s3://${{ env.FE_SOURCE_BUCKET }}/fe/image/latest.zip" \
+            --metadata "tag=${{ steps.meta.outputs.semver }},sha=${{ steps.meta.outputs.short_sha }}"
       - name: Summary
         run: |
           {
-            echo "## FE published (Phase 2 까지 promote.yml 의 fe 트리거 사용)"
+            echo "## FE source uploaded"
             echo ""
-            echo "- server Lambda: v${{ steps.server.outputs.version }}"
-            echo "- image Lambda:  v${{ steps.image.outputs.version }}"
+            echo "- semver: \`${{ steps.meta.outputs.semver }}\`"
+            echo "- sha: \`${{ steps.meta.outputs.short_sha }}\`"
+            echo "- assets bucket sync: \`${{ steps.fe.outputs.assets_bucket }}\`"
+            echo "- source bucket: \`${{ env.FE_SOURCE_BUCKET }}\`"
+            echo ""
+            echo "→ \`igallery-fe-server-pipeline\` / \`igallery-fe-image-pipeline\` 이 자동 트리거."
+            echo "→ Build (publish-version) → Deploy (CodeDeploy LINEAR 10%/1min, ~10분)."
+            echo "→ 진행 상황은 Pipeline 콘솔의 Deploy stage build log 에서 실시간."
           } >> $GITHUB_STEP_SUMMARY

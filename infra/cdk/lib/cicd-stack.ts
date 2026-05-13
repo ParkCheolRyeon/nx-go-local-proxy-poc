@@ -49,24 +49,18 @@ export class CicdStack extends Stack {
     });
 
     // ── 권한
-    //   Phase 1 후 변경:
-    //   - 제거: AmazonECS_FullAccess  (BE 가 CodePipeline 으로 이전, GitHub Actions 가 ECS 직접 안 만짐)
-    //   - 제거: iam:PassRole          (task def register 안 함)
-    //   - 유지: ECR (BE 이미지 push), CodeDeploy (FE promote 가 호출 — Phase 2 끝나면 제거)
-    //   - 유지: Lambda (FE deploy.yml 이 publish-version / promote 가 UpdateAlias)
-    //   - 유지: S3 (FE 의 assets/cache sync)
-    //   - 유지: CloudFront (Phase 2 의 invalidate 가능성, 안 쓰면 추후 제거)
-    [
-      'AmazonEC2ContainerRegistryPowerUser', // ECR push/pull (BE)
-      'AWSCodeDeployFullAccess',             // FE promote.yml (Phase 2 후 제거 예정)
-      'CloudFrontFullAccess',                // CreateInvalidation (필요 시)
-    ].forEach((name) =>
-      this.deployRole.addManagedPolicy(
-        iam.ManagedPolicy.fromAwsManagedPolicyName(name),
-      ),
+    //   Phase 2 cutover 후:
+    //   GitHub Actions 의 책임 = build + 아티팩트 push 만.
+    //   배포 (Lambda update / publish / alias / CodeDeploy) 는 CodePipeline 의 CodeBuild 가 처리.
+    //   따라서 OIDC role 권한은 매우 좁아짐:
+    //     - ECR push (BE 이미지)
+    //     - S3 put (FE assets/cache → distribution bucket, FE zip → source bucket)
+    //     - CloudFormation describe (FE assets bucket 이름 lookup)
+    this.deployRole.addManagedPolicy(
+      iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonEC2ContainerRegistryPowerUser'),
     );
 
-    // CloudFormation describe (deploy.yml 의 fe-build 가 IgalleryFe outputs 읽음)
+    // CloudFormation describe (deploy.yml 의 fe-build 가 AssetsBucketName output 읽음)
     this.deployRole.addToPolicy(
       new iam.PolicyStatement({
         actions: ['cloudformation:DescribeStacks'],
@@ -74,24 +68,7 @@ export class CicdStack extends Stack {
       }),
     );
 
-    // Lambda: update-function-code / publish-version / get-function / list-versions
-    this.deployRole.addToPolicy(
-      new iam.PolicyStatement({
-        actions: [
-          'lambda:UpdateFunctionCode',
-          'lambda:PublishVersion',
-          'lambda:GetFunction',
-          'lambda:GetFunctionConfiguration',
-          'lambda:UpdateAlias',
-          'lambda:GetAlias',
-          'lambda:ListVersionsByFunction',
-          'lambda:ListAliases',
-        ],
-        resources: [`arn:aws:lambda:${this.region}:${this.account}:function:*`],
-      }),
-    );
-
-    // S3: assets bucket sync (이름 정규식으로 prefix 매칭)
+    // S3: FE distribution bucket (igalleryfe-*) + FE source bucket (igallery-fe-source)
     this.deployRole.addToPolicy(
       new iam.PolicyStatement({
         actions: [
@@ -104,6 +81,8 @@ export class CicdStack extends Stack {
         resources: [
           'arn:aws:s3:::igalleryfe-*',
           'arn:aws:s3:::igalleryfe-*/*',
+          'arn:aws:s3:::igallery-fe-source',
+          'arn:aws:s3:::igallery-fe-source/*',
         ],
       }),
     );
