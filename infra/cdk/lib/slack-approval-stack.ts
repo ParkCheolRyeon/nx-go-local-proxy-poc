@@ -223,6 +223,8 @@ export class SlackApprovalStack extends Stack {
           'codedeploy:GetDeploymentTarget',
           'codedeploy:PutLifecycleEventHookExecutionStatus',
           'lambda:GetFunctionConfiguration',
+          'lambda:GetAlias',
+          'lambda:ListVersionsByFunction',
         ],
         resources: ['*'],
       }),
