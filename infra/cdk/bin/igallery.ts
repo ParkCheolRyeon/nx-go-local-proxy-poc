@@ -6,6 +6,7 @@ import { CicdStack } from '../lib/cicd-stack';
 import { DbStack } from '../lib/db-stack';
 import { FeCicdStack } from '../lib/fe-cicd-stack';
 import { FeStack } from '../lib/fe-stack';
+import { MigrateRunnerStack } from '../lib/migrate-runner-stack';
 import { NetworkStack } from '../lib/network-stack';
 import { SlackApprovalStack } from '../lib/slack-approval-stack';
 
@@ -24,6 +25,14 @@ const db = new DbStack(app, 'IgalleryDb', {
 });
 
 const be = new BeStack(app, 'IgalleryBe', {
+  env: seoul,
+  vpc: network.vpc,
+  db: db.instance,
+});
+
+// igallery-db repo 의 self-hosted GitHub Actions runner.
+// dp-back 컨테이너에서 마이그레이션 책임을 떼고 별도 워크플로우가 RDS 에 적용.
+new MigrateRunnerStack(app, 'IgalleryMigrateRunner', {
   env: seoul,
   vpc: network.vpc,
   db: db.instance,
