@@ -9,7 +9,7 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/iscreamarts/igallery/dp-back/internal/db"
+	"github.com/iscreamarts/igallery/packages/igallery-db/db"
 	"github.com/jackc/pgx/v5/pgconn"
 	"golang.org/x/crypto/bcrypt"
 )

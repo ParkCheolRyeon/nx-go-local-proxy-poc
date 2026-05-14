@@ -3,6 +3,7 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
   "sourceRoot": "apps/dp-back",
+  "implicitDependencies": ["igallery-db"],
   "targets": {
     "dev": {
       "executor": "nx:run-commands",
@@ -19,7 +20,9 @@
         "default",
         "{projectRoot}/**/*.go",
         "{projectRoot}/go.mod",
-        "{projectRoot}/go.sum"
+        "{projectRoot}/go.sum",
+        "{workspaceRoot}/go.work",
+        "{workspaceRoot}/go.work.sum"
       ],
       "outputs": ["{workspaceRoot}/dist/apps/dp-back"],
       "options": {
@@ -34,7 +37,9 @@
         "default",
         "{projectRoot}/**/*.go",
         "{projectRoot}/go.mod",
-        "{projectRoot}/go.sum"
+        "{projectRoot}/go.sum",
+        "{workspaceRoot}/go.work",
+        "{workspaceRoot}/go.work.sum"
       ],
       "options": {
         "command": "go vet ./...",
@@ -48,7 +53,9 @@
         "default",
         "{projectRoot}/**/*.go",
         "{projectRoot}/go.mod",
-        "{projectRoot}/go.sum"
+        "{projectRoot}/go.sum",
+        "{workspaceRoot}/go.work",
+        "{workspaceRoot}/go.work.sum"
       ],
       "options": {
         "command": "go vet ./...",
@@ -62,7 +69,9 @@
         "default",
         "{projectRoot}/**/*.go",
         "{projectRoot}/go.mod",
-        "{projectRoot}/go.sum"
+        "{projectRoot}/go.sum",
+        "{workspaceRoot}/go.work",
+        "{workspaceRoot}/go.work.sum"
       ],
       "options": {
         "command": "go test ./...",
@@ -73,20 +82,6 @@
       "executor": "nx:run-commands",
       "options": {
         "command": "curl -sf http://localhost:8080/openapi.yaml -o ../../packages/api-schema/openapi.yaml",
-        "cwd": "apps/dp-back"
-      }
-    },
-    "sqlc:gen": {
-      "executor": "nx:run-commands",
-      "cache": true,
-      "inputs": [
-        "{projectRoot}/sqlc.yaml",
-        "{projectRoot}/internal/db/queries/**/*.sql",
-        "{projectRoot}/internal/db/migrations/**/*.sql"
-      ],
-      "outputs": ["{projectRoot}/internal/db/sqlc"],
-      "options": {
-        "command": "sqlc generate",
         "cwd": "apps/dp-back"
       }
     }

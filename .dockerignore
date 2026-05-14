@@ -1,0 +1,43 @@
+# docker build context = monorepo root. context 크기 줄이기 위해 빌드에 불필요한 것 제외.
+
+# 의존성/빌드 산출물
+**/node_modules/
+**/dist/
+**/.nx/
+**/.next/
+**/.turbo/
+**/tmp/
+**/build-errors.log
+
+# BE 와 무관한 영역
+apps/dp-front/
+infra/
+tools/
+tools/**
+packages/api-schema/
+
+# cert / key (혹시라도)
+**/*.pem
+**/*.key
+**/certs/
+
+# Git / IDE
+.git/
+.github/
+.vscode/
+.idea/
+.cursor/
+.claude/
+
+# 환경 파일 (모든 .env)
+**/.env
+**/.env.*
+!**/.env.example
+
+# OS
+.DS_Store
+*.log
+
+# 문서
+*.md
+docs/

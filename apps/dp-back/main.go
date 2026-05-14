@@ -8,8 +8,8 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	redisx "github.com/iscreamarts/igallery/dp-back/internal/redis"
-	"github.com/iscreamarts/igallery/dp-back/internal/server"
+	redisx "github.com/iscreamarts/igallery/apps/dp-back/internal/redis"
+	"github.com/iscreamarts/igallery/apps/dp-back/internal/server"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 )
