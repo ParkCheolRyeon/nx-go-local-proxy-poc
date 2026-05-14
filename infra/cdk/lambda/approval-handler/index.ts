@@ -27,6 +27,7 @@ const SLACK_SIGNING_SECRET_NAME = process.env.SLACK_SIGNING_SECRET_NAME ?? '';
 const PROD_LISTENER_ARN = process.env.PROD_LISTENER_ARN ?? '';
 const BLUE_TG_ARN = process.env.BLUE_TG_ARN ?? '';
 const GREEN_TG_ARN = process.env.GREEN_TG_ARN ?? '';
+const BATCH_TABLE = process.env.BATCH_TABLE ?? '';
 
 let cachedSigningSecret: string | null = null;
 async function getSigningSecret(): Promise<string> {
@@ -112,6 +113,9 @@ export const handler = async (
       case 'approve_fe_reroute':
       case 'reject_fe_reroute':
         return await handleFeReroute(payload, action);
+      case 'approve_fe_reroute_batch':
+      case 'reject_fe_reroute_batch':
+        return await handleFeRerouteBatch(payload, action);
       case 'rollback_fe_lambda':
         return await handleFeRollback(payload, action);
       case 'open_console':
@@ -160,6 +164,7 @@ async function handlePipelineApproval(
           text: `${emoji} *${data.pipelineName}*\n${status} by *${payload.user.name}*`,
         },
       },
+      { type: 'divider' },
     ],
   });
   return { statusCode: 200, body: '' };
@@ -193,6 +198,7 @@ async function handleCodeDeployReroute(
             text: `✅ *Reroute 시작* — \`${data.deploymentId}\`\nby *${payload.user.name}*. ALB listener 가 즉시 swap 됩니다.`,
           },
         },
+        { type: 'divider' },
       ],
     });
   } else {
@@ -212,6 +218,7 @@ async function handleCodeDeployReroute(
             text: `❌ *Deployment Stop* — \`${data.deploymentId}\`\nby *${payload.user.name}*. 자동 rollback 진행.`,
           },
         },
+        { type: 'divider' },
       ],
     });
   }
@@ -285,6 +292,7 @@ async function handleRollback(
             `(원래 deployment: \`${data.deploymentId}\`)`,
         },
       },
+      { type: 'divider' },
     ],
   });
   return { statusCode: 200, body: '' };
@@ -354,6 +362,112 @@ async function handleFeReroute(
             `by *${payload.user.name}* (${data.deploymentId})`,
         },
       },
+      { type: 'divider' },
+    ],
+  });
+  return { statusCode: 200, body: '' };
+}
+
+interface FeRerouteBatchValue {
+  tag: string;
+  action: 'fe_reroute_batch';
+}
+
+interface BatchEntry {
+  type: string;
+  application: string;
+  functionName: string;
+  deploymentId: string;
+  hookExecId: string;
+  targetVersion: string;
+  prevVersion: string;
+}
+
+async function handleFeRerouteBatch(
+  payload: SlackInteractionPayload,
+  action: SlackInteractionPayload['actions'][0],
+) {
+  // FE BeforeAllowTraffic 의 aggregator 가 묶어준 batch 처리.
+  //   1) DDB 에서 tag 로 모든 entry 조회 (server + image)
+  //   2) 각 deployment 마다 PutLifecycleEventHookExecutionStatus 호출
+  //   3) Slack 메시지 replace
+  const data: FeRerouteBatchValue = JSON.parse(action.value);
+  const isApprove = action.action_id === 'approve_fe_reroute_batch';
+
+  const { DynamoDBClient, GetItemCommand } = await import('@aws-sdk/client-dynamodb');
+  const { unmarshall } = await import('@aws-sdk/util-dynamodb');
+  const ddb = new DynamoDBClient({});
+  const result = await ddb.send(
+    new GetItemCommand({
+      TableName: BATCH_TABLE,
+      Key: { tag: { S: data.tag } },
+      ConsistentRead: true,
+    }),
+  );
+  if (!result.Item) {
+    await replaceMessage(payload.response_url, {
+      text: `⚠️ FE batch ${data.tag} 를 못 찾았어요 (TTL 만료?)`,
+      blocks: [
+        {
+          type: 'section',
+          text: {
+            type: 'mrkdwn',
+            text: `⚠️ *FE batch* \`${data.tag}\` *를 DDB 에서 못 찾았습니다*\nTTL 만료(2시간) 또는 다른 환경 문제일 수 있어요.`,
+          },
+        },
+        { type: 'divider' },
+      ],
+    });
+    return { statusCode: 200, body: '' };
+  }
+  const item = unmarshall(result.Item) as {
+    entries?: Record<string, BatchEntry>;
+  };
+  const entries = Object.values(item.entries ?? {});
+
+  const { CodeDeployClient, PutLifecycleEventHookExecutionStatusCommand } =
+    await import('@aws-sdk/client-codedeploy');
+  const cd = new CodeDeployClient({});
+  const status = isApprove ? 'Succeeded' : 'Failed';
+  const results: Array<{ type: string; ok: boolean; err?: string }> = [];
+  for (const entry of entries) {
+    try {
+      await cd.send(
+        new PutLifecycleEventHookExecutionStatusCommand({
+          deploymentId: entry.deploymentId,
+          lifecycleEventHookExecutionId: entry.hookExecId,
+          status,
+        }),
+      );
+      results.push({ type: entry.type, ok: true });
+    } catch (err) {
+      results.push({
+        type: entry.type,
+        ok: false,
+        err: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+
+  const emoji = isApprove ? '✅' : '❌';
+  const verb = isApprove ? 'Reroute 시작' : 'Reject';
+  const list = results
+    .map((r) => (r.ok ? `• ${r.type} ✓` : `• ${r.type} ⚠️ ${r.err ?? '실패'}`))
+    .join('\n');
+  await replaceMessage(payload.response_url, {
+    text: `${emoji} FE ${verb} by ${payload.user.name} (${data.tag})`,
+    blocks: [
+      {
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text:
+            `${emoji} *FE ${verb}* — *${data.tag}*\n` +
+            `${list}\n` +
+            `by *${payload.user.name}*`,
+        },
+      },
+      { type: 'divider' },
     ],
   });
   return { statusCode: 200, body: '' };
@@ -395,6 +509,7 @@ async function handleFeRollback(
             `by *${payload.user.name}*. 사용자 트래픽이 즉시 옛 코드로.`,
         },
       },
+      { type: 'divider' },
     ],
   });
   return { statusCode: 200, body: '' };

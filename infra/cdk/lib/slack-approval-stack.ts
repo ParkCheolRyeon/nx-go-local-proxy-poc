@@ -1,6 +1,7 @@
 import * as path from 'node:path';
 import { Stack, StackProps, Duration, CfnOutput } from 'aws-cdk-lib';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
+import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import * as events from 'aws-cdk-lib/aws-events';
 import * as targets from 'aws-cdk-lib/aws-events-targets';
@@ -48,6 +49,16 @@ export class SlackApprovalStack extends Stack {
       displayName: 'iGallery Deploy Approval',
     });
 
+    // ── FE BeforeAllowTraffic hook aggregator 용 DDB.
+    //   PK: tag (예: fe/v0.0.10) — 같은 tag 의 server/image hook 을 1개 batch 로 묶음.
+    //   TTL 2시간 — 사용자 클릭 후 자동 정리.
+    const feBatchTable = new dynamodb.Table(this, 'FeDeployBatch', {
+      tableName: 'igallery-fe-deploy-batch',
+      partitionKey: { name: 'tag', type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      timeToLiveAttribute: 'ttl',
+    });
+
     const botTokenSecret = secretsmanager.Secret.fromSecretNameV2(
       this,
       'BotTokenSecret',
@@ -67,7 +78,7 @@ export class SlackApprovalStack extends Stack {
     // ── handler Lambda
     const handlerFn = new lambda_nodejs.NodejsFunction(this, 'ApprovalHandler', {
       functionName: 'igallery-approval-handler',
-      runtime: lambda.Runtime.NODEJS_20_X,
+      runtime: lambda.Runtime.NODEJS_22_X,
       handler: 'handler',
       entry: path.join(__dirname, '..', 'lambda', 'approval-handler', 'index.ts'),
       timeout: Duration.seconds(30),
@@ -79,9 +90,11 @@ export class SlackApprovalStack extends Stack {
         GREEN_TG_ARN: props.beGreenTg.targetGroupArn,
         CODEDEPLOY_APP: props.beCodeDeployApp,
         CODEDEPLOY_GROUP: props.beCodeDeployGroup,
+        BATCH_TABLE: feBatchTable.tableName,
       },
       bundling: { minify: true, sourceMap: false, externalModules: [] },
     });
+    feBatchTable.grantReadData(handlerFn);
     handlerFn.addToRolePolicy(
       new iam.PolicyStatement({
         actions: [
@@ -113,7 +126,7 @@ export class SlackApprovalStack extends Stack {
     // ── notifier Lambda
     const notifierFn = new lambda_nodejs.NodejsFunction(this, 'ApprovalNotifier', {
       functionName: 'igallery-approval-notifier',
-      runtime: lambda.Runtime.NODEJS_20_X,
+      runtime: lambda.Runtime.NODEJS_22_X,
       handler: 'handler',
       entry: path.join(__dirname, '..', 'lambda', 'approval-notifier', 'index.ts'),
       timeout: Duration.seconds(30),
@@ -140,7 +153,7 @@ export class SlackApprovalStack extends Stack {
     // functionName 고정 — BeStack 의 buildSpec 이 by-name 으로 appspec.yaml 에 박음.
     const postSwapFn = new lambda_nodejs.NodejsFunction(this, 'PostSwapNotifier', {
       functionName: 'igallery-post-swap-notifier',
-      runtime: lambda.Runtime.NODEJS_20_X,
+      runtime: lambda.Runtime.NODEJS_22_X,
       handler: 'handler',
       entry: path.join(__dirname, '..', 'lambda', 'post-swap-notifier', 'index.ts'),
       timeout: Duration.seconds(30),
@@ -168,7 +181,7 @@ export class SlackApprovalStack extends Stack {
     //   사용자 클릭 대기 동안 hook execution status 안 PUT — handler 가 사용자 클릭 시 PUT.
     const feBeforeFn = new lambda_nodejs.NodejsFunction(this, 'FeBeforeAllowTraffic', {
       functionName: 'igallery-fe-before-allow-traffic',
-      runtime: lambda.Runtime.NODEJS_20_X,
+      runtime: lambda.Runtime.NODEJS_22_X,
       handler: 'handler',
       entry: path.join(
         __dirname,
@@ -177,15 +190,18 @@ export class SlackApprovalStack extends Stack {
         'fe-before-allow-traffic',
         'index.ts',
       ),
-      timeout: Duration.seconds(30),
+      // aggregator 가 45초 sleep + sibling hook 합류 대기 → 60s timeout
+      timeout: Duration.seconds(60),
       memorySize: 256,
       environment: {
         SLACK_BOT_TOKEN_SECRET: props.slackBotTokenSecretName,
         SLACK_CHANNEL_ID: props.slackChannelId,
+        BATCH_TABLE: feBatchTable.tableName,
       },
       bundling: { minify: true, sourceMap: false, externalModules: [] },
     });
     botTokenSecret.grantRead(feBeforeFn);
+    feBatchTable.grantReadWriteData(feBeforeFn);
     feBeforeFn.addToRolePolicy(
       new iam.PolicyStatement({
         actions: [
@@ -203,7 +219,7 @@ export class SlackApprovalStack extends Stack {
     // ── FE AfterAllowTraffic hook — swap 직후 [🔙 롤백] 알림 + hook Succeeded
     const fePostFn = new lambda_nodejs.NodejsFunction(this, 'FePostSwap', {
       functionName: 'igallery-fe-post-swap',
-      runtime: lambda.Runtime.NODEJS_20_X,
+      runtime: lambda.Runtime.NODEJS_22_X,
       handler: 'handler',
       entry: path.join(__dirname, '..', 'lambda', 'fe-post-swap', 'index.ts'),
       timeout: Duration.seconds(30),
