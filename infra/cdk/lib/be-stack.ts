@@ -12,6 +12,7 @@ import * as codepipeline from 'aws-cdk-lib/aws-codepipeline';
 import * as cpactions from 'aws-cdk-lib/aws-codepipeline-actions';
 import * as codebuild from 'aws-cdk-lib/aws-codebuild';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import * as scheduler from 'aws-cdk-lib/aws-scheduler';
 import * as sns from 'aws-cdk-lib/aws-sns';
 import { Construct } from 'constructs';
 
@@ -217,6 +218,58 @@ export class BeStack extends Stack {
 
     // 초기에는 blue TG 에만 등록. 이후 배포는 CodeDeploy 가 swap.
     service.attachToApplicationTargetGroup(blueTg);
+
+    // ── 야간 정지/기동 — DbStack 의 RDS 스케줄과 짝.
+    // RDS stop 5 분 뒤 ECS desired=0, RDS start 10 분 뒤 ECS desired=1 (RDS available 대기 여유).
+    const ecsSchedulerRole = new iam.Role(this, 'EcsSchedulerRole', {
+      assumedBy: new iam.ServicePrincipal('scheduler.amazonaws.com'),
+      description: 'Allow EventBridge Scheduler to update the dp-back ECS service desired count',
+    });
+    ecsSchedulerRole.addToPolicy(
+      new iam.PolicyStatement({
+        actions: ['ecs:UpdateService', 'ecs:DescribeServices'],
+        resources: [service.serviceArn],
+      }),
+    );
+
+    const stopServiceInput = Stack.of(this).toJsonString({
+      Cluster: cluster.clusterName,
+      Service: service.serviceArn,
+      DesiredCount: 0,
+    });
+    const startServiceInput = Stack.of(this).toJsonString({
+      Cluster: cluster.clusterName,
+      Service: service.serviceArn,
+      DesiredCount: 1,
+    });
+
+    new scheduler.CfnSchedule(this, 'EcsStopSchedule', {
+      description: '매일 18:05 KST dp-back ECS desired=0 (RDS stop 5 분 뒤)',
+      scheduleExpression: 'cron(5 18 * * ? *)',
+      scheduleExpressionTimezone: 'Asia/Seoul',
+      flexibleTimeWindow: { mode: 'OFF' },
+      state: 'ENABLED',
+      target: {
+        arn: 'arn:aws:scheduler:::aws-sdk:ecs:updateService',
+        roleArn: ecsSchedulerRole.roleArn,
+        input: stopServiceInput,
+        retryPolicy: { maximumRetryAttempts: 3, maximumEventAgeInSeconds: 300 },
+      },
+    });
+
+    new scheduler.CfnSchedule(this, 'EcsStartSchedule', {
+      description: '매일 07:50 KST dp-back ECS desired=1 (RDS start 10 분 뒤)',
+      scheduleExpression: 'cron(50 7 * * ? *)',
+      scheduleExpressionTimezone: 'Asia/Seoul',
+      flexibleTimeWindow: { mode: 'OFF' },
+      state: 'ENABLED',
+      target: {
+        arn: 'arn:aws:scheduler:::aws-sdk:ecs:updateService',
+        roleArn: ecsSchedulerRole.roleArn,
+        input: startServiceInput,
+        retryPolicy: { maximumRetryAttempts: 3, maximumEventAgeInSeconds: 300 },
+      },
+    });
 
     // ── CloudWatch Alarm (auto-rollback 트리거)
     // 데이터가 없을 땐 OK 로 — 첫 배포가 INSUFFICIENT_DATA 로 막히는 걸 방지.
