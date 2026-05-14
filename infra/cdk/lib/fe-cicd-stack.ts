@@ -4,6 +4,8 @@ import * as codepipeline from 'aws-cdk-lib/aws-codepipeline';
 import * as cpactions from 'aws-cdk-lib/aws-codepipeline-actions';
 import * as codebuild from 'aws-cdk-lib/aws-codebuild';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import * as events from 'aws-cdk-lib/aws-events';
+import * as eventsTargets from 'aws-cdk-lib/aws-events-targets';
 import { Construct } from 'constructs';
 
 /**
@@ -100,13 +102,16 @@ export class FeCicdStack extends Stack {
     const sourceArtifact = new codepipeline.Artifact('source');
     const buildArtifact = new codepipeline.Artifact('build');
 
-    // ── Source: S3 zip 변경 감지 (EventBridge rule 자동 생성)
+    // ── Source: S3 zip 변경 감지.
+    // CDK 의 S3Trigger.EVENTS 는 CloudTrail 기반 패턴 ('AWS API Call via CloudTrail') 룰을 만드는데,
+    // 우리는 bucket 의 eventBridgeEnabled=true 로 native S3 EventBridge 이벤트를 쓰므로
+    // CloudTrail 데이터 이벤트 활성화 없이는 매칭이 안 됨. 트리거 직접 정의로 우회.
     const sourceAction = new cpactions.S3SourceAction({
       actionName: 'S3_Source',
       bucket: opts.bucket,
       bucketKey: opts.sourceKey,
       output: sourceArtifact,
-      trigger: cpactions.S3Trigger.EVENTS,
+      trigger: cpactions.S3Trigger.NONE,
     });
 
     // ── Build: lambda update-function-code + publish-version + appspec 생성
@@ -254,6 +259,22 @@ export class FeCicdStack extends Stack {
         { stageName: 'Build', actions: [buildAction] },
         { stageName: 'Deploy', actions: [deployAction] },
       ],
+    });
+
+    // ── Native S3 EventBridge 트리거 룰.
+    // bucket(eventBridgeEnabled=true) 가 PutObject 시 'Object Created' 이벤트 발행 →
+    // 이 룰이 매칭해서 pipeline 시작.
+    new events.Rule(scope, `${idPrefix}S3NativeTrigger`, {
+      ruleName: `igallery-fe-${idPrefix.toLowerCase()}-s3-trigger`,
+      eventPattern: {
+        source: ['aws.s3'],
+        detailType: ['Object Created'],
+        detail: {
+          bucket: { name: [opts.bucket.bucketName] },
+          object: { key: [opts.sourceKey] },
+        },
+      },
+      targets: [new eventsTargets.CodePipeline(pipeline)],
     });
 
     new CfnOutput(scope, `${idPrefix}PipelineName`, { value: pipeline.pipelineName });
