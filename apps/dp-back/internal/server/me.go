@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/iscreamarts/igallery/packages/igallery-db/db"
+	"github.com/ParkCheolRyeon/igallery-db/db"
 )
 
 func (s *Server) GetMe(ctx context.Context, _ *struct{}) (*UserOutput, error) {

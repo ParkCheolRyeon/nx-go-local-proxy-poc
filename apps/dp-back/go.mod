@@ -2,16 +2,12 @@ module github.com/iscreamarts/igallery/apps/dp-back
 
 go 1.26.2
 
-// 모노레포 내부 참조 — 외부 publish 안 하므로 로컬 경로로 가로챔.
-// go.work 가 있어도 `go mod tidy` 가 require 라인을 fetch 하려 하기 때문에 필요.
-replace github.com/iscreamarts/igallery/packages/igallery-db => ../../packages/igallery-db
-
 require (
+	github.com/ParkCheolRyeon/igallery-db v0.1.0
 	github.com/danielgtaylor/huma/v2 v2.37.3
 	github.com/gin-contrib/cors v1.7.7
 	github.com/gin-gonic/gin v1.12.0
 	github.com/golang-jwt/jwt/v5 v5.3.1
-	github.com/iscreamarts/igallery/packages/igallery-db v0.1.0
 	github.com/jackc/pgx/v5 v5.9.2
 	github.com/joho/godotenv v1.5.1
 	github.com/redis/go-redis/v9 v9.19.0

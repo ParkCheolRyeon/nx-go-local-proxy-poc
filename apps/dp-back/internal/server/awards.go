@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/iscreamarts/igallery/packages/igallery-db/db"
+	"github.com/ParkCheolRyeon/igallery-db/db"
 	"github.com/jackc/pgx/v5"
 )
 

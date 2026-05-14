@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/iscreamarts/igallery/packages/igallery-db/db"
+	"github.com/ParkCheolRyeon/igallery-db/db"
 )
 
 // Notification — 도메인 표현. category 는 'contest','social','coin','system'.

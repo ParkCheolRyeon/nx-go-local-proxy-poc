@@ -3,7 +3,6 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
   "sourceRoot": "apps/dp-back",
-  "implicitDependencies": ["igallery-db"],
   "targets": {
     "dev": {
       "executor": "nx:run-commands",
@@ -20,9 +19,7 @@
         "default",
         "{projectRoot}/**/*.go",
         "{projectRoot}/go.mod",
-        "{projectRoot}/go.sum",
-        "{workspaceRoot}/go.work",
-        "{workspaceRoot}/go.work.sum"
+        "{projectRoot}/go.sum"
       ],
       "outputs": ["{workspaceRoot}/dist/apps/dp-back"],
       "options": {
@@ -37,9 +34,7 @@
         "default",
         "{projectRoot}/**/*.go",
         "{projectRoot}/go.mod",
-        "{projectRoot}/go.sum",
-        "{workspaceRoot}/go.work",
-        "{workspaceRoot}/go.work.sum"
+        "{projectRoot}/go.sum"
       ],
       "options": {
         "command": "go vet ./...",
@@ -53,9 +48,7 @@
         "default",
         "{projectRoot}/**/*.go",
         "{projectRoot}/go.mod",
-        "{projectRoot}/go.sum",
-        "{workspaceRoot}/go.work",
-        "{workspaceRoot}/go.work.sum"
+        "{projectRoot}/go.sum"
       ],
       "options": {
         "command": "go vet ./...",
@@ -69,9 +62,7 @@
         "default",
         "{projectRoot}/**/*.go",
         "{projectRoot}/go.mod",
-        "{projectRoot}/go.sum",
-        "{workspaceRoot}/go.work",
-        "{workspaceRoot}/go.work.sum"
+        "{projectRoot}/go.sum"
       ],
       "options": {
         "command": "go test ./...",
