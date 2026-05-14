@@ -160,7 +160,6 @@ export const handler = async (event: HookEvent): Promise<{ statusCode: number }>
                 {
                   type: 'button',
                   text: { type: 'plain_text', text: `🔙 ${prevLabel} 로 롤백` },
-                  style: 'danger',
                   action_id: 'rollback_fe_lambda',
                   value,
                 },
@@ -172,6 +171,7 @@ export const handler = async (event: HookEvent): Promise<{ statusCode: number }>
                 },
               ],
             },
+            { type: 'divider' },
           ],
         },
       ],

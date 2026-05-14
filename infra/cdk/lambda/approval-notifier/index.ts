@@ -139,14 +139,12 @@ async function handleCodeDeployEvent(msg: CodeDeployEventMessage): Promise<void>
               {
                 type: 'button',
                 text: { type: 'plain_text', text: '✅ Reroute (즉시 swap)' },
-                style: 'primary',
                 action_id: 'approve_reroute',
                 value,
               },
               {
                 type: 'button',
                 text: { type: 'plain_text', text: '❌ Stop' },
-                style: 'danger',
                 action_id: 'reject_reroute',
                 value,
               },
@@ -158,6 +156,7 @@ async function handleCodeDeployEvent(msg: CodeDeployEventMessage): Promise<void>
               },
             ],
           },
+          { type: 'divider' },
         ],
       },
     ],
