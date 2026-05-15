@@ -7,10 +7,10 @@ import (
 	"errors"
 	"time"
 
+	"github.com/ParkCheolRyeon/igallery-db/db"
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humagin"
 	"github.com/gin-gonic/gin"
-	"github.com/ParkCheolRyeon/igallery-db/db"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
@@ -388,14 +388,14 @@ func RegisterRoutes(api huma.API, s *Server) {
 type HealthOutput struct {
 	Body struct {
 		Status  string `json:"status" enum:"ok" example:"ok"`
-		Version string `json:"version" example:"v0.0.11"`
+		Version string `json:"version" example:"v0.0.12"`
 	}
 }
 
 func (s *Server) GetHealth(ctx context.Context, _ *struct{}) (*HealthOutput, error) {
 	out := &HealthOutput{}
 	out.Body.Status = "ok"
-	out.Body.Version = "v0.0.11"
+	out.Body.Version = "v0.0.12"
 	return out, nil
 }
 
